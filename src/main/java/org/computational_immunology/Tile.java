@@ -5,6 +5,8 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 
@@ -15,6 +17,8 @@ public class Tile {
     private String code;
 
     private BufferedImage bi = null;
+    // Cache of pre-shrunk copies keyed by downsample factor (pyramid levels).
+    private final Map<Integer, BufferedImage> downsampledCache = new HashMap<>();
     //real-world tile xy pos
     private double tileX;
     private double tileY;
@@ -99,7 +103,7 @@ public class Tile {
         return this.tileY;
     }
 
-    private static BufferedImage resizeImage(BufferedImage img, int targetWidth, int targetHeight, boolean qualityOverSpeed) {
+    static BufferedImage resizeImage(BufferedImage img, int targetWidth, int targetHeight, boolean qualityOverSpeed) {
         BufferedImage bufferedImg = new BufferedImage(targetWidth, targetHeight, img.getType());
         Graphics2D g2d = bufferedImg.createGraphics();
         
@@ -116,6 +120,33 @@ public class Tile {
     }
 
     public BufferedImage getImage() throws IOException, IllegalArgumentException {
+        return getImage(1);
+    }
+
+    /**
+     * Returns the tile image, optionally pre-shrunk by the given downsample factor.
+     * Full-resolution pixels are fetched from the server on first access; downsampled
+     * copies are derived from them and cached per downsample so a pyramid level is only
+     * computed once.
+     *
+     * @param downsample factor to shrink by ({@code <= 1} returns full resolution)
+     */
+    public synchronized BufferedImage getImage(int downsample) throws IOException, IllegalArgumentException {
+        BufferedImage full = getFullImage();
+        if (downsample <= 1) {
+            return full;
+        }
+        BufferedImage cached = downsampledCache.get(downsample);
+        if (cached == null) {
+            int width = Math.max(1, (int)this.tileW / downsample);
+            int height = Math.max(1, (int)this.tileH / downsample);
+            cached = resizeImage(full, width, height, false);
+            downsampledCache.put(downsample, cached);
+        }
+        return cached;
+    }
+
+    private BufferedImage getFullImage() throws IOException, IllegalArgumentException {
         if (bi == null) {
             InputStream webpage = ServerConnectionHandler.getInstance().fetchPage(getPath()).body();
             ImmuNetLog.log("Fetched URL is " + getPath());

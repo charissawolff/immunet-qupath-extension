@@ -2,8 +2,12 @@ package org.computational_immunology;
 
 import java.util.List;
 
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 public class DatasetSelectorTab extends CustomSidePanelTab {
@@ -29,20 +33,54 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         Button loadDataBtn = makeButton("Load Datasets", new Dimensions(40, 100)); 
         loadDataBtn.setOnAction(e -> MenuActions.updateListViewerBox(dsBox, getDatasets()));
 
-        Button openImgBtn = makeButton("Open Image", new Dimensions(40, 100)); 
+        Button openImgBtn = makeButton("Open Image", new Dimensions(40, 100));
+        Label openedImageLabel = new Label("No image opened");
         openImgBtn.setOnAction(e -> {
-            try{
-                String dsName = dsBox.getListView().getSelectionModel().selectedItemProperty().getValue();
-                String tsName = tsBox.getListView().getSelectionModel().selectedItemProperty().getValue();
-                MenuActions.setStreamedServer(dsName, tsName);
-            } catch (NullPointerException exc){
-                ImmuNetLog.error("No dataset of slide selected for opening.", exc);
+            String dsName = dsBox.getListView().getSelectionModel().getSelectedItem();
+            String tsName = tsBox.getListView().getSelectionModel().getSelectedItem();
+
+            if (dsName == null || tsName == null) {
+                ImmuNetLog.error("No dataset of slide selected for opening.",
+                        new NullPointerException("No dataset or slide selected."));
+                openedImageLabel.setText("No slide selected");
+                return;
             }
+
+            // load off the JavaFX Application Thread so the label can update live.
+            Task<Void> loadTask = new Task<>() {
+                @Override
+                protected Void call() {
+                    MenuActions.setStreamedServer(dsName, tsName,
+                            (processed, total) -> updateMessage("Fetching " + processed + "/" + total + " tiles"));
+                    return null;
+                }
+            };
+
+            openImgBtn.setDisable(true);
+            openedImageLabel.textProperty().bind(loadTask.messageProperty());
+            loadTask.setOnSucceeded(ev -> {
+                openedImageLabel.textProperty().unbind();
+                openedImageLabel.setText("Opened: " + tsName);
+                openImgBtn.setDisable(false);
+            });
+            loadTask.setOnFailed(ev -> {
+                openedImageLabel.textProperty().unbind();
+                openedImageLabel.setText("Failed to open slide");
+                openImgBtn.setDisable(false);
+                ImmuNetLog.error("Failed to open slide.", loadTask.getException());
+            });
+
+            Thread loadThread = new Thread(loadTask, "open-image");
+            loadThread.setDaemon(true);
+            loadThread.start();
         });
 
+        HBox openImgRow = new HBox(10, openImgBtn, openedImageLabel);
+        openImgRow.setAlignment(Pos.CENTER_LEFT);
+
         updateSlideByDataset(dsBox, tsBox);
-        
-        sidePanelTab.getChildren().addAll(loadDataBtn, dsBox.getBox(), tsBox.getBox(), openImgBtn);
+
+        sidePanelTab.getChildren().addAll(loadDataBtn, dsBox.getBox(), tsBox.getBox(), openImgRow);
 
         return sidePanelTab;
     }
