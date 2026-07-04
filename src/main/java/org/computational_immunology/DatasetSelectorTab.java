@@ -10,6 +10,16 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import javafx.application.Application;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
+import javafx.util.Duration;
+import org.controlsfx.control.Notifications;
+
+
 public class DatasetSelectorTab extends CustomSidePanelTab {
 
     public DatasetSelectorTab() {
@@ -38,6 +48,14 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         openImgBtn.setOnAction(e -> {
             String dsName = dsBox.getListView().getSelectionModel().getSelectedItem();
             String tsName = tsBox.getListView().getSelectionModel().getSelectedItem();
+            Notifications.create()
+                .title("Opgeslagen")
+                .text("Wijzigingen zijn succesvol opgeslagen.")
+                .hideAfter(Duration.seconds(3))
+                .position(Pos.TOP_RIGHT)
+                .showInformation();
+
+            
 
             if (dsName == null || tsName == null) {
                 ImmuNetLog.error("No dataset of slide selected for opening.",

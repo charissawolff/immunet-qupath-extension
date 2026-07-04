@@ -24,13 +24,11 @@ dependencies {
     shadow(libs.bundles.logging)
     shadow(libs.qupath.fxtras)
 
-    // If you aren't using Groovy, this can be removed
-    shadow(libs.bundles.groovy)
-
     // Third-party libraries used by the extension source.
     // Bundled into the shadow jar so they're available at runtime.
     implementation("org.json:json:20250107")
     implementation("org.apache.sshd:sshd-core:2.14.0")
+    implementation("org.controlsfx:controlsfx:11.2.3")
 
     // Compile-only nullness annotations (not needed at runtime)
     compileOnly("org.checkerframework:checker-qual:3.49.0")
