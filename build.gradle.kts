@@ -16,6 +16,21 @@ qupathExtension {
     automaticModule = "io.github.qupath.extension.template"
 }
 
+val osClassifier = when {
+    org.gradle.internal.os.OperatingSystem.current().isWindows -> "win"
+    org.gradle.internal.os.OperatingSystem.current().isMacOsX -> "mac"
+    else -> "linux"
+}
+
+dependencies {
+    // ...existing...
+    testImplementation("org.openjfx:javafx-base:21:$osClassifier")
+    testImplementation("org.openjfx:javafx-graphics:21:$osClassifier")
+    testImplementation("org.openjfx:javafx-controls:21:$osClassifier")
+}
+
+
+
 // TODO: Define your dependencies here
 dependencies {
 
@@ -36,5 +51,14 @@ dependencies {
     // For testing
     testImplementation(libs.bundles.qupath)
     testImplementation(libs.junit)
+    testImplementation("org.testfx:testfx-junit5:4.0.18")
+    testImplementation("org.testfx:testfx-core:4.0.18")
+    testImplementation("org.hamcrest:hamcrest:2.2")
+
+    testImplementation("org.openjfx:javafx-base:21:$osClassifier")
+    testImplementation("org.openjfx:javafx-graphics:21:$osClassifier")
+    testImplementation("org.openjfx:javafx-controls:21:$osClassifier")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
 }
+
