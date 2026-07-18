@@ -35,7 +35,7 @@ public class ServerRequestHandler {
 
         JSONArray parsedOutput = new JSONArray(allTilesJson);
         ImmuNetLog.log("Fetched all tiles json");
-        tiles = jsonToTiles(parsedOutput, path, ImageType.COMPOSITE);
+        tiles = jsonToTiles(parsedOutput, path, ImageType.THUMB);
         return tiles;
     }
 
