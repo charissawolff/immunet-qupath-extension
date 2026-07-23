@@ -4,11 +4,9 @@ import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandle
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
 import org.computational_immunology.ext.ImmuNet.ui.DatasetSelectorTab;
 import org.computational_immunology.ext.ImmuNet.ui.ServerConnectionTab;
-import org.computational_immunology.ext.ImmuNet.ui.MainViewerListener;
 
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.extensions.QuPathExtension;
-import qupath.lib.gui.viewer.QuPathViewer;
 
 public class ImmuNetExtension implements QuPathExtension {
 
@@ -25,12 +23,6 @@ public class ImmuNetExtension implements QuPathExtension {
 
         DatasetSelectorTab datasetTab = new DatasetSelectorTab(imageRequestHandler);
         datasetTab.addCustomTab(qupath.getAnalysisTabPane());
-
-        //viewer listener
-        QuPathViewer viewer = qupath.getViewer();
-        if (viewer != null) {
-            viewer.addViewerListener(new MainViewerListener());
-        }
     }
 
     @Override

@@ -93,7 +93,7 @@ public class ServerConnectionHandler implements PageFetcher {
             checkStatusCode(response.statusCode());
             return response;
         } catch(IOException | InterruptedException e){
-            ImmuNetLog.error("Could not fetch page", e);
+            ImmuNetLog.error("Could not fetch page {}", localPath );
             return null;
         }
     }
@@ -110,7 +110,7 @@ public class ServerConnectionHandler implements PageFetcher {
             checkStatusCode(response.statusCode());
             return response;
         } catch(IOException | InterruptedException e){
-            ImmuNetLog.error("Could not fetch page", e);
+            ImmuNetLog.error("Could not fetch page : {}", localPath);
             return null;
         }
     }

@@ -12,10 +12,16 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
 
+import qupath.lib.gui.QuPathGUI;
+import qupath.lib.gui.viewer.QuPathViewer;
+
 public class DatasetSelectorTab extends CustomSidePanelTab {
 
     private final ImageRequestHandler imageRequestHandler;
     private Task<?> currentLoadTask;
+    // Only created and registered with the viewer on the first successful "Open Image" click
+    // shouldn't exist before a slide is actually open. Reused (reset, not replaced) after that.
+    private SlideViewerCleaner slideViewerCleaner;
 
     public DatasetSelectorTab(ImageRequestHandler imageRequestHandler) {
         super("Image selector");
@@ -46,6 +52,15 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                 String tsName = tsBox.getListView().getSelectionModel().selectedItemProperty().getValue();
                 if (currentLoadTask != null) {
                     currentLoadTask.cancel();
+                }
+                if (slideViewerCleaner == null) {
+                    slideViewerCleaner = new SlideViewerCleaner();
+                    QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
+                    if (viewer != null) {
+                        viewer.addViewerListener(slideViewerCleaner);
+                    }
+                } else {
+                    slideViewerCleaner.reset();
                 }
                 SelectSlideCommand command = new SelectSlideCommand(dsName, tsName, imageRequestHandler);
                 command.run();

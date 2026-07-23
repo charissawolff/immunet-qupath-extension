@@ -17,7 +17,7 @@ public class SlideViewerServerFactory {
     // Fixed at an absolute downsample.  StreamedImageServer.readRegion then 
     // resizes the real fetched thumb image to whatever size this implies, so registering thumb here
     // instead of at its true native resolution stays consistent.
-    private static final double COMPOSITE_SWITCH_DOWNSAMPLE = 2;
+    private static final double COMPOSITE_SWITCH_DOWNSAMPLE = 1.5;
 
     public static SparseImageServer build(
             List<TileMetadata> tileMetadataList,
