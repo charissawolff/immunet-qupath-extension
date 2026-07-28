@@ -13,6 +13,7 @@ public class TileImageServerBuilder implements ImageServerBuilder<BufferedImage>
     TileMetadata tileMetadata;
     String datasetName;
     String slideName;
+    double downsampleValue;
     ImageRequestHandler imageRequestHandler;
 
     @Override
@@ -22,13 +23,14 @@ public class TileImageServerBuilder implements ImageServerBuilder<BufferedImage>
 
     @Override
     public ImageServer<BufferedImage> buildServer(URI uri, String... args) throws Exception {
-        return new TileImageServer(tileMetadata, datasetName, slideName, imageRequestHandler);
+        return new TileImageServer(tileMetadata, datasetName, slideName, downsampleValue, imageRequestHandler);
     }
 
-    public TileImageServerBuilder forTile(TileMetadata tileMetadata, String datasetName, String slideName, ImageRequestHandler imageRequestHandler) {
+    public TileImageServerBuilder forTile(TileMetadata tileMetadata, String datasetName, String slideName, double downsampleValue, ImageRequestHandler imageRequestHandler) {
         this.tileMetadata = tileMetadata;
         this.datasetName = datasetName;
         this.slideName = slideName;
+        this.downsampleValue = downsampleValue;
         this.imageRequestHandler = imageRequestHandler;
         return this;
     }

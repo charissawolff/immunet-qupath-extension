@@ -55,8 +55,9 @@ public class Tile {
         return metadata.h();
     }
 
-    static BufferedImage resizeImage(BufferedImage img, int targetWidth, int targetHeight, boolean qualityOverSpeed) {
-        BufferedImage bufferedImg = new BufferedImage(targetWidth, targetHeight, img.getType());
+    public BufferedImage resizeImage(int targetWidth, int targetHeight, boolean qualityOverSpeed, int... bufferedImageType) {
+        int imageType = bufferedImageType.length > 0 ? bufferedImageType[0] : image.getType();
+        BufferedImage bufferedImg = new BufferedImage(targetWidth, targetHeight, imageType);
         Graphics2D g2d = bufferedImg.createGraphics();
 
         if (qualityOverSpeed) {
@@ -65,9 +66,10 @@ public class Tile {
             g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         }
 
-        g2d.drawImage(img, 0, 0, targetWidth, targetHeight, null);
+        g2d.drawImage(image, 0, 0, targetWidth, targetHeight, null);
         g2d.dispose();
 
         return bufferedImg;
     }
+
 }

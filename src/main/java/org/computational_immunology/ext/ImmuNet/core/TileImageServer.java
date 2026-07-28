@@ -5,126 +5,96 @@ import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandle
 import qupath.lib.images.servers.ImageServerMetadata;
 import qupath.lib.images.servers.ImageServerBuilder;
 import qupath.lib.images.servers.AbstractImageServer;
+import qupath.lib.images.servers.AbstractTileableImageServer;
 import qupath.lib.images.servers.ImageChannel;
 import qupath.lib.images.servers.PixelType;
+import qupath.lib.images.servers.TileRequest;
 import qupath.lib.regions.RegionRequest;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 
-public class TileImageServer extends AbstractImageServer<BufferedImage> {
-    private TileMetadata tileMetadata;
-    private String datasetName;
-    private String slideName;
-    private ImageRequestHandler imageRequestHandler;
+public class TileImageServer extends AbstractTileableImageServer {
+    private final TileMetadata vectraTileMetadata;
+    private final String datasetName;
+    private final String slideName;
+    private final double downsampleValue;
+    private final ImageRequestHandler imageRequestHandler;
+    private final ImageServerMetadata metadata;
     
-
-    public TileImageServer(TileMetadata tileMetadata, String datasetName, String slideName, ImageRequestHandler imageRequestHandler) {
-        super(BufferedImage.class);
-        this.tileMetadata = tileMetadata;
+    public TileImageServer(TileMetadata vectraTileMetadata, String datasetName, String slideName, double downsampleValue, ImageRequestHandler imageRequestHandler) {
+        super();
+        this.vectraTileMetadata = vectraTileMetadata;
         this.datasetName = datasetName;
         this.slideName = slideName;
+        this.downsampleValue = downsampleValue;
         this.imageRequestHandler = imageRequestHandler;
+
+        int fullWidth  = (int) Math.round(vectraTileMetadata.getWidth());
+        int fullHeight = (int) Math.round(vectraTileMetadata.getHeight());
+        int levelWidth  = Math.max(1, (int) Math.round(fullWidth  / downsampleValue));
+        int levelHeight = Math.max(1, (int) Math.round(fullHeight / downsampleValue));
+        double declaredDownsample = fullWidth / (double) levelWidth;
+
+        this.metadata = new ImageServerMetadata.Builder()
+                .width(fullWidth).height(fullHeight)
+                .name(datasetName + "/" + slideName + "/" + vectraTileMetadata.getCode() + " (" + vectraTileMetadata.getType() + ")")
+                .rgb(true).pixelType(PixelType.UINT8)
+                .channels(ImageChannel.getDefaultRGBChannels())
+                .sizeZ(1).sizeT(1)
+                .levels(new ImageServerMetadata.ImageResolutionLevel.Builder(fullWidth, fullHeight)
+                        .addLevel(declaredDownsample, levelWidth, levelHeight)
+                        .build())
+                .preferredTileSize(levelWidth, levelHeight)
+                .build();
+        
     }
 
-    @Override
-    public synchronized ImageServerMetadata getMetadata() {
+    public BufferedImage readTile(TileRequest tileRequest) throws IOException {
+        int requestedWidth = tileRequest.getTileWidth();
+        int requestedHeight = tileRequest.getTileHeight();
         try {
-            final int width = (int)tileMetadata.getWidth();
-            final int height = (int)tileMetadata.getHeight();
-
-            return new ImageServerMetadata.Builder()
-                    .width(width)
-                    .height(height)
-                    // Temporary: code stands in for a real identifier until dataset/slide
-                    // context (SlideRef) is threaded through to StreamedImageServer.
-                    .name(tileMetadata.getCode())
-                    .channels(ImageChannel.getDefaultRGBChannels())
-                    .sizeZ(0)
-                    .sizeT(0)
-                    .rgb(true)
-                    .pixelType(PixelType.UINT8)
-                    .preferredTileSize(width,height).build();
-        } catch (Exception e) {
-            ImmuNetLog.error("Couldn't get metadata of ImageServer", e);
-            throw new RuntimeException(e);
+            Tile fetchedTile = imageRequestHandler.fetchTileImage(vectraTileMetadata, datasetName, slideName);
+            return fetchedTile.resizeImage(requestedWidth, requestedHeight, false, 1);
+        } catch(InterruptedException e) {
+            ImmuNetLog.log("Error in reading Tile in Tile image server");
+            throw new IOException("Interrupted fetching tile " + vectraTileMetadata.getCode(), e); 
         }
     }
 
     @Override
     protected ImageServerBuilder.ServerBuilder<BufferedImage> createServerBuilder() {
         return ImageServerBuilder.DefaultImageServerBuilder.createInstance(TileImageServerBuilder.class,
-                URI.create(createID()), "");
+                getURIs().iterator().next());
     }
 
     @Override
     protected String createID() {
-        // Must include type, not just code: SparseImageServerManager caches/deduplicates child
-        // servers by the builder this ID produces. Each physical tile is registered twice (once
-        // per resolution), so code alone would make the thumb and composite variants collide onto
-        // the same cache entry, whichever got registered first silently wins for both, regardless
-        // of which downsample was actually requested.
-        return tileMetadata.getCode() + "-" + tileMetadata.getType();
+        return datasetName + "/" + slideName + "/" + vectraTileMetadata.getCode() + "-" + vectraTileMetadata.getType();
     }
 
     @Override
     public Collection<URI> getURIs() {
-        // Same reason as createID()
-        return List.of(URI.create(tileMetadata.getCode() + "-" + tileMetadata.getType()));
-    }
-
-    @Override
-    public BufferedImage readRegion(RegionRequest request) throws IOException {
-        ImmuNetLog.log("readRegion: type={} code={} downsample={} request=({},{} {}x{})",
-                tileMetadata.getType(), tileMetadata.getCode(), request.getDownsample(),
-                request.getX(), request.getY(), request.getWidth(), request.getHeight());
         try {
-            Tile fetchedTile = imageRequestHandler.fetchTileImage(tileMetadata, datasetName, slideName);
-            BufferedImage image = fetchedTile.getImage();
-            double downsample = request.getDownsample();
-
-            // request.getDownsample() is the *registered* level's own value, not necessarily the
-            // real fetched image's true native resolution (e.g. THUMB_ZOOM_BUFFER_FACTOR deliberately
-            // registers thumb smaller than it really is, as a hack to let users zoom in before changing to composite). 
-            // Resize to whatever size this request's
-            // downsample implies for the whole tile first, so the geometry is self-consistent
-            // regardless of any mismatch between registered and true resolution.
-            int expectedFullWidth = (int) Math.round(tileMetadata.getWidth() / downsample);
-            int expectedFullHeight = (int) Math.round(tileMetadata.getHeight() / downsample);
-            if (image.getWidth() != expectedFullWidth || image.getHeight() != expectedFullHeight) {
-                image = Tile.resizeImage(image, expectedFullWidth, expectedFullHeight, true);
-            }
-
-            int x = (int) Math.round(request.getX() / downsample);
-            int y = (int) Math.round(request.getY() / downsample);
-            int requestedWidth = (int) Math.round(request.getWidth() / downsample);
-            int requestedHeight = (int) Math.round(request.getHeight() / downsample);
-
-            x = Math.min(x, image.getWidth());
-            y = Math.min(y, image.getHeight());
-            int width = Math.min(requestedWidth, image.getWidth() - x);
-            int height = Math.min(requestedHeight, image.getHeight() - y);
-            if (width <= 0 || height <= 0) {
-                return new BufferedImage(requestedWidth, requestedHeight, image.getType());
-            }
-            return image.getSubimage(x, y, width, height);
-        } catch (IOException | InterruptedException e) {
-            ImmuNetLog.error("Error fetching tile image", e);
-            throw new IOException("Error fetching tile image that exists according to the database. Tile code: " + tileMetadata.getCode(), e);
+            return List.of(new URI("ImmuNet", createID(), null));
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException("bad URI for tile " + vectraTileMetadata.getCode(), e);
         }
     }
 
     @Override
     public String getServerType() {
-        return "StreamedImageServer";
+        return "TileImageServer";
     }
-
     @Override
     public ImageServerMetadata getOriginalMetadata() {
-        return null;
+        return metadata;
     }
 }
