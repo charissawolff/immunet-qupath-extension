@@ -16,14 +16,14 @@ import java.util.Collection;
 import java.util.List;
 
 
-public class StreamedImageServer extends AbstractImageServer<BufferedImage> {
+public class TileImageServer extends AbstractImageServer<BufferedImage> {
     private TileMetadata tileMetadata;
     private String datasetName;
     private String slideName;
     private ImageRequestHandler imageRequestHandler;
     
 
-    public StreamedImageServer(TileMetadata tileMetadata, String datasetName, String slideName, ImageRequestHandler imageRequestHandler) {
+    public TileImageServer(TileMetadata tileMetadata, String datasetName, String slideName, ImageRequestHandler imageRequestHandler) {
         super(BufferedImage.class);
         this.tileMetadata = tileMetadata;
         this.datasetName = datasetName;
@@ -57,7 +57,7 @@ public class StreamedImageServer extends AbstractImageServer<BufferedImage> {
 
     @Override
     protected ImageServerBuilder.ServerBuilder<BufferedImage> createServerBuilder() {
-        return ImageServerBuilder.DefaultImageServerBuilder.createInstance(StreamedImageServerBuilder.class,
+        return ImageServerBuilder.DefaultImageServerBuilder.createInstance(TileImageServerBuilder.class,
                 URI.create(createID()), "");
     }
 

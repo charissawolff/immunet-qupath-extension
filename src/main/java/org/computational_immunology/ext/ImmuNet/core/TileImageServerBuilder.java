@@ -9,7 +9,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URI;
 
-public class StreamedImageServerBuilder implements ImageServerBuilder<BufferedImage> {
+public class TileImageServerBuilder implements ImageServerBuilder<BufferedImage> {
     TileMetadata tileMetadata;
     String datasetName;
     String slideName;
@@ -22,10 +22,10 @@ public class StreamedImageServerBuilder implements ImageServerBuilder<BufferedIm
 
     @Override
     public ImageServer<BufferedImage> buildServer(URI uri, String... args) throws Exception {
-        return new StreamedImageServer(tileMetadata, datasetName, slideName, imageRequestHandler);
+        return new TileImageServer(tileMetadata, datasetName, slideName, imageRequestHandler);
     }
 
-    public StreamedImageServerBuilder forTile(TileMetadata tileMetadata, String datasetName, String slideName, ImageRequestHandler imageRequestHandler) {
+    public TileImageServerBuilder forTile(TileMetadata tileMetadata, String datasetName, String slideName, ImageRequestHandler imageRequestHandler) {
         this.tileMetadata = tileMetadata;
         this.datasetName = datasetName;
         this.slideName = slideName;

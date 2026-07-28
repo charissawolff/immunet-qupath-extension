@@ -9,7 +9,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
 
-public class SlideViewerServerFactory {
+public class SlideImageServer {
     // SparseImageServerManager's per-region level selection only ever compares the requested
     // downsample against the registered THUMB value when there are just two levels. As soon as
     // the viewer's zoom passes below it, composite is selected, regardless of how far off
@@ -51,11 +51,11 @@ public class SlideViewerServerFactory {
 
                 TileMetadata thumbTile = tileMetadata.withType(TileMetadata.ImageType.THUMB);
                 builder.serverRegion(tileRegion, registeredDownsampleThumb,
-                        new StreamedImageServer(thumbTile, datasetName, slideName, imageRequestHandler));
+                        new TileImageServer(thumbTile, datasetName, slideName, imageRequestHandler));
 
                 TileMetadata compositeTile = tileMetadata.withType(TileMetadata.ImageType.COMPOSITE);
                 builder.serverRegion(tileRegion, downsampleComposite,
-                        new StreamedImageServer(compositeTile, datasetName, slideName, imageRequestHandler));
+                        new TileImageServer(compositeTile, datasetName, slideName, imageRequestHandler));
             }
             return builder.build();
         } catch (IOException | InterruptedException e) {

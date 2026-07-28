@@ -1,7 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.ui.commands;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.SlideViewerServerFactory;
+import org.computational_immunology.ext.ImmuNet.core.SlideImageServer;
 import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 
@@ -38,7 +38,7 @@ public class SelectSlideCommand implements Runnable {
             @Override
             protected SparseImageServer call() throws Exception {
                 List<TileMetadata> tiles = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
-                return SlideViewerServerFactory.build(tiles, datasetName, slideName, imageRequestHandler);
+                return SlideImageServer.build(tiles, datasetName, slideName, imageRequestHandler);
             }
         };
 
