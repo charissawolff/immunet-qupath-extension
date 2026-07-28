@@ -62,6 +62,7 @@ public class TileImageServer extends AbstractTileableImageServer {
         int requestedHeight = tileRequest.getTileHeight();
         try {
             Tile fetchedTile = imageRequestHandler.fetchTileImage(vectraTileMetadata, datasetName, slideName);
+            ImmuNetLog.log("Fetching tile of type {}",vectraTileMetadata.getType() );
             return fetchedTile.resizeImage(requestedWidth, requestedHeight, false, 1);
         } catch(InterruptedException e) {
             ImmuNetLog.log("Error in reading Tile in Tile image server");
