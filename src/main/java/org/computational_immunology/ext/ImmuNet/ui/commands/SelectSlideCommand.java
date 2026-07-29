@@ -15,6 +15,7 @@ import qupath.lib.images.servers.SparseImageServer;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -42,18 +43,30 @@ public class SelectSlideCommand implements Runnable {
             protected SparseImageServer call() throws Exception {
                 List<TileMetadata> tiles = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
                 SparseImageServer sparseServer = SlideImageServer.build(tiles, datasetName, slideName, imageRequestHandler);
-                
+                List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
+
+                // initialize countdownlatch to make it possible to cancel midway of the executor
+                CountDownLatch latch = new CountDownLatch(allThumbServers.size());
+
                 ExecutorService prefetchExecutor = Executors.newFixedThreadPool(64);
-                for (TileImageServer thumbServer : SlideImageServer.getThumbServers(sparseServer)) {
+                for (TileImageServer thumbServer : allThumbServers) {
                     prefetchExecutor.submit(() -> {
                         try {
                             thumbServer.getDefaultThumbnail(0, 0);
                         } catch (IOException e) {
                             ImmuNetLog.error("Prefetch failed for a thumb tile", e);
+                        } finally {
+                            latch.countDown();
                         }
                     });
                 }
-                prefetchExecutor.shutdown();
+                try {
+                    latch.await(); 
+                } catch (InterruptedException e) {
+                    prefetchExecutor.shutdownNow();
+                    throw e;
+                }
+                prefetchExecutor.close();
 
                 return sparseServer;
             }
