@@ -1,5 +1,5 @@
-import org.computational_immunology.CustomSidePanelTab;
-import org.computational_immunology.Dimensions;
+import org.computational_immunology.ext.ImmuNet.core.Dimensions;
+import org.computational_immunology.ext.ImmuNet.ui.CustomSidePanelTab;
 import org.junit.jupiter.api.Test;
 
 import javafx.scene.control.Button;

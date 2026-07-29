@@ -1,11 +1,11 @@
-package org.computational_immunology;
+package org.computational_immunology.ext.ImmuNet.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ImmuNetLog {
     // Define the logger at the top of your class
-    private static final Logger logger = LoggerFactory.getLogger(ImmuNetExtension.class);
+    private static final Logger logger = LoggerFactory.getLogger(ImmuNetLog.class);
 
 
     // Static shorthand for INFO

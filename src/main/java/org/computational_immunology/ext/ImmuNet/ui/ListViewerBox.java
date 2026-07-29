@@ -1,4 +1,4 @@
-package org.computational_immunology;
+package org.computational_immunology.ext.ImmuNet.ui;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package org.computational_immunology;
+package org.computational_immunology.ext.ImmuNet;
 
 import java.io.IOException;
 

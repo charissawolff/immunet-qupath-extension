@@ -9,10 +9,10 @@ plugins {
 
 // TODO: Configure your extension here (please change the defaults!)
 qupathExtension {
-    name = "vectra-extension"
+    name = "ImmuNet Extension"
     group = "computational-immunology-group"
     version = "0.1.0-SNAPSHOT"
-    description = "For the vectra server"
+    description = "For the vectra images server"
     automaticModule = "io.github.qupath.extension.template"
 }
 

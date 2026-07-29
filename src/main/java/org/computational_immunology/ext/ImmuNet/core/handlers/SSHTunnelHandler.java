@@ -1,8 +1,10 @@
-package org.computational_immunology;
+package org.computational_immunology.ext.ImmuNet.core.handlers;
 
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.session.ClientSession;
 import org.apache.sshd.common.util.net.SshdSocketAddress;
+
+import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 
 import java.io.IOException;
 import java.util.Set;

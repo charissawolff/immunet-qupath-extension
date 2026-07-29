@@ -1,10 +1,12 @@
-package org.computational_immunology;
+package org.computational_immunology.ext.ImmuNet.ui;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 
+import org.computational_immunology.ext.ImmuNet.core.Dimensions;
+import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.json.JSONException;
 import org.json.JSONObject;
 

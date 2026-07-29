@@ -1,4 +1,6 @@
-package org.computational_immunology;
+package org.computational_immunology.ext.ImmuNet.core;
+
+import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 
 import qupath.lib.images.servers.ImageServer;
 import qupath.lib.images.servers.ImageServerBuilder;
@@ -7,8 +9,12 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URI;
 
-public class StreamedImageServerBuilder implements ImageServerBuilder<BufferedImage> {
-    Tile ownedTile;
+public class TileImageServerBuilder implements ImageServerBuilder<BufferedImage> {
+    TileMetadata tileMetadata;
+    String datasetName;
+    String slideName;
+    double downsampleValue;
+    ImageRequestHandler imageRequestHandler;
 
     @Override
     public UriImageSupport<BufferedImage> checkImageSupport(URI uri, String... args) throws IOException {
@@ -17,13 +23,13 @@ public class StreamedImageServerBuilder implements ImageServerBuilder<BufferedIm
 
     @Override
     public ImageServer<BufferedImage> buildServer(URI uri, String... args) throws Exception {
-        return new StreamedImageServer(ownedTile);
+        throw new UnsupportedOperationException(
+            "TileImageServer cannot be reconstructed from a URI alone, it needs a live ImageRequestHandler...");
     }
 
-    public StreamedImageServerBuilder tile(Tile inTile){
-        ownedTile = inTile;
-        return this;
-    }
+    public TileMetadata.ImageType getType() {
+    return tileMetadata.getType();
+}
 
     @Override
     public String getName() {

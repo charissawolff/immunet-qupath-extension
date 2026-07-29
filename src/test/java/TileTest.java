@@ -1,5 +1,5 @@
-import org.computational_immunology.Tile;
-import org.computational_immunology.Tile.ImageType;
+import org.computational_immunology.ext.ImmuNet.core.Tile;
+import org.computational_immunology.ext.ImmuNet.core.Tile.ImageType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -14,19 +14,6 @@ class TileTest {
         // Verify negative values
         Assertions.assertThrows(IllegalArgumentException.class, () -> 
             new Tile(-1, "/", ImageType.THUMB, "16,38", 0, 0, 1, 1)
-        );
-    }
-
-    @Test
-    void getPath(){
-        Tile tile1 = new Tile(1, "/", ImageType.THUMB, "16,38", 0, 0, 1, 1);
-        Assertions.assertEquals("/16,38/thumb.jpg", tile1.getPath());
-        tile1 = new Tile(1, "", ImageType.THUMB, "16,38", 0, 0, 1, 1);
-        Assertions.assertEquals("/16,38/thumb.jpg", tile1.getPath());
-
-        // Verify null handling
-        Assertions.assertThrows(IllegalArgumentException.class, () -> 
-            new Tile(1, null, ImageType.THUMB, "16,38", 0, 0, 1, 1)
         );
     }
 

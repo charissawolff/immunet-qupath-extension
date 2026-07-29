@@ -1,6 +1,6 @@
-import org.computational_immunology.ServerRequestHandler;
-import org.computational_immunology.Tile;
-import org.computational_immunology.Tile.ImageType;
+import org.computational_immunology.ext.ImmuNet.core.ServerRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.Tile;
+import org.computational_immunology.ext.ImmuNet.core.Tile.ImageType;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

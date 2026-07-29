@@ -1,5 +1,5 @@
-import org.computational_immunology.Dimensions;
 import org.junit.jupiter.api.Test;
+import org.computational_immunology.ext.ImmuNet.core.Dimensions;
 import org.junit.jupiter.api.Assertions;
 
 

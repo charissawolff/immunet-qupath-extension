@@ -1,11 +1,12 @@
-package org.computational_immunology;
+package org.computational_immunology.ext.ImmuNet.ui;
+
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.json.JSONObject;
 
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.json.JSONObject;
 
 public class CachedLoginBox extends HBox {
     String json_key;
