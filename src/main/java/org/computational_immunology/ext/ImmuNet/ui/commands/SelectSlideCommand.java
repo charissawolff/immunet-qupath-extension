@@ -2,6 +2,7 @@ package org.computational_immunology.ext.ImmuNet.ui.commands;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.SlideImageServer;
+import org.computational_immunology.ext.ImmuNet.core.TileImageServer;
 import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 
@@ -14,6 +15,8 @@ import qupath.lib.images.servers.SparseImageServer;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Captures the selected dataset/slide once at click time, then loads it in a cancellable
@@ -38,7 +41,21 @@ public class SelectSlideCommand implements Runnable {
             @Override
             protected SparseImageServer call() throws Exception {
                 List<TileMetadata> tiles = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
-                return SlideImageServer.build(tiles, datasetName, slideName, imageRequestHandler);
+                SparseImageServer sparseServer = SlideImageServer.build(tiles, datasetName, slideName, imageRequestHandler);
+                
+                ExecutorService prefetchExecutor = Executors.newFixedThreadPool(32);
+                for (TileImageServer thumbServer : SlideImageServer.getThumbServers(sparseServer)) {
+                    prefetchExecutor.submit(() -> {
+                        try {
+                            thumbServer.getDefaultThumbnail(0, 0);
+                        } catch (IOException e) {
+                            ImmuNetLog.error("Prefetch failed for a thumb tile", e);
+                        }
+                    });
+                }
+                prefetchExecutor.shutdown();
+
+                return sparseServer;
             }
         };
 

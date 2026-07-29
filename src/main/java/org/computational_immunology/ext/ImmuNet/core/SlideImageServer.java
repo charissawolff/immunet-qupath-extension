@@ -2,12 +2,16 @@ package org.computational_immunology.ext.ImmuNet.core;
 
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 
+import qupath.lib.images.servers.ImageServer;
 import qupath.lib.images.servers.SparseImageServer;
 import qupath.lib.regions.ImageRegion;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class SlideImageServer {
     private static final double COMPOSITE_SWITCH_DOWNSAMPLE = 1.5;
@@ -80,6 +84,15 @@ public class SlideImageServer {
         }
     }
 
+
+    public static List<TileImageServer> getThumbServers(SparseImageServer sparseServer) throws IOException {
+        double thumbDownsample = sparseServer.getPreferredDownsamples()[1];
+        List<TileImageServer> thumbServers = new ArrayList<>();
+        for (ImageRegion region : sparseServer.getManager().getRegions()) {
+            thumbServers.add((TileImageServer) sparseServer.getManager().getServer(region, thumbDownsample));
+        }
+        return thumbServers;
+    }
     /**
      * Samples one tile's thumb and composite images to derive the downsample factor for each
      * resolution level (averaged from width and height ratios, since they don't necessarily agree

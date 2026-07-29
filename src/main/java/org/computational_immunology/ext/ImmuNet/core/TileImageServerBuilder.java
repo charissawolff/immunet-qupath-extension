@@ -35,6 +35,10 @@ public class TileImageServerBuilder implements ImageServerBuilder<BufferedImage>
         return this;
     }
 
+    public TileMetadata.ImageType getType() {
+    return tileMetadata.getType();
+}
+
     @Override
     public String getName() {
         return "Streamed Image Server Builder";
