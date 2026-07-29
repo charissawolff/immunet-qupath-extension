@@ -18,17 +18,19 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Captures the selected dataset/slide once at click time, then loads it in a cancellable
  * background Task. 
  */
-public class SelectSlideCommand implements Runnable {
+public class SelectSlideCommand {
 
     private final String datasetName;
     private final String slideName;
     private final ImageRequestHandler imageRequestHandler;
     private Task<SparseImageServer> task;
+    private Runnable onDone;
 
     public SelectSlideCommand(String datasetName, String slideName, ImageRequestHandler imageRequestHandler) {
         this.datasetName = datasetName;
@@ -36,27 +38,35 @@ public class SelectSlideCommand implements Runnable {
         this.imageRequestHandler = imageRequestHandler;
     }
 
-    @Override
-    public void run() {
+    public void build() {
         task = new Task<>() {
+            {
+                updateMessage("Opening...");
+            }
             @Override
             protected SparseImageServer call() throws Exception {
+                updateMessage("Fetching slide metadata");
                 List<TileMetadata> tiles = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
                 SparseImageServer sparseServer = SlideImageServer.build(tiles, datasetName, slideName, imageRequestHandler);
                 List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
+                int amountTiles = allThumbServers.size();
+                AtomicInteger completedCount = new AtomicInteger(0);
 
                 // initialize countdownlatch to make it possible to cancel midway of the executor
-                CountDownLatch latch = new CountDownLatch(allThumbServers.size());
+                CountDownLatch latch = new CountDownLatch(amountTiles);
 
                 ExecutorService prefetchExecutor = Executors.newFixedThreadPool(64);
                 for (TileImageServer thumbServer : allThumbServers) {
                     prefetchExecutor.submit(() -> {
                         try {
                             thumbServer.getDefaultThumbnail(0, 0);
-                        } catch (IOException e) {
+                            Thread.sleep(300);
+                        } catch (IOException | InterruptedException e) {
                             ImmuNetLog.error("Prefetch failed for a thumb tile", e);
                         } finally {
                             latch.countDown();
+                            int n = completedCount.incrementAndGet();
+                            updateMessage("Loading tile " + n + "/" + amountTiles + "...");
                         }
                     });
                 }
@@ -66,18 +76,23 @@ public class SelectSlideCommand implements Runnable {
                     prefetchExecutor.shutdownNow();
                     throw e;
                 }
+                updateMessage("Drawing slide...");
                 prefetchExecutor.close();
-
                 return sparseServer;
             }
         };
+    }
 
-        task.setOnSucceeded(event -> {
+    public void start() {
+         task.setOnSucceeded(event -> {
             QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
             if (viewer != null) {
                 try {
                     viewer.setImageData(new ImageData<>(task.getValue()));
                     ImmuNetLog.log("Successfully opened {}/{}", datasetName, slideName);
+                    if (onDone != null) {
+                        onDone.run();
+                    } 
                 } catch (IOException e) {
                     ImmuNetLog.error("Could not set image data for " + datasetName + "/" + slideName, e);
                 }
@@ -96,11 +111,16 @@ public class SelectSlideCommand implements Runnable {
     }
 
     /**
-     * @return the background Task backing this command, or null before run() has been called.
+     * @return the background Task backing this command, or null before build() has been called.
      * Callers that may supersede this command (e.g. selecting a different slide) should hold onto
      * this and call cancel() on it before starting a new one.
      */
     public Task<SparseImageServer> getTask() {
         return task;
     }
+
+    public void setOnDone(Runnable callback) {
+        this.onDone = callback;
+    }
+
 }
