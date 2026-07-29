@@ -29,12 +29,14 @@ public class SelectSlideCommand {
     private final String datasetName;
     private final String slideName;
     private final ImageRequestHandler imageRequestHandler;
+    private final double compositeSwitchDownsample;
     private Task<SparseImageServer> task;
     private Runnable onDone;
 
-    public SelectSlideCommand(String datasetName, String slideName, ImageRequestHandler imageRequestHandler) {
+    public SelectSlideCommand(String datasetName, String slideName, double compositeSwitchDownsample, ImageRequestHandler imageRequestHandler) {
         this.datasetName = datasetName;
         this.slideName = slideName;
+        this.compositeSwitchDownsample = compositeSwitchDownsample;
         this.imageRequestHandler = imageRequestHandler;
     }
 
@@ -47,7 +49,7 @@ public class SelectSlideCommand {
             protected SparseImageServer call() throws Exception {
                 updateMessage("Fetching slide metadata...");
                 List<TileMetadata> tiles = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
-                SparseImageServer sparseServer = SlideImageServer.build(tiles, datasetName, slideName, imageRequestHandler);
+                SparseImageServer sparseServer = SlideImageServer.build(tiles, datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
                 List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
                 int amountTiles = allThumbServers.size();
                 AtomicInteger completedCount = new AtomicInteger(0);
@@ -69,13 +71,13 @@ public class SelectSlideCommand {
                         }
                     });
                 }
-                updateMessage("Drawing slide...");
                 try {
                     latch.await(); 
                 } catch (InterruptedException e) {
                     prefetchExecutor.shutdownNow();
                     throw e;
                 }
+                updateMessage("Drawing slide...");
                 prefetchExecutor.close();
                 return sparseServer;
             }

@@ -12,15 +12,17 @@ import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
+import javafx.scene.control.Tooltip;
 
 public class DatasetSelectorTab extends CustomSidePanelTab {
 
     private final ImageRequestHandler imageRequestHandler;
     private Task<?> currentLoadTask;
-    Label statusLabel = new Label();
     private final PauseTransition buttonPause = new PauseTransition((Duration.seconds(3)));
 
     public DatasetSelectorTab(ImageRequestHandler imageRequestHandler) {
@@ -46,6 +48,20 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         loadDataBtn.setOnAction(e -> MenuActions.updateListViewerBox(dsBox, getDatasets()));
 
         Button openImgBtn = makeButton("Open Slide", new Dimensions(40, 100));
+        Label statusLabel = new Label();
+
+        // add a slider to see what user wants to transition composite to be. The smaller the better
+        Slider compositeTransitionSlider = new Slider(0.2, 12, 1.5);
+        Label infoIcon = new Label("ⓘ");
+        infoIcon.setTooltip(new Tooltip(
+            "Controls how much you need to zoom in before the viewer loads full detail images.\n" +
+            "Lower = safer for weaker machines (more zoom needed before detail loads).\n" +
+            "Higher = sharper images sooner, but uses more memory. \n" +
+            "WARNING: If you set this higher, make sure that you allocate enough memory from your system. \n"+
+            "Change this at (Edit > Preferences > General > Maximum memory) and restart the application. \n" +
+            "If your machine crashes upon loading in slides, lower this or avoid zooming at all before tile selection."
+        ));
+        HBox sliderRow = new HBox(5, new Label("Safer zoom"), compositeTransitionSlider, new Label("Sharper, sooner"), infoIcon);
 
         // set the the button will return to default when button pause; after button is "done" showing whatever it had to show
         buttonPause.setOnFinished(event -> {
@@ -63,7 +79,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                     currentLoadTask.cancel();
                     return;
                 }
-                SelectSlideCommand command = new SelectSlideCommand(dsName, tsName, imageRequestHandler);
+                SelectSlideCommand command = new SelectSlideCommand(dsName, tsName, compositeTransitionSlider.getValue(), imageRequestHandler);
                 command.build();
                 // hide label after done fetching slide image and presenting it, 
                 //use setOnDone because else it's hidden before the image is visible if I use the worker.state.succeeded
@@ -107,7 +123,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
 
         updateSlideByDataset(dsBox, tsBox);
 
-        sidePanelTab.getChildren().addAll(loadDataBtn, dsBox.getBox(), tsBox.getBox(), openImgBtn, statusLabel);
+        sidePanelTab.getChildren().addAll(loadDataBtn, dsBox.getBox(), tsBox.getBox(), openImgBtn, statusLabel, sliderRow);
 
         return sidePanelTab;
     }

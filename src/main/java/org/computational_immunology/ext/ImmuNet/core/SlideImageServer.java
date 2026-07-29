@@ -14,13 +14,13 @@ import java.util.List;
 import java.util.Set;
 
 public class SlideImageServer {
-    private static final double COMPOSITE_SWITCH_DOWNSAMPLE = 1.5;
     private static final double OVERVIEW_TARGET_MAX_DIMENSION = 2048;
 
     public static SparseImageServer build(
             List<TileMetadata> tileMetadataList,
             String datasetName,
             String slideName,
+            double compositeSwitchDownsample,
             ImageRequestHandler imageRequestHandler) {
         try {
             //register information aout the slide: how many pixels large it is
@@ -39,7 +39,7 @@ public class SlideImageServer {
             double downsampleThumb = downsamples[0];
             double downsampleComposite = downsamples[1];
 
-            double registeredDownsampleThumb = COMPOSITE_SWITCH_DOWNSAMPLE;
+            double registeredDownsampleThumb = compositeSwitchDownsample;
             //this is for the overview upon image opening; else for very large tiles it doesn't open due to memory issues making this
             //extension useless
             double overviewDownsample = Math.max(totalWidth, totalHeight) / OVERVIEW_TARGET_MAX_DIMENSION;
@@ -47,7 +47,7 @@ public class SlideImageServer {
             boolean registerOverviewLevel = overviewDownsample > registeredDownsampleThumb;
 
             if (registeredDownsampleThumb <= downsampleComposite) {
-                ImmuNetLog.error("COMPOSITE_SWITCH_DOWNSAMPLE (" + COMPOSITE_SWITCH_DOWNSAMPLE
+                ImmuNetLog.error("compositeSwitchDownsample (" + compositeSwitchDownsample
                         + ") is at or below this slide's downsampleComposite (" + downsampleComposite
                         + "), using the midpoint instead.");
                 registeredDownsampleThumb = (downsampleThumb + downsampleComposite) / 2;
