@@ -43,7 +43,7 @@ public class SelectSlideCommand implements Runnable {
                 List<TileMetadata> tiles = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
                 SparseImageServer sparseServer = SlideImageServer.build(tiles, datasetName, slideName, imageRequestHandler);
                 
-                ExecutorService prefetchExecutor = Executors.newFixedThreadPool(32);
+                ExecutorService prefetchExecutor = Executors.newFixedThreadPool(64);
                 for (TileImageServer thumbServer : SlideImageServer.getThumbServers(sparseServer)) {
                     prefetchExecutor.submit(() -> {
                         try {

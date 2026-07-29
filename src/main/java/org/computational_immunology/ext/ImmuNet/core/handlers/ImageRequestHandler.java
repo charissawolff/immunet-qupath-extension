@@ -23,9 +23,10 @@ public class ImageRequestHandler {
     private static final String TILE_IMAGE_PATH_FORMAT = "v/datasets/%s/%s/%s/%s.jpg"; // datasetName, slideName, tileCode, imageType
     private static final String TILEMETADATAPATH_FORMAT = "v/datasets/%s/%s/"; // datasetName, slideName
     private final PageFetcher pageFetcher;
-    private static final int MAX_CONCURRENT_IMAGE_DECODES = 4;
-    private final Semaphore semaphore = new Semaphore(MAX_CONCURRENT_IMAGE_DECODES);
-
+    private static final int MAX_CONCURRENT_THUMB_DECODES = 16;
+    private static final int MAX_CONCURRENT_COMPOSITE_DECODES = 4;
+    private final Semaphore thumbSemaphore = new Semaphore(MAX_CONCURRENT_THUMB_DECODES);
+    private final Semaphore compositeSemaphore = new Semaphore(MAX_CONCURRENT_COMPOSITE_DECODES);
     public ImageRequestHandler(PageFetcher pageFetcher) {
         this.pageFetcher = pageFetcher;
     }
@@ -52,6 +53,7 @@ public class ImageRequestHandler {
         // at the same time
         
         String path = String.format(TILE_IMAGE_PATH_FORMAT, datasetName, slideName, tileMetadata.getCode(), tileMetadata.getType().toString());
+        Semaphore semaphore = tileMetadata.getType() == TileMetadata.ImageType.THUMB ? thumbSemaphore : compositeSemaphore;
         var response = pageFetcher.fetchPage(path);
         if (response == null) {
             throw new IOException("Could not fetch tile image for tile code: " + tileMetadata.getCode() + " at path: " + path);
