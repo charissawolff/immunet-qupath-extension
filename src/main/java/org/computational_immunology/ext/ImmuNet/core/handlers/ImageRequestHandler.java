@@ -1,9 +1,11 @@
 package org.computational_immunology.ext.ImmuNet.core.handlers;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 import javax.imageio.ImageIO;
 
@@ -21,6 +23,8 @@ public class ImageRequestHandler {
     private static final String TILE_IMAGE_PATH_FORMAT = "v/datasets/%s/%s/%s/%s.jpg"; // datasetName, slideName, tileCode, imageType
     private static final String TILEMETADATAPATH_FORMAT = "v/datasets/%s/%s/"; // datasetName, slideName
     private final PageFetcher pageFetcher;
+    private static final int MAX_CONCURRENT_IMAGE_DECODES = 4;
+    private final Semaphore semaphore = new Semaphore(MAX_CONCURRENT_IMAGE_DECODES);
 
     public ImageRequestHandler(PageFetcher pageFetcher) {
         this.pageFetcher = pageFetcher;
@@ -42,10 +46,23 @@ public class ImageRequestHandler {
     }
 
     public Tile fetchTileImage(TileMetadata tileMetadata, String datasetName, String slideName) throws IOException, InterruptedException {
-        // Fetch the image for a specific tile using its metadata and the dataset/slide names. Check for null image and throw IOException if the image cannot be decoded.
+        // Fetch the image for a specific tile using its metadata and the dataset/slide names. 
+        // Check for null image and throw IOException if the image cannot be decoded.
+        // The application crashes when I try to load in too fast of the composite images, so I added a semaphore to limit how many images are read
+        // at the same time
+        
         String path = String.format(TILE_IMAGE_PATH_FORMAT, datasetName, slideName, tileMetadata.getCode(), tileMetadata.getType().toString());
-        try (InputStream imageInputStream = pageFetcher.fetchPage(path).body()) {
-            BufferedImage image = ImageIO.read(imageInputStream);
+        var response = pageFetcher.fetchPage(path);
+        if (response == null) {
+            throw new IOException("Could not fetch tile image for tile code: " + tileMetadata.getCode() + " at path: " + path);
+        }
+        byte[] imageBytes;
+        try (InputStream imageInputStream = response.body()) {
+            imageBytes = imageInputStream.readAllBytes();
+        }
+        semaphore.acquire();
+        try {
+            BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
             if (image == null) {
                 throw new IOException("Could not decode image data for tile code: " + tileMetadata.getCode() + " at path: " + path);
             }
@@ -53,6 +70,8 @@ public class ImageRequestHandler {
         } catch (IOException e) {
             ImmuNetLog.error("Error fetching tile image for tile code: " + tileMetadata.getCode() + " at path: " + path, e);
             throw e;
+        } finally {
+            semaphore.release();
         }
     }
 
