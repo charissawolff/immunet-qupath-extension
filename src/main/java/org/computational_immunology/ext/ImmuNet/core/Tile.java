@@ -55,6 +55,8 @@ public class Tile {
         return metadata.h();
     }
 
+    //todo: rename this to indicate that we can also change the buffered image type. Intentional as with qupath, the viewer
+    // has to always have the correct type to show
     public BufferedImage resizeImage(int targetWidth, int targetHeight, boolean qualityOverSpeed, int... bufferedImageType) {
         int imageType = bufferedImageType.length > 0 ? bufferedImageType[0] : image.getType();
         BufferedImage bufferedImg = new BufferedImage(targetWidth, targetHeight, imageType);

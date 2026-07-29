@@ -21,6 +21,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
     private final ImageRequestHandler imageRequestHandler;
     private Task<?> currentLoadTask;
     Label statusLabel = new Label();
+    private final PauseTransition buttonPause = new PauseTransition((Duration.seconds(3)));
 
     public DatasetSelectorTab(ImageRequestHandler imageRequestHandler) {
         super("Image selector");
@@ -45,6 +46,15 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         loadDataBtn.setOnAction(e -> MenuActions.updateListViewerBox(dsBox, getDatasets()));
 
         Button openImgBtn = makeButton("Open Slide", new Dimensions(40, 100));
+
+        // set the the button will return to default when button pause; after button is "done" showing whatever it had to show
+        buttonPause.setOnFinished(event -> {
+            openImgBtn.setStyle("-fx-text-fill: black;");
+            openImgBtn.setText("Open Slide");
+            statusLabel.setVisible(false);
+            statusLabel.setManaged(false);
+        });
+
         openImgBtn.setOnAction(e -> {
             try{
                 String dsName = dsBox.getListView().getSelectionModel().selectedItemProperty().getValue();
@@ -55,7 +65,12 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                 }
                 SelectSlideCommand command = new SelectSlideCommand(dsName, tsName, imageRequestHandler);
                 command.build();
-                command.setOnDone(() -> statusLabel.setText("Done!")); // when the image is set in viewer, show Done in label
+                // hide label after done fetching slide image and presenting it, 
+                //use setOnDone because else it's hidden before the image is visible if I use the worker.state.succeeded
+                command.setOnDone(() -> {
+                    statusLabel.setVisible(false);
+                    statusLabel.setManaged(false);
+                }); 
                 command.start();
                 currentLoadTask = command.getTask();
                 currentLoadTask.messageProperty().addListener((obs, oldMsg, newMsg) -> statusLabel.setText(newMsg)); // bind the messages from the status of the command to the text
@@ -66,21 +81,25 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                     } else if (newState == Worker.State.CANCELLED) {
                         openImgBtn.setStyle("-fx-text-fill: red;");
                         openImgBtn.setText("Cancelled");
+                        statusLabel.setVisible(false);
+                        statusLabel.setManaged(false);
                     } else if (newState == Worker.State.FAILED) {
                         openImgBtn.setStyle("-fx-text-fill: red;");
                         openImgBtn.setText("Failed");
+                        statusLabel.setVisible(false);
+                        statusLabel.setManaged(false);
                     } else {
                         return; 
                     }
-                    PauseTransition pause = new PauseTransition(Duration.seconds(5));
-                    pause.setOnFinished(event -> {
-                        openImgBtn.setStyle("-fx-text-fill: black;");
-                        openImgBtn.setText("Open Slide");
-                    });
-                    pause.play();
+                    buttonPause.stop();
+                    buttonPause.playFromStart();
                 });
                 openImgBtn.setText("Cancel");
-                openImgBtn.setStyle("-fx-text-fill: red;");
+                openImgBtn.setStyle("-fx-text-fill: black;");
+                statusLabel.setVisible(true);
+                statusLabel.setManaged(true);
+                //stop whatever pause is happening
+                buttonPause.stop();
             } catch (NullPointerException exc){
                 ImmuNetLog.error("No dataset of slide selected for opening.", exc);
             }

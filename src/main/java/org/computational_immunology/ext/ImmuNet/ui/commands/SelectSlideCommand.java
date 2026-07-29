@@ -45,7 +45,7 @@ public class SelectSlideCommand {
             }
             @Override
             protected SparseImageServer call() throws Exception {
-                updateMessage("Fetching slide metadata");
+                updateMessage("Fetching slide metadata...");
                 List<TileMetadata> tiles = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
                 SparseImageServer sparseServer = SlideImageServer.build(tiles, datasetName, slideName, imageRequestHandler);
                 List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
@@ -60,23 +60,22 @@ public class SelectSlideCommand {
                     prefetchExecutor.submit(() -> {
                         try {
                             thumbServer.getDefaultThumbnail(0, 0);
-                            Thread.sleep(300);
-                        } catch (IOException | InterruptedException e) {
+                        } catch (IOException e) {
                             ImmuNetLog.error("Prefetch failed for a thumb tile", e);
                         } finally {
                             latch.countDown();
                             int n = completedCount.incrementAndGet();
-                            updateMessage("Loading tile " + n + "/" + amountTiles + "...");
+                            updateMessage("Loading tile " + n + "/" + amountTiles );
                         }
                     });
                 }
+                updateMessage("Drawing slide...");
                 try {
                     latch.await(); 
                 } catch (InterruptedException e) {
                     prefetchExecutor.shutdownNow();
                     throw e;
                 }
-                updateMessage("Drawing slide...");
                 prefetchExecutor.close();
                 return sparseServer;
             }
