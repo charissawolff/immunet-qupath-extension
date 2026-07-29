@@ -2,17 +2,26 @@ package org.computational_immunology.ext.ImmuNet.core;
 
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 
-import qupath.lib.images.servers.ImageServer;
 import qupath.lib.images.servers.SparseImageServer;
 import qupath.lib.regions.ImageRegion;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
+/*
+The image server for showing a SLIDE, which consists of many TILES. 
+Here we use a SparseImageServer which is a AbstractTileableImageServer.
+This server determines the downsample values of the tiles; since we have 2 or 3 different layers. The THUMB and the composite,
+each for the thumb.jpg or composite.jpg in backend server. Furthermore a third layer is made (overview) for some slides, so that Qupath doesn't crash
+when opening slides with hundreds of tiles due to memory issues. 
+
+For each tile region, we build a TileImageServer per resolution and register it into the SparseImageServer.Builder.
+Build() returns the finished SparseImageServer. This SparseImageServer instance (together with QuPath's own viewer)
+decides which registered tile/resolution to actually fetch as the user zooms and pans around.
+
+*/
 public class SlideImageServer {
     private static final double OVERVIEW_TARGET_MAX_DIMENSION = 2048;
 
@@ -43,8 +52,6 @@ public class SlideImageServer {
             //this is for the overview upon image opening; else for very large tiles it doesn't open due to memory issues making this
             //extension useless
             double overviewDownsample = Math.max(totalWidth, totalHeight) / OVERVIEW_TARGET_MAX_DIMENSION;
-            // use it is it's larger than the default thumb one
-            boolean registerOverviewLevel = overviewDownsample > registeredDownsampleThumb;
 
             if (registeredDownsampleThumb <= downsampleComposite) {
                 ImmuNetLog.error("compositeSwitchDownsample (" + compositeSwitchDownsample
@@ -52,6 +59,19 @@ public class SlideImageServer {
                         + "), using the midpoint instead.");
                 registeredDownsampleThumb = (downsampleThumb + downsampleComposite) / 2;
             }
+
+            // cap so thumb stays selectable at the most-zoomed-out view, otherwise the initial slide-open
+            // (QuPath's histogram scan reads the whole slide in one call) would need composite tiles across
+            // the entire slide, which is the exact OOM/crash risk the overview level exists to prevent.
+            if (registeredDownsampleThumb >= overviewDownsample) {
+                ImmuNetLog.error("compositeSwitchDownsample (" + compositeSwitchDownsample
+                        + ") is at or above this slide's overviewDownsample (" + overviewDownsample
+                        + "), capping it just below instead.");
+                registeredDownsampleThumb = overviewDownsample * 0.99;
+            }
+
+            // use it is it's larger than the default thumb one
+            boolean registerOverviewLevel = overviewDownsample > registeredDownsampleThumb;
 
             // we are making image regions being the same size as the tiles we get from backend
             SparseImageServer.Builder builder = new SparseImageServer.Builder();
@@ -97,7 +117,7 @@ public class SlideImageServer {
      * Samples one tile's thumb and composite images to derive the downsample factor for each
      * resolution level (averaged from width and height ratios, since they don't necessarily agree
      * exactly. Tries tiles in order in case
-     * a particular tile fails to fetch (edge tile, transient error, not found on server althoug it should be there), rather than failing outright
+     * a particular tile fails to fetch (edge tile, transient error, not found on server althoug it should be there), rather than failing
      * on the first one.
      */
     private static double[] deriveDownsamples(

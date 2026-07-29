@@ -4,22 +4,24 @@ import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandle
 
 import qupath.lib.images.servers.ImageServerMetadata;
 import qupath.lib.images.servers.ImageServerBuilder;
-import qupath.lib.images.servers.AbstractImageServer;
 import qupath.lib.images.servers.AbstractTileableImageServer;
 import qupath.lib.images.servers.ImageChannel;
 import qupath.lib.images.servers.PixelType;
 import qupath.lib.images.servers.TileRequest;
-import qupath.lib.regions.RegionRequest;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/*
+Image server for a TILE, which is what a SLIDE is made out of. The slide image server determines the position of each tile, and a tile
+is called. We use AbstractTileableImageServer instead of AbstractImageServer because it offers better caching and calling of the tiles, with less
+code. Furthermore, it offers better positioning making that when zooming or moving around the viewer, the tiles are not out of place.
+This was done after many errors using AbstractImageServer.
+*/
 
 public class TileImageServer extends AbstractTileableImageServer {
     private final TileMetadata vectraTileMetadata;
@@ -58,6 +60,10 @@ public class TileImageServer extends AbstractTileableImageServer {
     }
 
     public BufferedImage readTile(TileRequest tileRequest) throws IOException {
+        /*
+        This function is called when the sparse image server determines that the tile corresponding to this server is at this position, and since it
+        is not in cache, it needs to be fetched from the server, resized and made the correct bufferedImageType to avoid crashes.
+        */
         int requestedWidth = tileRequest.getTileWidth();
         int requestedHeight = tileRequest.getTileHeight();
         try {

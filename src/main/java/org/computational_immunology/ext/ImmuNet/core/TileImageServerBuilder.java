@@ -23,16 +23,8 @@ public class TileImageServerBuilder implements ImageServerBuilder<BufferedImage>
 
     @Override
     public ImageServer<BufferedImage> buildServer(URI uri, String... args) throws Exception {
-        return new TileImageServer(tileMetadata, datasetName, slideName, downsampleValue, imageRequestHandler);
-    }
-
-    public TileImageServerBuilder forTile(TileMetadata tileMetadata, String datasetName, String slideName, double downsampleValue, ImageRequestHandler imageRequestHandler) {
-        this.tileMetadata = tileMetadata;
-        this.datasetName = datasetName;
-        this.slideName = slideName;
-        this.downsampleValue = downsampleValue;
-        this.imageRequestHandler = imageRequestHandler;
-        return this;
+        throw new UnsupportedOperationException(
+            "TileImageServer cannot be reconstructed from a URI alone, it needs a live ImageRequestHandler...");
     }
 
     public TileMetadata.ImageType getType() {
