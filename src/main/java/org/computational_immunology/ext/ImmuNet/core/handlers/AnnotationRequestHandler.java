@@ -12,7 +12,7 @@ import java.util.concurrent.Semaphore;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 
-import org.computational_immunology.ext.ImmuNet.core.Annotation;
+import org.computational_immunology.ext.ImmuNet.core.AnnotationPoint;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.Tile;
 import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
@@ -24,15 +24,15 @@ import org.json.JSONObject;
 
 public class AnnotationRequestHandler {
     private final PageFetcher pageFetcher;
-    private static final String ANNOTATIONS = "v/datasets/%s/%s/"; // datasetName, slideName. Used for slide AND tile level...
+    private static final String ANNOTATIONS = "v/datasets/%s/%s/%s/annotations.json"; // datasetName, slideName, tileCode
 
     public AnnotationRequestHandler(PageFetcher pageFetcher) {
         this.pageFetcher = pageFetcher;
     }
 
-    public List<Annotation> fetchAnnotations(String dataset, String slide) throws IOException, JSONException {
-        String path = String.format(ANNOTATIONS, dataset, slide);
-        List<Annotation> annotations = new ArrayList<>();
+    public List<AnnotationPoint> fetchAnnotations(String dataset, String slide, String tile) throws IOException, JSONException {
+        String path = String.format(ANNOTATIONS, dataset, slide, tile);
+        List<AnnotationPoint> annotations = new ArrayList<>();
 
         HttpResponse<String> response = pageFetcher.fetchStringPage(path);
 
@@ -57,8 +57,8 @@ public class AnnotationRequestHandler {
         return annotations;
     }
 
-    private Annotation jsonToAnnotation(JSONObject json) throws JSONException {
-    return new Annotation(
+    private AnnotationPoint jsonToAnnotation(JSONObject json) throws JSONException {
+    return new AnnotationPoint(
         json.getString("_id"),
         json.getString("slide"),
         json.getString("dataset"),

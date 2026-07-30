@@ -2,7 +2,7 @@ package org.computational_immunology.ext.ImmuNet.core;
 
 import java.util.Objects;
 
-public class Annotation {
+public class AnnotationPoint {
 
     private final String id;
     private final String slide;
@@ -15,7 +15,7 @@ public class Annotation {
     private final String purpose;
     private final String created;
 
-    public Annotation(String id, String slide, String dataset, String tile,
+    public AnnotationPoint(String id, String slide, String dataset, String tile,
                        int x, int y, String t, String annotator,
                        String purpose, String created) {
         this.id = id;
@@ -45,7 +45,7 @@ public class Annotation {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Annotation that)) return false;
+        if (!(o instanceof AnnotationPoint that)) return false;
         return x == that.x
                 && y == that.y
                 && Objects.equals(id, that.id)
