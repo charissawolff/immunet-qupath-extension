@@ -24,14 +24,44 @@ import org.json.JSONObject;
 
 public class AnnotationRequestHandler {
     private final PageFetcher pageFetcher;
-    private static final String ANNOTATIONS = "v/datasets/%s/%s/%s/annotations.json"; // datasetName, slideName, tileCode
+    private static final String SLIDE_ANNOTATIONS = "/v/annotations/%s/%s/"; // datasetName, slideName
+    private static final String TILE_ANNOTATIONS = "v/datasets/%s/%s/%s/annotations.json"; // datasetName, slideName, tileCode
 
     public AnnotationRequestHandler(PageFetcher pageFetcher) {
         this.pageFetcher = pageFetcher;
     }
 
+    public List<String> fetchSlideAnnotations(String dataset, String slide) throws IOException, JSONException {
+        // Fetches the list of tile codes that have annotations for a given dataset and slide
+        
+        String path = String.format(SLIDE_ANNOTATIONS, dataset, slide);
+        List<String> tileCodes = new ArrayList<>();
+
+        HttpResponse<String> response = pageFetcher.fetchStringPage(path);
+
+        int status = response.statusCode();
+        if (status == 404) {
+            return tileCodes; // no annotations for this dataset/slide 
+        }
+        if (status < 200 || status >= 300) {
+            throw new IOException("Could not fetch annotations for dataset: " + dataset
+                    + " with slide: " + slide + " (status " + status + ")");
+        }
+
+        String body = response.body().trim();
+        if (body.isEmpty()) {
+            return tileCodes; // empty body means there are no annotations
+        }
+
+        JSONArray array = new JSONArray(body);
+        for (int i = 0; i < array.length(); i++) {
+            tileCodes.add(array.getString(i));
+        }
+        return tileCodes;
+    }
+
     public List<AnnotationPoint> fetchAnnotations(String dataset, String slide, String tile) throws IOException, JSONException {
-        String path = String.format(ANNOTATIONS, dataset, slide, tile);
+        String path = String.format(TILE_ANNOTATIONS, dataset, slide, tile);
         List<AnnotationPoint> annotations = new ArrayList<>();
 
         HttpResponse<String> response = pageFetcher.fetchStringPage(path);

@@ -5,10 +5,10 @@ import java.util.List;
 import org.computational_immunology.ext.ImmuNet.core.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
-import org.computational_immunology.ext.ImmuNet.ui.commands.SelectSlideCommand;
+import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
+import org.computational_immunology.ext.ImmuNet.ui.commands.SlideLoadWorkflow;
 
 import javafx.animation.PauseTransition;
-import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
@@ -22,12 +22,15 @@ import javafx.scene.control.Tooltip;
 public class DatasetSelectorTab extends CustomSidePanelTab {
 
     private final ImageRequestHandler imageRequestHandler;
-    private Task<?> currentLoadTask;
+    private final AnnotationRequestHandler annotationRequestHandler;
+    private SlideLoadWorkflow currentWorkflow;
     private final PauseTransition buttonPause = new PauseTransition((Duration.seconds(3)));
 
-    public DatasetSelectorTab(ImageRequestHandler imageRequestHandler) {
+    public DatasetSelectorTab(ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler) {
         super("Image selector");
         this.imageRequestHandler = imageRequestHandler;
+        this.annotationRequestHandler = annotationRequestHandler;
+
     }
 
     /**
@@ -67,30 +70,23 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         buttonPause.setOnFinished(event -> {
             openImgBtn.setStyle("-fx-text-fill: black;");
             openImgBtn.setText("Open Slide");
-            statusLabel.setVisible(false);
-            statusLabel.setManaged(false);
+            //statusLabel.setVisible(false);
+            //statusLabel.setManaged(false);
         });
 
         openImgBtn.setOnAction(e -> {
             try{
                 String dsName = dsBox.getListView().getSelectionModel().selectedItemProperty().getValue();
                 String tsName = tsBox.getListView().getSelectionModel().selectedItemProperty().getValue();
-                if (currentLoadTask != null && !currentLoadTask.isDone()) {
-                    currentLoadTask.cancel();
+                if (currentWorkflow != null && !currentWorkflow.isDone()) {
+                    currentWorkflow.cancel();
                     return;
                 }
-                SelectSlideCommand command = new SelectSlideCommand(dsName, tsName, compositeTransitionSlider.getValue(), imageRequestHandler);
-                command.build();
-                // hide label after done fetching slide image and presenting it, 
-                //use setOnDone because else it's hidden before the image is visible if I use the worker.state.succeeded
-                command.setOnDone(() -> {
-                    statusLabel.setVisible(false);
-                    statusLabel.setManaged(false);
-                }); 
-                command.start();
-                currentLoadTask = command.getTask();
-                currentLoadTask.messageProperty().addListener((obs, oldMsg, newMsg) -> statusLabel.setText(newMsg)); // bind the messages from the status of the command to the text
-                currentLoadTask.stateProperty().addListener((obs, oldState, newState) -> {
+                SlideLoadWorkflow workflow = new SlideLoadWorkflow(dsName, tsName, compositeTransitionSlider.getValue(), imageRequestHandler, annotationRequestHandler);
+                workflow.build();
+
+                workflow.messageProperty().addListener((obs, oldMsg, newMsg) -> statusLabel.setText(newMsg)); // bind the combined status message to the label
+                workflow.stateProperty().addListener((obs, oldState, newState) -> {
                     if (newState == Worker.State.SUCCEEDED) {
                         openImgBtn.setStyle("-fx-text-fill: green;");
                         openImgBtn.setText("Success");
@@ -110,6 +106,10 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                     buttonPause.stop();
                     buttonPause.playFromStart();
                 });
+
+                workflow.start();
+                currentWorkflow = workflow;
+
                 openImgBtn.setText("Cancel");
                 openImgBtn.setStyle("-fx-text-fill: black;");
                 statusLabel.setVisible(true);

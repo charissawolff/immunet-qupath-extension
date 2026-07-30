@@ -2,6 +2,7 @@ package org.computational_immunology.ext.ImmuNet.core;
 
 import java.util.List;
 
+import qupath.lib.common.ColorTools;
 import qupath.lib.objects.PathObject;
 import qupath.lib.objects.PathObjects;
 import qupath.lib.objects.classes.PathClass;
@@ -11,17 +12,38 @@ import qupath.lib.roi.interfaces.ROI;
 
 public class AnnotationPointConverter {
 
+    // a categorical palette so different "t" values are easy to tell apart at a glance,
+    // rather than relying on PathClass's default hash-derived color (which isn't guaranteed to be distinguishable).
+    private static final int[] TYPE_COLOR_PALETTE = {
+            ColorTools.packRGB(230, 25, 75),   // red
+            ColorTools.packRGB(60, 180, 75),   // green
+            ColorTools.packRGB(0, 130, 200),   // blue
+            ColorTools.packRGB(245, 130, 48),  // orange
+            ColorTools.packRGB(145, 30, 180),  // purple
+            ColorTools.packRGB(70, 240, 240),  // cyan
+            ColorTools.packRGB(240, 50, 230),  // magenta
+            ColorTools.packRGB(170, 110, 40),  // brown
+    };
+
     private AnnotationPointConverter(){
         /* This utility class should not be instantiated */
     }
 
-    public static PathObject toPathObject(AnnotationPoint point) {
-        ROI roi = ROIs.createPointsROI(point.getX(), point.getY(), ImagePlane.getDefaultPlane());
+    private static int colorForType(String type) {
+        int index = Math.floorMod(type == null ? 0 : type.hashCode(), TYPE_COLOR_PALETTE.length);
+        return TYPE_COLOR_PALETTE[index];
+    }
 
-        PathClass pointClassification = PathClass.getInstance(point.getT());
+    public static PathObject toPathObject(AnnotationPoint point, TileMetadata tileMetadata) {
+        double absoluteX = tileMetadata.getX() + point.getX();
+        double absoluteY = tileMetadata.getY() + point.getY();
+        ROI roi = ROIs.createPointsROI(absoluteX, absoluteY, ImagePlane.getDefaultPlane());
+
+        PathClass pointClassification = PathClass.getInstance(point.getT(), colorForType(point.getT()));
         PathObject annotation = PathObjects.createAnnotationObject(roi, pointClassification);
 
-        annotation.setName(point.getId());
+        //todo: think about what I want the name to be
+        //annotation.setName(point.getId());
         annotation.getMetadata().put("annotator", point.getAnnotator());
         annotation.getMetadata().put("created", point.getCreated());
         annotation.getMetadata().put("tile", point.getTile());
@@ -32,7 +54,7 @@ public class AnnotationPointConverter {
         return annotation;
     }
 
-    public static List<PathObject> toPathObjects(List<AnnotationPoint> points) {
-        return points.stream().map(AnnotationPointConverter::toPathObject).toList();
+    public static List<PathObject> toPathObjects(List<AnnotationPoint> points, TileMetadata tileMetadata) {
+        return points.stream().map(point -> toPathObject(point, tileMetadata)).toList();
     }
 }
