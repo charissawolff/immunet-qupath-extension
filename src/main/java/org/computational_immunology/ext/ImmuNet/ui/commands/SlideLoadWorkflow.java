@@ -3,11 +3,15 @@ package org.computational_immunology.ext.ImmuNet.ui.commands;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 
+import java.util.List;
+
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.concurrent.Worker;
+
+import qupath.lib.objects.PathObject;
 
 /**
  * Combines SelectSlideCommand (open the slide) and PresentAnnotationsCommand (fetch its
@@ -28,7 +32,7 @@ public class SlideLoadWorkflow {
     public SlideLoadWorkflow(String datasetName, String slideName, double compositeSwitchDownsample,
                               ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler) {
         this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
-        this.presentAnnotationsCommand = new PresentAnnotationsCommand(datasetName, slideName, annotationRequestHandler, imageRequestHandler);
+        this.presentAnnotationsCommand = new PresentAnnotationsCommand(datasetName, slideName, annotationRequestHandler);
     }
 
     public void build() {
@@ -41,10 +45,21 @@ public class SlideLoadWorkflow {
         presentAnnotationsCommand.getTask().messageProperty().addListener((obs, oldMsg, newMsg) -> message.set(newMsg));
 
         selectSlideCommand.getTask().stateProperty().addListener((obs, oldState, newState) -> state.set(newState));
-        presentAnnotationsCommand.getTask().stateProperty().addListener((obs, oldState, newState) -> state.set(newState));
+        presentAnnotationsCommand.getTask().stateProperty().addListener((obs, oldState, newState) -> {
+            state.set(newState);
+            if (newState == Worker.State.SUCCEEDED) {
+                // Only known once annotation-fetching has actually finished, so build the final
+                List<PathObject> pathObjects = presentAnnotationsCommand.getTask().getValue();
+                message.set("Fetched " + pathObjects.size() + " annotations in " + presentAnnotationsCommand.getAnnotatedTileCount()
+                        + " tiles. There are a total of " + selectSlideCommand.getTilesMetadata().size() + " tiles.");
+            }
+        });
 
-        // Only start fetching annotations once the slide itself has actually finished loading.
-        selectSlideCommand.setOnDone(presentAnnotationsCommand::start);
+        // Only start fetching annotations once the slide itself has actually finished loading
+        selectSlideCommand.setOnDone(() -> {
+            presentAnnotationsCommand.setTilesMetadata(selectSlideCommand.getTilesMetadata());
+            presentAnnotationsCommand.start();
+        });
     }
 
     public void start() {

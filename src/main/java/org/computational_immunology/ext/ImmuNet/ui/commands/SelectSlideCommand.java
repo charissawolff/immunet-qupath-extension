@@ -32,6 +32,7 @@ public class SelectSlideCommand {
     private final double compositeSwitchDownsample;
     private Task<SparseImageServer> task;
     private Runnable onDone;
+    private List<TileMetadata> tilesMetadata;
 
     public SelectSlideCommand(String datasetName, String slideName, double compositeSwitchDownsample, ImageRequestHandler imageRequestHandler) {
         this.datasetName = datasetName;
@@ -48,8 +49,8 @@ public class SelectSlideCommand {
             @Override
             protected SparseImageServer call() throws Exception {
                 updateMessage("Fetching slide metadata...");
-                List<TileMetadata> tiles = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
-                SparseImageServer sparseServer = SlideImageServer.build(tiles, datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
+                tilesMetadata = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
+                SparseImageServer sparseServer = SlideImageServer.build(tilesMetadata, datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
                 List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
                 int amountTiles = allThumbServers.size();
                 AtomicInteger completedCount = new AtomicInteger(0);
@@ -118,6 +119,14 @@ public class SelectSlideCommand {
      */
     public Task<SparseImageServer> getTask() {
         return task;
+    }
+
+    /**
+     * @return the tile metadata fetched while loading the slide, or null if the load hasn't
+     * succeeded yet. Lets other commands (see SlideLoadWorkflow) reuse it instead of re-fetching.
+     */
+    public List<TileMetadata> getTilesMetadata() {
+        return tilesMetadata;
     }
 
     public void setOnDone(Runnable callback) {
