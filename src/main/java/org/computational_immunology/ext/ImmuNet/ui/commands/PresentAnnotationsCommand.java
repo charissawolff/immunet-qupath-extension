@@ -92,15 +92,15 @@ public class PresentAnnotationsCommand {
 
     public List<PathObject> fetchSlideAnnotations() {
         if (tilesMetadata == null) {
-            ImmuNetLog.error("fetchSlideAnnotations called without tile metadata set call setTilesMetadata first for dataset: "
+            ImmuNetLog.error("fetchSlideAnnotations called without tile metadata set. You need to call setTilesMetadata first for dataset: "
                     + datasetName + ", slide: " + slideName);
             return new ArrayList<>();
         }
         try {
             List<String> tileCodes = annotationRequestHandler.fetchSlideAnnotations(datasetName, slideName);
             Map<String, TileMetadata> tileMetadataByCode = new HashMap<>();
-            for (TileMetadata tile : tilesMetadata) {
-                tileMetadataByCode.put(tile.getCode(), tile);
+            for (TileMetadata tileMetadata : tilesMetadata) {
+                tileMetadataByCode.put( tileMetadata.getCode(), tileMetadata);
             }
 
             List<PathObject> annotationPathObjects = new ArrayList<>();
