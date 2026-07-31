@@ -18,9 +18,7 @@ import qupath.lib.objects.PathObject;
  * Combines SelectSlideCommand (open the slide) and PresentAnnotationsCommand (fetch its
  * annotations) behind one Task-shaped surface, so callers bind to a single message/state pair
  * instead of tracking two Tasks by hand.
- *
- * Cancellation only interferes when loading slides. Once annotation-fetching has started,
- * cancel() does nothing. INstead we rely on the timeout per tile... Why? easier to implement
+ * cancelling the workflow cancels both phases, and the workflow is only considered done once both phases are fully stopped.
  */
 public class SlideLoadWorkflow {
 
@@ -76,20 +74,23 @@ public class SlideLoadWorkflow {
 
     public void cancel() {
         selectSlideCommand.getTask().cancel();
+        presentAnnotationsCommand.getTask().cancel();
     }
 
     public boolean isDone() {
-        Worker.State loadState = selectSlideCommand.getTask().getState();
-        if (loadState != Worker.State.SUCCEEDED) {
-            // Still loading the slide, or the slide load itself ended (failed/cancelled) -
-            // either way annotation-fetching never started, so this state alone decides it.
-            return isTerminal(loadState);
+        Worker.State slideState = selectSlideCommand.getTask().getState();
+        Worker.State annotationState = presentAnnotationsCommand.getTask().getState();
+        if ((isCancelledOrFailed(slideState) || isCancelledOrFailed(annotationState)) || (slideState == Worker.State.SUCCEEDED && annotationState == Worker.State.SUCCEEDED)) {
+            if (selectSlideCommand.isFullyStopped() && presentAnnotationsCommand.isFullyStopped()) {
+                return true;
+            }
+            return false; // still waiting for executors to finish
         }
-        return isTerminal(presentAnnotationsCommand.getTask().getState());
+        return false;
     }
 
-    private static boolean isTerminal(Worker.State state) {
-        return state == Worker.State.SUCCEEDED || state == Worker.State.FAILED || state == Worker.State.CANCELLED;
+    private static boolean isCancelledOrFailed(Worker.State state) {
+        return state == Worker.State.FAILED || state == Worker.State.CANCELLED;
     }
 
     public StringProperty messageProperty() {

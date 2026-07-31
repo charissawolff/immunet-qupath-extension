@@ -8,6 +8,7 @@ import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandle
 
 import javafx.concurrent.Task;
 
+import qupath.fx.utils.FXUtils;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.images.ImageData;
@@ -31,6 +32,7 @@ public class SelectSlideCommand {
     private final ImageRequestHandler imageRequestHandler;
     private final double compositeSwitchDownsample;
     private Task<SparseImageServer> task;
+    private volatile ExecutorService prefetchExecutor;
     private Runnable onDone;
     private List<TileMetadata> tilesMetadata;
 
@@ -58,7 +60,12 @@ public class SelectSlideCommand {
                 // initialize countdownlatch to make it possible to cancel midway of the executor
                 CountDownLatch latch = new CountDownLatch(amountTiles);
 
-                ExecutorService prefetchExecutor = Executors.newFixedThreadPool(64);
+                if (isCancelled()) {
+                    // check if the task was cancelled before starting the executor, to avoid that the user cancels 
+                    // the task and the executor still runs in the background
+                    return null;
+                }
+                prefetchExecutor = Executors.newFixedThreadPool(64);
                 for (TileImageServer thumbServer : allThumbServers) {
                     prefetchExecutor.submit(() -> {
                         try {
@@ -80,6 +87,31 @@ public class SelectSlideCommand {
                 }
                 updateMessage("Drawing slide...");
                 prefetchExecutor.close();
+
+                // Attach the slide to the viewer here, on the FX thread but blocking this background
+                // thread until it's done. That way, a failure to display becomes a real Task failure
+                // (thrown below) instead of an uncaught exception later on the FX thread.
+                QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
+                if (viewer != null) {
+                    Throwable displayError = FXUtils.callOnApplicationThread(() -> {
+                        // Re-check cancellation on the FX thread itself: if cancel() was called while we
+                        // were waiting here, skip attaching an already-cancelled slide to the viewer.
+                        if (isCancelled()) {
+                            return null;
+                        }
+                        try {
+                            viewer.setImageData(new ImageData<>(sparseServer));
+                            return null;
+                        } catch (Exception | UnsatisfiedLinkError e) {
+                            // setImageData rethrows UnsatisfiedLinkError as well as Exception, and an
+                            // Error would otherwise escape uncaught here and pop up QuPath's own dialog
+                            return e;
+                        }
+                    });
+                    if (displayError != null) {
+                        throw new IOException("Could not set image data for " + datasetName + "/" + slideName, displayError);
+                    }
+                }
                 return sparseServer;
             }
         };
@@ -87,17 +119,9 @@ public class SelectSlideCommand {
 
     public void start() {
          task.setOnSucceeded(event -> {
-            QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
-            if (viewer != null) {
-                try {
-                    viewer.setImageData(new ImageData<>(task.getValue()));
-                    ImmuNetLog.log("Successfully opened {}/{}", datasetName, slideName);
-                    if (onDone != null) {
-                        onDone.run();
-                    } 
-                } catch (IOException e) {
-                    ImmuNetLog.error("Could not set image data for " + datasetName + "/" + slideName, e);
-                }
+            ImmuNetLog.log("Successfully opened {}/{}", datasetName, slideName);
+            if (onDone != null) {
+                onDone.run();
             }
         });
 
@@ -131,6 +155,12 @@ public class SelectSlideCommand {
 
     public void setOnDone(Runnable callback) {
         this.onDone = callback;
+    }
+
+    public boolean isFullyStopped() {
+        // check if the executor is null or terminated, which means all tasks are done or cancelled 
+        ExecutorService e = prefetchExecutor;
+        return e == null || e.isTerminated();
     }
 
 }

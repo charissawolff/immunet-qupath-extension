@@ -82,24 +82,26 @@ public class ServerConnectionHandler implements PageFetcher {
      * @throws IOException
      * @throws InterruptedException
      */
-    public HttpResponse<InputStream> fetchPage(String localPath){
+    public HttpResponse<InputStream> fetchPage(String localPath) throws IOException, InterruptedException {
         HttpRequest getRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8082/" + localPath))
                 .header("Cookie", sessionCookie)
                 .GET()
                 .build();
         try{
-            HttpResponse<InputStream> response = client.send(getRequest, BodyHandlers.ofInputStream()); 
+            HttpResponse<InputStream> response = client.send(getRequest, BodyHandlers.ofInputStream());
             checkStatusCode(response.statusCode());
             return response;
-        } catch(IOException | InterruptedException e){
+        } catch (InterruptedException e) {
+            throw e;
+        } catch(IOException e){
             ImmuNetLog.error("Could not fetch page {}", localPath );
             return null;
         }
     }
 
     // Fetch content with type String
-    public HttpResponse<String> fetchStringPage(String localPath){
+    public HttpResponse<String> fetchStringPage(String localPath) throws IOException, InterruptedException {
         HttpRequest getRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8082/" + localPath))
                 .header("Cookie", sessionCookie)
@@ -109,8 +111,10 @@ public class ServerConnectionHandler implements PageFetcher {
             HttpResponse<String> response = client.send(getRequest, BodyHandlers.ofString());
             checkStatusCode(response.statusCode());
             return response;
-        } catch(IOException | InterruptedException e){
-            ImmuNetLog.error("Could not fetch page : {}", localPath);
+        } catch (InterruptedException e) {
+            throw e;
+        } catch(IOException ioe){
+            ImmuNetLog.error("Could not fetch page : {}", localPath, ioe);
             return null;
         }
     }
@@ -122,7 +126,7 @@ public class ServerConnectionHandler implements PageFetcher {
      * @throws InterruptedException
      * @throws IOException
      */
-    public HttpResponse<String> postRequestVectraLogin(String username, String password) {
+    public HttpResponse<String> postRequestVectraLogin(String username, String password) throws InterruptedException {
         HttpRequest postRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8082/v/login"))
                 .POST(HttpRequest.BodyPublishers.ofString("username=" + username + "&password=" + password))
@@ -133,7 +137,9 @@ public class ServerConnectionHandler implements PageFetcher {
             HttpResponse<String> response = client.send(postRequest, BodyHandlers.ofString());
             checkStatusCode(response.statusCode());
             return response;
-        } catch(InterruptedException | IOException e){
+        } catch (InterruptedException e) {
+            throw e;
+        } catch(IOException e){
             ImmuNetLog.error("Could not log into Vectra database", e);
             return null;
         }
