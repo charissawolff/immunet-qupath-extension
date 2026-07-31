@@ -14,13 +14,13 @@ public class ImmuNetExtension implements QuPathExtension {
 
     // make the point radius larger 
     // This is a global QuPath preference, not per-object.
-    private static final int ANNOTATION_POINT_RADIUS = 5;
+    private static final int ANNOTATION_POINT_RADIUS = 8;
 
     @Override
     public void installExtension(QuPathGUI qupath) {
         qupath.getMenu("ImmuNet", true); // Add new tab to top menu bar
 
-        //PathPrefs.pointRadiusProperty().set(ANNOTATION_POINT_RADIUS);
+        PathPrefs.pointRadiusProperty().set(ANNOTATION_POINT_RADIUS);
         // fill the detections
         //qupath.getOverlayOptions().setFillDetections(true);
 
