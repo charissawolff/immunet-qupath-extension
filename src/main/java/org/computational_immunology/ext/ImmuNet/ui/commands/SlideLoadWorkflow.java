@@ -1,5 +1,6 @@
 package org.computational_immunology.ext.ImmuNet.ui.commands;
 
+import org.computational_immunology.ext.ImmuNet.core.SlideImageServer;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 
@@ -58,6 +59,7 @@ public class SlideLoadWorkflow {
         // Only start fetching annotations once the slide itself has actually finished loading
         selectSlideCommand.setOnDone(() -> {
             presentAnnotationsCommand.setTilesMetadata(selectSlideCommand.getTilesMetadata());
+            presentAnnotationsCommand.setDownsampleComposite(SlideImageServer.getDownsampleComposite());
             presentAnnotationsCommand.start();
         });
     }

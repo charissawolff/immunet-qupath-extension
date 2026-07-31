@@ -34,9 +34,9 @@ public class AnnotationPointConverter {
         return TYPE_COLOR_PALETTE[index];
     }
 
-    public static PathObject toPathObject(AnnotationPoint point, TileMetadata tileMetadata) {
-        double absoluteX = tileMetadata.getX() + point.getX();
-        double absoluteY = tileMetadata.getY() + point.getY();
+    public static PathObject toPathObject(AnnotationPoint point, TileMetadata tileMetadata, double downsampleComposite) {
+        double absoluteX = tileMetadata.getX() + point.getX() * downsampleComposite;
+        double absoluteY = tileMetadata.getY() + point.getY() * downsampleComposite;
         ROI roi = ROIs.createPointsROI(absoluteX, absoluteY, ImagePlane.getDefaultPlane());
 
         PathClass pointClassification = PathClass.getInstance(point.getT(), colorForType(point.getT()));
@@ -54,7 +54,7 @@ public class AnnotationPointConverter {
         return annotation;
     }
 
-    public static List<PathObject> toPathObjects(List<AnnotationPoint> points, TileMetadata tileMetadata) {
-        return points.stream().map(point -> toPathObject(point, tileMetadata)).toList();
+    public static List<PathObject> toPathObjects(List<AnnotationPoint> points, TileMetadata tileMetadata, double downsampleComposite) {
+        return points.stream().map(point -> toPathObject(point, tileMetadata, downsampleComposite)).toList();
     }
 }

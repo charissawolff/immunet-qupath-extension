@@ -34,6 +34,7 @@ public class PresentAnnotationsCommand {
     private Task<List<PathObject>> task;
     private Runnable onDone;
     private List<TileMetadata> tilesMetadata;
+    private double downsampleComposite;
     private int annotatedTileCount;
 
     public PresentAnnotationsCommand(String datasetName, String slideName, AnnotationRequestHandler annotationRequestHandler) {
@@ -44,6 +45,10 @@ public class PresentAnnotationsCommand {
 
     public void setTilesMetadata(List<TileMetadata> tilesMetadata) {
         this.tilesMetadata = tilesMetadata;
+    }
+
+    public void setDownsampleComposite(double downsampleComposite) {
+        this.downsampleComposite = downsampleComposite;
     }
 
     public void build() {
@@ -138,7 +143,7 @@ public class PresentAnnotationsCommand {
     public List<PathObject> fetchTileAnnotations(String tileCode, TileMetadata tileMetadata) {
         try{
             List<AnnotationPoint> annotations = annotationRequestHandler.fetchAnnotations(datasetName, slideName, tileCode);
-            List<PathObject> annotationPathObjects = AnnotationPointConverter.toPathObjects(annotations, tileMetadata);
+            List<PathObject> annotationPathObjects = AnnotationPointConverter.toPathObjects(annotations, tileMetadata, downsampleComposite);
             return annotationPathObjects;
         } catch (Exception e) {
             ImmuNetLog.error("Error fetching annotations for dataset: " + datasetName + ", slide: " + slideName + ", tile: " + tileCode, e);

@@ -24,6 +24,11 @@ decides which registered tile/resolution to actually fetch as the user zooms and
 */
 public class SlideImageServer {
     private static final double OVERVIEW_TARGET_MAX_DIMENSION = 2048;
+    private static double downsampleComposite;
+
+    public static double getDownsampleComposite() {
+        return downsampleComposite;
+    }
 
     public static SparseImageServer build(
             List<TileMetadata> tileMetadataList,
@@ -46,7 +51,7 @@ public class SlideImageServer {
 
             double[] downsamples = deriveDownsamples(tileMetadataList, datasetName, slideName, imageRequestHandler);
             double downsampleThumb = downsamples[0];
-            double downsampleComposite = downsamples[1];
+            downsampleComposite = downsamples[1];
 
             double registeredDownsampleThumb = compositeSwitchDownsample;
             //this is for the overview upon image opening; else for very large tiles it doesn't open due to memory issues making this
