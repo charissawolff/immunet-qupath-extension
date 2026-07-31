@@ -45,7 +45,13 @@ public class SlideLoadWorkflow {
         selectSlideCommand.getTask().messageProperty().addListener((obs, oldMsg, newMsg) -> message.set(newMsg));
         presentAnnotationsCommand.getTask().messageProperty().addListener((obs, oldMsg, newMsg) -> message.set(newMsg));
 
-        selectSlideCommand.getTask().stateProperty().addListener((obs, oldState, newState) -> state.set(newState));
+        // Reaching SUCCEEDED here only means slide loading is done and annotation fetching is about to start, not
+        // that the whole workflow is done, so don't forward it as a terminal state.
+        selectSlideCommand.getTask().stateProperty().addListener((obs, oldState, newState) -> {
+            if (newState == Worker.State.FAILED || newState == Worker.State.CANCELLED) {
+                state.set(newState);
+            }
+        });
         presentAnnotationsCommand.getTask().stateProperty().addListener((obs, oldState, newState) -> {
             state.set(newState);
             if (newState == Worker.State.SUCCEEDED) {
