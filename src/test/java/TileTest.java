@@ -1,90 +1,91 @@
+import java.awt.image.BufferedImage;
+
 import org.computational_immunology.ext.ImmuNet.core.Tile;
-import org.computational_immunology.ext.ImmuNet.core.Tile.ImageType;
+import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
+import org.computational_immunology.ext.ImmuNet.core.TileMetadata.ImageType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Tile is now a TileMetadata plus the image it describes, so what is left to cover here is the
+ * pairing itself: the null guards, the getters that delegate to the metadata, and resizeImage.
+ * The metadata validation is covered by TileMetadataTest.
+ */
 class TileTest {
-    @Test
-    void getId(){
-        Tile tile1 = new Tile(1, "/", ImageType.THUMB, "16,38", 0, 0, 1, 1);
-        Assertions.assertEquals(1, tile1.getId());
-        tile1 = new Tile(0, "/", ImageType.THUMB, "16,38", 0, 0, 1, 1);
-        Assertions.assertEquals(0, tile1.getId());
 
-        // Verify negative values
-        Assertions.assertThrows(IllegalArgumentException.class, () -> 
-            new Tile(-1, "/", ImageType.THUMB, "16,38", 0, 0, 1, 1)
-        );
-    }
+    private static final TileMetadata METADATA = new TileMetadata(1, "16,38", ImageType.THUMB, 10, 20, 900, 700);
 
-    @Test 
-    void getType(){
-        Tile tile1 = new Tile(1, "/", ImageType.THUMB, "16,38", 0, 0, 1, 1);
-        Assertions.assertEquals("thumb", tile1.getType());
-        tile1 = new Tile(1, "/", ImageType.COMPOSITE, "16,38", 0, 0, 1, 1);
-        Assertions.assertEquals("composite", tile1.getType());
+    private static BufferedImage image(int width, int height) {
+        return new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
     }
 
     @Test
-    void getCode(){
-        Tile tile1 = new Tile(1, "/", ImageType.THUMB, "16,38", 0, 0, 1, 1);
-        Assertions.assertEquals("16,38", tile1.getCode());
-
-        tile1 = new Tile(1, "/", ImageType.THUMB, "-1,38", 0, 0, 1, 1);
-        Assertions.assertEquals("-1,38", tile1.getCode());
-
-        tile1 = new Tile(1, "/", ImageType.THUMB, "16,-1", 0, 0, 1, 1);
-        Assertions.assertEquals("16,-1", tile1.getCode());
-
-        tile1 = new Tile(1, "/", ImageType.THUMB, "-1,-1", 0, 0, 1, 1);
-        Assertions.assertEquals("-1,-1", tile1.getCode());
-
-        // Verify incorrect value handling
-        Assertions.assertThrows(IllegalArgumentException.class, () -> 
-            new Tile(1, "/", ImageType.THUMB, null, 0, 0, 1, 1)
+    void rejectsMissingParts(){
+        Assertions.assertThrows(IllegalArgumentException.class, () ->
+            new Tile(null, image(4, 4))
         );
-        Assertions.assertThrows(IllegalArgumentException.class, () -> 
-            new Tile(1, "/", ImageType.THUMB, "", 0, 0, 1, 1)
+        Assertions.assertThrows(IllegalArgumentException.class, () ->
+            new Tile(METADATA, null)
         );
     }
 
     @Test
-    void getCoordinates(){
-        Tile tile1 = new Tile(1, "/", ImageType.THUMB, "16,38", 10, 20, 1, 1);
-        Assertions.assertEquals(10, tile1.getTileX());
-        Assertions.assertEquals(20, tile1.getTileY());
-        
-        // Test zero coordinates
-        tile1 = new Tile(1, "/", ImageType.THUMB, "16,38", 0, 0, 1, 1);
-        Assertions.assertEquals(0, tile1.getTileX());
-        Assertions.assertEquals(0, tile1.getTileY());
-        
-        // Test negative coordinates
-        tile1 = new Tile(1, "/", ImageType.THUMB, "16,38", -10, -20, 1, 1);
-        Assertions.assertEquals(-10, tile1.getTileX());
-        Assertions.assertEquals(-20, tile1.getTileY());
-        
-        // Test decimal coordinates
-        tile1 = new Tile(1, "/", ImageType.THUMB, "16,38", 10.5, 20.7, 1, 1);
-        Assertions.assertEquals(10.5, tile1.getTileX());
-        Assertions.assertEquals(20.7, tile1.getTileY());
+    void exposesWhatItWasBuiltFrom(){
+        BufferedImage img = image(4, 4);
+        Tile tile = new Tile(METADATA, img);
+
+        Assertions.assertSame(METADATA, tile.getMetadata());
+        Assertions.assertSame(img, tile.getImage());
     }
 
     @Test
-    void invalidDimensions() {
-        // Verify negative width throws exception
-        Assertions.assertThrows(IllegalArgumentException.class, () -> 
-            new Tile(1, "/", ImageType.THUMB, "16,38", 0, 0, -1, 1)
-        );
-        
-        // Verify negative height throws exception
-        Assertions.assertThrows(IllegalArgumentException.class, () -> 
-            new Tile(1, "/", ImageType.THUMB, "16,38", 0, 0, 1, -1)
-        );
-        
-        // Verify both negative throws exception
-        Assertions.assertThrows(IllegalArgumentException.class, () -> 
-            new Tile(1, "/", ImageType.THUMB, "16,38", 0, 0, -1, -1)
-        );
+    void gettersDelegateToMetadata(){
+        Tile tile = new Tile(METADATA, image(4, 4));
+
+        Assertions.assertEquals(1, tile.getId());
+        Assertions.assertEquals("16,38", tile.getCode());
+        Assertions.assertEquals(ImageType.THUMB, tile.getType());
+        Assertions.assertEquals(10.0, tile.getTileX());
+        Assertions.assertEquals(20.0, tile.getTileY());
+        Assertions.assertEquals(900.0, tile.getTileW());
+        Assertions.assertEquals(700.0, tile.getTileH());
+    }
+
+    @Test
+    void resizeImageProducesRequestedSize(){
+        Tile tile = new Tile(METADATA, image(8, 8));
+
+        BufferedImage resized = tile.resizeImage(4, 6, false);
+        Assertions.assertEquals(4, resized.getWidth());
+        Assertions.assertEquals(6, resized.getHeight());
+
+        // Quality path is a different set of rendering hints, same resulting dimensions
+        BufferedImage quality = tile.resizeImage(16, 16, true);
+        Assertions.assertEquals(16, quality.getWidth());
+        Assertions.assertEquals(16, quality.getHeight());
+    }
+
+    @Test
+    void resizeImageKeepsSourceTypeUnlessOverridden(){
+        Tile tile = new Tile(METADATA, image(8, 8));
+
+        // No override, so the source image type carries over
+        Assertions.assertEquals(BufferedImage.TYPE_INT_RGB, tile.resizeImage(4, 4, false).getType());
+
+        // QuPath's viewer needs a specific type, hence the override
+        BufferedImage overridden = tile.resizeImage(4, 4, false, BufferedImage.TYPE_INT_ARGB);
+        Assertions.assertEquals(BufferedImage.TYPE_INT_ARGB, overridden.getType());
+    }
+
+    @Test
+    void resizeImageLeavesOriginalAlone(){
+        BufferedImage img = image(8, 8);
+        Tile tile = new Tile(METADATA, img);
+
+        tile.resizeImage(4, 4, false);
+
+        Assertions.assertEquals(8, img.getWidth());
+        Assertions.assertEquals(8, img.getHeight());
+        Assertions.assertSame(img, tile.getImage());
     }
 }
