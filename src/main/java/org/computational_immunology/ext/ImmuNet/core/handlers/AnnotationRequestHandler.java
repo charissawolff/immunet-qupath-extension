@@ -1,0 +1,108 @@
+package org.computational_immunology.ext.ImmuNet.core.handlers;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Semaphore;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+
+import org.computational_immunology.ext.ImmuNet.core.AnnotationPoint;
+import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
+import org.computational_immunology.ext.ImmuNet.core.Tile;
+import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
+import org.computational_immunology.ext.ImmuNet.core.TileMetadata.ImageType;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+
+public class AnnotationRequestHandler {
+    private final PageFetcher pageFetcher;
+    private static final String SLIDE_ANNOTATIONS = "/v/annotations/%s/%s/"; // datasetName, slideName
+    private static final String TILE_ANNOTATIONS = "v/datasets/%s/%s/%s/annotations.json"; // datasetName, slideName, tileCode
+
+    public AnnotationRequestHandler(PageFetcher pageFetcher) {
+        this.pageFetcher = pageFetcher;
+    }
+
+    public List<String> fetchSlideAnnotations(String dataset, String slide) throws IOException, JSONException {
+        // Fetches the list of tile codes that have annotations for a given dataset and slide
+        
+        String path = String.format(SLIDE_ANNOTATIONS, dataset, slide);
+        List<String> tileCodes = new ArrayList<>();
+
+        HttpResponse<String> response = pageFetcher.fetchStringPage(path);
+
+        int status = response.statusCode();
+        if (status == 404) {
+            return tileCodes; // no annotations for this dataset/slide 
+        }
+        if (status < 200 || status >= 300) {
+            throw new IOException("Could not fetch annotations for dataset: " + dataset
+                    + " with slide: " + slide + " (status " + status + ")");
+        }
+
+        String body = response.body().trim();
+        if (body.isEmpty()) {
+            return tileCodes; // empty body means there are no annotations
+        }
+
+        JSONArray array = new JSONArray(body);
+        for (int i = 0; i < array.length(); i++) {
+            tileCodes.add(array.getString(i));
+        }
+        return tileCodes;
+    }
+
+    public List<AnnotationPoint> fetchAnnotations(String dataset, String slide, String tile) throws IOException, JSONException {
+        String path = String.format(TILE_ANNOTATIONS, dataset, slide, tile);
+        List<AnnotationPoint> annotations = new ArrayList<>();
+
+        HttpResponse<String> response = pageFetcher.fetchStringPage(path);
+
+        int status = response.statusCode();
+        if (status == 404) {
+            return annotations; // no annotations for this dataset/slide 
+        }
+        if (status < 200 || status >= 300) {
+            throw new IOException("Could not fetch annotations for dataset: " + dataset
+                    + " with slide: " + slide + " (status " + status + ")");
+        }
+
+        String body = response.body().trim();
+        if (body.isEmpty()) {
+            return annotations; // empty body means there are no annotations
+        }
+
+        JSONArray array = new JSONArray(body);
+        for (int i = 0; i < array.length(); i++) {
+            annotations.add(jsonToAnnotation(array.getJSONObject(i)));
+        }
+        return annotations;
+    }
+
+    private AnnotationPoint jsonToAnnotation(JSONObject json) throws JSONException {
+    return new AnnotationPoint(
+        json.getString("_id"),
+        json.getString("slide"),
+        json.getString("dataset"),
+        json.getString("tile"),
+        json.getInt("x"),
+        json.getInt("y"),
+        json.getString("t"),
+        json.getString("annotator"),
+        json.getString("purpose"),
+        json.getString("created")
+    );
+}
+
+
+
+
+}
