@@ -107,7 +107,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                     currentWorkflow.cancel();
                     return;
                 }
-                SlideLoadWorkflow workflow = new SlideLoadWorkflow(dsName, tsName, compositeTransitionSlider.getValue(), imageRequestHandler, annotationRequestHandler);
+                SlideLoadWorkflow workflow = new SlideLoadWorkflow(dsName, tsName, compositeTransitionSlider.getValue(), imageRequestHandler, annotationRequestHandler, selectedDataStore);
                 workflow.build();
 
                 workflow.setOnSlideReady(slide -> {

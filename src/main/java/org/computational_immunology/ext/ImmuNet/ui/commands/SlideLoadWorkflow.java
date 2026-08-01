@@ -1,5 +1,6 @@
 package org.computational_immunology.ext.ImmuNet.ui.commands;
 
+import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.SelectedSlide;
 import org.computational_immunology.ext.ImmuNet.core.SlideImageServer;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
@@ -28,6 +29,7 @@ public class SlideLoadWorkflow {
     private final String slideName;
     private final SelectSlideCommand selectSlideCommand;
     private final PresentAnnotationsCommand presentAnnotationsCommand;
+    private final SelectedDataStore selectedDataStore;
 
     private final StringProperty message = new SimpleStringProperty("");
     private final ObjectProperty<Worker.State> state = new SimpleObjectProperty<>(Worker.State.READY);
@@ -35,11 +37,13 @@ public class SlideLoadWorkflow {
     private Consumer<SelectedSlide> onSlideReady;
 
     public SlideLoadWorkflow(String datasetName, String slideName, double compositeSwitchDownsample,
-                              ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler) {
+                              ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler,
+                              SelectedDataStore selectedDataStore) {
         this.datasetName = datasetName;
         this.slideName = slideName;
         this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
         this.presentAnnotationsCommand = new PresentAnnotationsCommand(datasetName, slideName, annotationRequestHandler);
+        this.selectedDataStore = selectedDataStore;
     }
 
     /**
@@ -89,6 +93,7 @@ public class SlideLoadWorkflow {
     }
 
     public void start() {
+        new ClearImageViewerCommand(selectedDataStore).execute();
         selectSlideCommand.start();
     }
 

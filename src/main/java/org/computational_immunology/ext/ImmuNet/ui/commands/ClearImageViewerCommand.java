@@ -7,7 +7,7 @@ import qupath.lib.gui.viewer.QuPathViewer;
 
 /**
  * Clears the currently displayed slide from the active viewer and resets the
- * selection state of the store so in order to not hace clicking be on the old tile
+ * store's selected slide, so a stale click can't be attributed to the old tile.
  */
 public class ClearImageViewerCommand {
 
