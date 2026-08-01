@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.ui;
+package org.computational_immunology.ext.ImmuNet.ui.tabs;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -7,6 +7,8 @@ import java.util.Arrays;
 
 import org.computational_immunology.ext.ImmuNet.core.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
+import org.computational_immunology.ext.ImmuNet.ui.commands.MenuActions;
+import org.computational_immunology.ext.ImmuNet.ui.tabs.CachedLoginBox.BoxType;
 import org.json.JSONException;
 import org.json.JSONObject;
 

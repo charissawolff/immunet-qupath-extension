@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.ui;
+package org.computational_immunology.ext.ImmuNet.ui.tabs;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.json.JSONObject;

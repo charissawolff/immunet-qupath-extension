@@ -4,10 +4,10 @@ import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
-import org.computational_immunology.ext.ImmuNet.ui.DatasetSelectorTab;
-import org.computational_immunology.ext.ImmuNet.ui.ServerConnectionTab;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverOverlay;
+import org.computational_immunology.ext.ImmuNet.ui.tabs.DatasetSelectorTab;
+import org.computational_immunology.ext.ImmuNet.ui.tabs.ServerConnectionTab;
 
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.extensions.QuPathExtension;
