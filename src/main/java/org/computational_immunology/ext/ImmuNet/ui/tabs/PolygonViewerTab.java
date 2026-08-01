@@ -8,6 +8,7 @@ import org.computational_immunology.ext.ImmuNet.core.Polygon;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.ui.commands.LoadPolygonDataCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.SetPolygonVisibilityCommand;
 
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
@@ -22,6 +23,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.control.ListView;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.util.StringConverter;
 
 import java.util.Map;
 
@@ -48,12 +50,28 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         sidePanelTab.setPadding(new Insets(10, 10, 10, 10)); // Box margins
         sidePanelTab.setSpacing(5); // Space between buttons and boxes
         
-        ObservableList<String> polygonNames = FXCollections.observableArrayList();
+        ObservableList<Polygon> polygonNames = FXCollections.observableArrayList();
         Map<String, BooleanProperty> checkedMap = new HashMap<>();
 
-        ListView<String> listView = new ListView<>(polygonNames);
+        ListView<Polygon> listView = new ListView<>(polygonNames);
         listView.setCellFactory(CheckBoxListCell.forListView(
-                item -> checkedMap.computeIfAbsent(item, k -> new SimpleBooleanProperty(false))
+                p -> checkedMap.computeIfAbsent(p.getId(), id -> {
+                    BooleanProperty visible = new SimpleBooleanProperty(true); // checked = visible, matches "Show polygons" label
+                    visible.addListener((obs, was, isVisible) -> new SetPolygonVisibilityCommand(id, isVisible).execute());
+                    return visible;
+                }),
+                // need a string converter to display the polygon name in the list view
+                new StringConverter<Polygon>() {
+                    @Override
+                    public String toString(Polygon p) {
+                        return p.getDisplayedName();
+                    }
+
+                    @Override
+                    public Polygon fromString(String s) {
+                        return null; // list is display-only, never edited back from text
+                    }
+                }
         ));
         Button loadDataBtn = makeButton("Load polygons", new Dimensions(40, 120));
         Label statusLabel = new Label();
@@ -73,6 +91,8 @@ public class PolygonViewerTab extends CustomSidePanelTab {
                 return;
             }
             ImmuNetLog.log("Load polygons button clicked");
+            polygonNames.clear();
+            checkedMap.clear();
             loadPolygonDataCommand.start();
             
             statusLabel.setText("Loading polygons...");
@@ -88,7 +108,7 @@ public class PolygonViewerTab extends CustomSidePanelTab {
                 }
                 statusLabel.setText("Polygons loaded: " + selectedDataStore.getPolygons().size());
                 polygonNames.setAll(
-                        selectedDataStore.getPolygons().stream().map(Polygon::getName).toList()
+                        selectedDataStore.getPolygons()
                 );
             });
 
@@ -101,7 +121,17 @@ public class PolygonViewerTab extends CustomSidePanelTab {
 
         // checkbox to show or not the polygons
         CheckBox c = new CheckBox("Show polygons");
-        c.setOnAction(e -> ImmuNetLog.log("Show polygons checkbox clicked"));
+        c.setSelected(true); // matches the default-visible state of each per-item checkbox
+        c.setOnAction(e -> {
+            ImmuNetLog.log("Show polygons checkbox clicked");
+            checkedMap.forEach((id, visible) -> {
+                visible.set(c.isSelected());
+                new SetPolygonVisibilityCommand(id, c.isSelected()).execute();
+            });
+
+
+        
+        });
 
         sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,c,listView);
 

@@ -30,6 +30,11 @@ public class Polygon{
     public String getCreated() { return created; }
 
     /**
+     * The text to show for this polygon in the UI
+     */
+    public String getDisplayedName() { return name; }
+
+    /**
      * A single (x, y) vertex of the polygon.
      */
    public static class Vertex{

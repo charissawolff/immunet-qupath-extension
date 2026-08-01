@@ -19,7 +19,7 @@ public class PolygonConverter {
         ROI roi = ROIs.createPolygonROI(points, ImagePlane.getDefaultPlane());
 
         
-        PathClass polygonClass = PathClass.getInstance(p.getName());
+        PathClass polygonClass = PathClass.getInstance(p.getId());
         PathObject polygon = PathObjects.createAnnotationObject(roi, polygonClass);
         polygon.setName(p.getName());
         polygon.getMetadata().put("id", p.getId());
