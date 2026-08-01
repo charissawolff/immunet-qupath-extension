@@ -5,6 +5,7 @@ import java.util.List;
 import qupath.lib.geom.Point2;
 import qupath.lib.objects.PathObject;
 import qupath.lib.objects.PathObjects;
+import qupath.lib.objects.classes.PathClass;
 import qupath.lib.regions.ImagePlane;
 import qupath.lib.roi.ROIs;
 import qupath.lib.roi.interfaces.ROI;
@@ -17,7 +18,9 @@ public class PolygonConverter {
             .toList();
         ROI roi = ROIs.createPolygonROI(points, ImagePlane.getDefaultPlane());
 
-        PathObject polygon = PathObjects.createAnnotationObject(roi);
+        
+        PathClass polygonClass = PathClass.getInstance(p.getName());
+        PathObject polygon = PathObjects.createAnnotationObject(roi, polygonClass);
         polygon.setName(p.getName());
         polygon.getMetadata().put("id", p.getId());
         polygon.getMetadata().put("name", p.getName());
