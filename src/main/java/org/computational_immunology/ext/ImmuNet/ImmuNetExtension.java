@@ -6,6 +6,7 @@ import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandle
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverOverlay;
+import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonTracker;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.DatasetSelectorTab;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.PolygonViewerTab;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.ServerConnectionTab;
@@ -48,6 +49,10 @@ public class ImmuNetExtension implements QuPathExtension {
         //polygon viewer tab
         PolygonViewerTab polygonViewerTab = new PolygonViewerTab(annotationRequestHandler, selectedDataStore);
         polygonViewerTab.addCustomTab(qupath.getAnalysisTabPane());
+
+        //polygon tracker listener
+        new PolygonTracker();
+
     }
 
     @Override

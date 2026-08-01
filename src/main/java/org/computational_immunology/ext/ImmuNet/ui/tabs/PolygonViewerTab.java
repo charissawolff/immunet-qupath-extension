@@ -13,7 +13,6 @@ import org.computational_immunology.ext.ImmuNet.ui.commands.SetPolygonVisibility
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -128,10 +127,15 @@ public class PolygonViewerTab extends CustomSidePanelTab {
                 visible.set(c.isSelected());
                 new SetPolygonVisibilityCommand(id, c.isSelected()).execute();
             });
-
-
-        
         });
+
+        Button addDataBtn = makeButton("Add polygon", new Dimensions(40, 120));
+        addDataBtn.setOnAction(e -> {
+            ImmuNetLog.log("Add polygon button clicked");
+        });
+
+
+
 
         sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,c,listView);
 
