@@ -4,8 +4,10 @@ import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
+import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
+import org.computational_immunology.ext.ImmuNet.ui.commands.ClearImageViewerCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SlideLoadWorkflow;
 
 import qupath.lib.gui.QuPathGUI;
@@ -17,8 +19,6 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import javafx.scene.control.Label;
@@ -30,14 +30,16 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
     private final ImageRequestHandler imageRequestHandler;
     private final AnnotationRequestHandler annotationRequestHandler;
     private final TileHoverController tileHoverController;
+    private final SelectedDataStore selectedDataStore;
     private SlideLoadWorkflow currentWorkflow;
     private final PauseTransition buttonPause = new PauseTransition((Duration.seconds(3)));
 
     public DatasetSelectorTab(ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler,
-                               TileHoverController tileHoverController) {
+                               SelectedDataStore selectedDataStore, TileHoverController tileHoverController) {
         super("Image selector");
         this.imageRequestHandler = imageRequestHandler;
         this.annotationRequestHandler = annotationRequestHandler;
+        this.selectedDataStore = selectedDataStore;
         this.tileHoverController = tileHoverController;
 
     }
@@ -60,7 +62,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         Button loadDataBtn = makeButton("Load Datasets", new Dimensions(40, 120));
         loadDataBtn.setOnAction(e -> MenuActions.updateListViewerBox(dsBox, getDatasets()));
         Button clearSelectionBtn = makeButton("Clear Image", new Dimensions(40, 120));
-        clearSelectionBtn.setOnAction(e -> { MenuActions.clearSelectionFromViewer(); });
+        clearSelectionBtn.setOnAction(e -> new ClearImageViewerCommand(selectedDataStore).execute());
         BorderPane buttonRow = new BorderPane();
         buttonRow.setLeft(loadDataBtn);
         buttonRow.setRight(clearSelectionBtn);

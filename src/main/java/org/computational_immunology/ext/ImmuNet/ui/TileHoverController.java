@@ -64,6 +64,12 @@ public class TileHoverController {
         viewer = null;
     }
 
+    public void clearSelection() {
+        //detach and clear the selected slide, which will also clear the selected tile
+        detach();
+        selectedDataStore.setSelectedSlide(null);
+    }
+
     private void handleMouseMoved(MouseEvent e) {
         TileMetadata tile = tileAtEvent(e);
         if (overlay.setHoveredTileMetadata(tile)) {
