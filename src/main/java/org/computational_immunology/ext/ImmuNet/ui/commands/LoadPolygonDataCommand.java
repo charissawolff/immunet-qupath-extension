@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.Polygon;
+import org.computational_immunology.ext.ImmuNet.core.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 
@@ -29,7 +30,7 @@ public class LoadPolygonDataCommand {
         task = new Task<>() {
             @Override
             protected List<Polygon> call() {
-                updateMessage("Fetching annotations...");
+                updateMessage("Fetching polygons...");
                 return fetchSlidePolygons();
             }
         };
@@ -40,7 +41,7 @@ public class LoadPolygonDataCommand {
             selectedDataStore.setPolygons(polygons);
             List<PathObject> pathObjects = new ArrayList<>();
             for (Polygon p: polygons) {
-                pathObjects.add(p.toPathObject());
+                pathObjects.add(PolygonConverter.toPathObject(p));
                 ImmuNetLog.log("Fetched polygon with ID: " + p.getId() + " for dataset: " + selectedDataStore.getSelectedSlide().getDatasetName() + ", slide: " + selectedDataStore.getSelectedSlide().getSlideName());
             }
             QuPathViewer viewer = QuPathGUI.getInstance().getViewer();

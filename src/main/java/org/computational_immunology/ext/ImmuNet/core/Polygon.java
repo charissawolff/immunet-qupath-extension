@@ -3,13 +3,6 @@ package org.computational_immunology.ext.ImmuNet.core;
 import java.util.List;
 import java.util.Objects;
 
-import qupath.lib.geom.Point2;
-import qupath.lib.objects.PathObject;
-import qupath.lib.objects.PathObjects;
-import qupath.lib.regions.ImagePlane;
-import qupath.lib.roi.ROIs;
-import qupath.lib.roi.interfaces.ROI;
-
 public class Polygon{
 
     private final String id;
@@ -36,23 +29,10 @@ public class Polygon{
     public String getSlide() { return slide; }
     public String getCreated() { return created; }
 
-    public PathObject toPathObject() {
-        List<Vertex> vertices = this.getVertices();
-        ROI roi = ROIs.createPolygonROI(vertices, ImagePlane.getDefaultPlane());
-
-        PathObject polygon = PathObjects.createAnnotationObject(roi);
-        polygon.getMetadata().put("id", this.getId());
-        polygon.getMetadata().put("name", this.getName());
-        polygon.getMetadata().put("dataset", this.getDataset());
-        polygon.getMetadata().put("slide", this.getSlide());
-        polygon.getMetadata().put("created", this.getCreated());
-        return polygon;
-    }
-
     /**
-     * A single (x, y) vertex of the polygon extends point2.
+     * A single (x, y) vertex of the polygon.
      */
-   public static class Vertex extends Point2 {
+   public static class Vertex{
         private final double x;
         private final double y;
 
