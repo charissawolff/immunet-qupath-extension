@@ -122,6 +122,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                     if (newState == Worker.State.SUCCEEDED) {
                         openImgBtn.setStyle("-fx-text-fill: green;");
                         openImgBtn.setText("Success");
+                        clearSelectionBtn.setDisable(false);
                     } else if (newState == Worker.State.CANCELLED) {
                         openImgBtn.setStyle("-fx-text-fill: red;");
                         openImgBtn.setText("Cancelled");
@@ -144,6 +145,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
 
                 openImgBtn.setText("Cancel");
                 openImgBtn.setStyle("-fx-text-fill: black;");
+                clearSelectionBtn.setDisable(true);
                 statusLabel.setVisible(true);
                 statusLabel.setManaged(true);
                 //stop whatever pause is happening

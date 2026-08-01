@@ -64,7 +64,7 @@ public class SlideLoadWorkflow {
         presentAnnotationsCommand.getTask().messageProperty().addListener((obs, oldMsg, newMsg) -> message.set(newMsg));
 
         // Reaching SUCCEEDED here only means slide loading is done and annotation fetching is about to start, not
-        // that the whole workflow is done, so don't forward it as a terminal state.
+        // that the whole workflow is done, so don't forward it as a terminal state. 
         selectSlideCommand.getTask().stateProperty().addListener((obs, oldState, newState) -> {
             if (newState == Worker.State.FAILED || newState == Worker.State.CANCELLED) {
                 state.set(newState);
@@ -77,6 +77,10 @@ public class SlideLoadWorkflow {
                 List<PathObject> pathObjects = presentAnnotationsCommand.getTask().getValue();
                 message.set("Fetched " + pathObjects.size() + " annotations in " + presentAnnotationsCommand.getAnnotatedTileCount()
                         + " tiles. There are a total of " + selectSlideCommand.getTilesMetadata().size() + " tiles.");
+            }
+            else if (newState == Worker.State.CANCELLED) {
+                //user cancelled the workflow while the slide was loading or while annotations were being fetched, so clear the viewer
+                new ClearImageViewerCommand(selectedDataStore).execute();
             }
         });
 
@@ -98,8 +102,10 @@ public class SlideLoadWorkflow {
     }
 
     public void cancel() {
+        //user cancelled the workflow while the slide was loading or while annotations were being fetched, so cancel both tasks and clear the viewer
         selectSlideCommand.getTask().cancel();
         presentAnnotationsCommand.getTask().cancel();
+        new ClearImageViewerCommand(selectedDataStore).execute();
     }
 
     public boolean isDone() {
