@@ -7,6 +7,7 @@ import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHa
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverOverlay;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.DatasetSelectorTab;
+import org.computational_immunology.ext.ImmuNet.ui.tabs.PolygonViewerTab;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.ServerConnectionTab;
 
 import qupath.lib.gui.QuPathGUI;
@@ -43,6 +44,10 @@ public class ImmuNetExtension implements QuPathExtension {
 
         DatasetSelectorTab datasetTab = new DatasetSelectorTab(imageRequestHandler, annotationRequestHandler, selectedDataStore, tileHoverController);
         datasetTab.addCustomTab(qupath.getAnalysisTabPane());
+
+        //polygon viewer tab
+        PolygonViewerTab polygonViewerTab = new PolygonViewerTab(annotationRequestHandler, selectedDataStore);
+        polygonViewerTab.addCustomTab(qupath.getAnalysisTabPane());
     }
 
     @Override

@@ -26,6 +26,7 @@ public class AnnotationRequestHandler {
     private final PageFetcher pageFetcher;
     private static final String SLIDE_ANNOTATIONS = "/v/annotations/%s/%s/"; // datasetName, slideName
     private static final String TILE_ANNOTATIONS = "v/datasets/%s/%s/%s/annotations.json"; // datasetName, slideName, tileCode
+    private static final String SLIDE_POLYGONS = "v/datasets/%s/%s/polygons.json"; // datasetName, slideName
 
     public AnnotationRequestHandler(PageFetcher pageFetcher) {
         this.pageFetcher = pageFetcher;
@@ -87,6 +88,7 @@ public class AnnotationRequestHandler {
         return annotations;
     }
 
+    public List<
     private AnnotationPoint jsonToAnnotation(JSONObject json) throws JSONException {
     return new AnnotationPoint(
         json.getString("_id"),
