@@ -1,12 +1,14 @@
 package org.computational_immunology.ext.ImmuNet.core;
 
+import java.util.List;
+
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 
 public class SelectedDataStore {
     private final ReadOnlyObjectWrapper<SelectedSlide> selectedSlide = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyObjectWrapper<TileMetadata> selectedTile = new ReadOnlyObjectWrapper<>(); //only the tile meatdata as the tile image is not needed here and can be retrieved from the metadata
-
+    private final ReadOnlyObjectWrapper<List<Polygon>> Polygons = new ReadOnlyObjectWrapper<>();
     public SelectedSlide getSelectedSlide() {
         return selectedSlide.get();
     }
@@ -23,6 +25,14 @@ public class SelectedDataStore {
 
     public void setSelectedTile(TileMetadata tile) {
         selectedTile.set(tile);
+    }
+
+    public List<Polygon> getPolygons() {
+        return Polygons.get();
+    }
+
+    public void setPolygons(List<Polygon> polygons) {
+        Polygons.set(polygons);
     }
 
     public ReadOnlyObjectProperty<SelectedSlide> selectedSlideProperty() {

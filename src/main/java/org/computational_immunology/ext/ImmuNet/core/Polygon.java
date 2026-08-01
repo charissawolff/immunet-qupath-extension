@@ -3,7 +3,14 @@ package org.computational_immunology.ext.ImmuNet.core;
 import java.util.List;
 import java.util.Objects;
 
-public class Polygon {
+import qupath.lib.geom.Point2;
+import qupath.lib.objects.PathObject;
+import qupath.lib.objects.PathObjects;
+import qupath.lib.regions.ImagePlane;
+import qupath.lib.roi.ROIs;
+import qupath.lib.roi.interfaces.ROI;
+
+public class Polygon{
 
     private final String id;
     private final List<Vertex> vertices;
@@ -29,33 +36,45 @@ public class Polygon {
     public String getSlide() { return slide; }
     public String getCreated() { return created; }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Polygon that)) return false;
-        return Objects.equals(id, that.id)
-                && Objects.equals(vertices, that.vertices)
-                && Objects.equals(name, that.name)
-                && Objects.equals(dataset, that.dataset)
-                && Objects.equals(slide, that.slide)
-                && Objects.equals(created, that.created);
-    }
+    public PathObject toPathObject() {
+        List<Vertex> vertices = this.getVertices();
+        ROI roi = ROIs.createPolygonROI(vertices, ImagePlane.getDefaultPlane());
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, vertices, name, dataset, slide, created);
-    }
-
-    @Override
-    public String toString() {
-        return "Polygon{id='" + id + "', name='" + name + "', dataset='" + dataset +
-                "', slide='" + slide + "', created='" + created +
-                "', vertexCount=" + (vertices != null ? vertices.size() : 0) + "}";
+        PathObject polygon = PathObjects.createAnnotationObject(roi);
+        polygon.getMetadata().put("id", this.getId());
+        polygon.getMetadata().put("name", this.getName());
+        polygon.getMetadata().put("dataset", this.getDataset());
+        polygon.getMetadata().put("slide", this.getSlide());
+        polygon.getMetadata().put("created", this.getCreated());
+        return polygon;
     }
 
     /**
-     * A single (x, y) vertex of the polygon.
+     * A single (x, y) vertex of the polygon extends point2.
      */
-    public record Vertex(double x, double y) {
+   public static class Vertex extends Point2 {
+        private final double x;
+        private final double y;
+
+        public Vertex(double x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        public double getX() { return x; }
+        public double getY() { return y; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Vertex vertex = (Vertex) o;
+            return Double.compare(vertex.x, x) == 0 && Double.compare(vertex.y, y) == 0;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(x, y);
+        }
     }
 }
