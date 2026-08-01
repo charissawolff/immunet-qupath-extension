@@ -15,6 +15,7 @@ import qupath.lib.images.ImageData;
 import qupath.lib.images.servers.SparseImageServer;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -150,7 +151,7 @@ public class SelectSlideCommand {
      * succeeded yet. Lets other commands (see SlideLoadWorkflow) reuse it instead of re-fetching.
      */
     public List<TileMetadata> getTilesMetadata() {
-        return tilesMetadata;
+        return tilesMetadata == null ? null : Collections.unmodifiableList(tilesMetadata);
     }
 
     public void setOnDone(Runnable callback) {

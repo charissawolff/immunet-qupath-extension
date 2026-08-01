@@ -8,6 +8,9 @@ import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandle
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SlideLoadWorkflow;
 
+import qupath.lib.gui.QuPathGUI;
+import qupath.lib.gui.viewer.QuPathViewer;
+
 import javafx.animation.PauseTransition;
 import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
@@ -23,13 +26,16 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
 
     private final ImageRequestHandler imageRequestHandler;
     private final AnnotationRequestHandler annotationRequestHandler;
+    private final TileHoverController tileHoverController;
     private SlideLoadWorkflow currentWorkflow;
     private final PauseTransition buttonPause = new PauseTransition((Duration.seconds(3)));
 
-    public DatasetSelectorTab(ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler) {
+    public DatasetSelectorTab(ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler,
+                               TileHoverController tileHoverController) {
         super("Image selector");
         this.imageRequestHandler = imageRequestHandler;
         this.annotationRequestHandler = annotationRequestHandler;
+        this.tileHoverController = tileHoverController;
 
     }
 
@@ -91,6 +97,13 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                 }
                 SlideLoadWorkflow workflow = new SlideLoadWorkflow(dsName, tsName, compositeTransitionSlider.getValue(), imageRequestHandler, annotationRequestHandler);
                 workflow.build();
+
+                workflow.setOnSlideReady(slide -> {
+                    QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
+                    if (viewer != null) {
+                        tileHoverController.setSlide(slide, viewer);
+                    }
+                });
 
                 workflow.messageProperty().addListener((obs, oldMsg, newMsg) -> statusLabel.setText(newMsg)); // bind the combined status message to the label
                 workflow.stateProperty().addListener((obs, oldState, newState) -> {

@@ -1,10 +1,13 @@
 package org.computational_immunology.ext.ImmuNet;
 
+import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
 import org.computational_immunology.ext.ImmuNet.ui.DatasetSelectorTab;
 import org.computational_immunology.ext.ImmuNet.ui.ServerConnectionTab;
+import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
+import org.computational_immunology.ext.ImmuNet.ui.TileHoverOverlay;
 
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.extensions.QuPathExtension;
@@ -28,11 +31,17 @@ public class ImmuNetExtension implements QuPathExtension {
         ImageRequestHandler imageRequestHandler = new ImageRequestHandler(ServerConnectionHandler.getInstance());
         AnnotationRequestHandler annotationRequestHandler = new AnnotationRequestHandler(ServerConnectionHandler.getInstance());
 
+        // Built once and injected down. THis tracks the currently loaded slide and the currently
+        // selected tile, and wires mouse hover/click on the viewer to the tile highlight overlay.
+        SelectedDataStore selectedDataStore = new SelectedDataStore();
+        TileHoverOverlay tileHoverOverlay = new TileHoverOverlay(qupath.getOverlayOptions(), selectedDataStore);
+        TileHoverController tileHoverController = new TileHoverController(selectedDataStore, tileHoverOverlay);
+
         // Side bar
         ServerConnectionTab serverConnectionTab = new ServerConnectionTab();
         serverConnectionTab.addCustomTab(qupath.getAnalysisTabPane());
 
-        DatasetSelectorTab datasetTab = new DatasetSelectorTab(imageRequestHandler, annotationRequestHandler);
+        DatasetSelectorTab datasetTab = new DatasetSelectorTab(imageRequestHandler, annotationRequestHandler, tileHoverController);
         datasetTab.addCustomTab(qupath.getAnalysisTabPane());
     }
 
