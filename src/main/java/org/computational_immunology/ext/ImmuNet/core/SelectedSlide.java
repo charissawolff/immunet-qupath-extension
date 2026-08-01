@@ -3,6 +3,7 @@ package org.computational_immunology.ext.ImmuNet.core;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 public record SelectedSlide(String datasetName, String slideName, List<TileMetadata> tileMetadataList) {
 
@@ -21,6 +22,16 @@ public record SelectedSlide(String datasetName, String slideName, List<TileMetad
 
     public boolean hasTileMetadata() {
         return !tileMetadataList.isEmpty();
+    }
+
+    public Optional<TileMetadata> tileAt(double imageX, double imageY) {
+        for (TileMetadata tile : tileMetadataList) {
+            if (imageX >= tile.getX() && imageX < tile.getX() + tile.getWidth()
+                    && imageY >= tile.getY() && imageY < tile.getY() + tile.getHeight()) {
+                return Optional.of(tile);
+            }
+        }
+        return Optional.empty();
     }
 
     public String getDatasetName() {

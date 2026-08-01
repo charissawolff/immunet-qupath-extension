@@ -1,10 +1,12 @@
 package org.computational_immunology.ext.ImmuNet.ui.commands;
 
+import org.computational_immunology.ext.ImmuNet.core.SelectedSlide;
 import org.computational_immunology.ext.ImmuNet.core.SlideImageServer;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -22,16 +24,30 @@ import qupath.lib.objects.PathObject;
  */
 public class SlideLoadWorkflow {
 
+    private final String datasetName;
+    private final String slideName;
     private final SelectSlideCommand selectSlideCommand;
     private final PresentAnnotationsCommand presentAnnotationsCommand;
 
     private final StringProperty message = new SimpleStringProperty("");
     private final ObjectProperty<Worker.State> state = new SimpleObjectProperty<>(Worker.State.READY);
 
+    private Consumer<SelectedSlide> onSlideReady;
+
     public SlideLoadWorkflow(String datasetName, String slideName, double compositeSwitchDownsample,
                               ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler) {
+        this.datasetName = datasetName;
+        this.slideName = slideName;
         this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
         this.presentAnnotationsCommand = new PresentAnnotationsCommand(datasetName, slideName, annotationRequestHandler);
+    }
+
+    /**
+     * @param onSlideReady called once tile metadata first exists (slide loaded, before annotations finish
+     * fetching) with an immutable snapshot of the dataset/slide/tiles just loaded.
+     */
+    public void setOnSlideReady(Consumer<SelectedSlide> onSlideReady) {
+        this.onSlideReady = onSlideReady;
     }
 
     public void build() {
@@ -65,6 +81,9 @@ public class SlideLoadWorkflow {
             presentAnnotationsCommand.setTilesMetadata(selectSlideCommand.getTilesMetadata());
             presentAnnotationsCommand.setDownsampleComposite(SlideImageServer.getDownsampleComposite());
             presentAnnotationsCommand.start();
+            if (onSlideReady != null) {
+                onSlideReady.accept(new SelectedSlide(datasetName, slideName, selectSlideCommand.getTilesMetadata()));
+            }
         });
     }
 
