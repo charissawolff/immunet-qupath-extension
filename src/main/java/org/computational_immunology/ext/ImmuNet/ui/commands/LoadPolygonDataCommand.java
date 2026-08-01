@@ -19,6 +19,7 @@ public class LoadPolygonDataCommand {
     private final SelectedDataStore selectedDataStore;
     private final AnnotationRequestHandler annotationRequestHandler;
     private Runnable onDone;
+    private Runnable onFailed;
     private Task<List<Polygon>> task;
 
     public LoadPolygonDataCommand(AnnotationRequestHandler annotationRequestHandler, SelectedDataStore selectedDataStore) {
@@ -30,7 +31,6 @@ public class LoadPolygonDataCommand {
         task = new Task<>() {
             @Override
             protected List<Polygon> call() {
-                updateMessage("Fetching polygons...");
                 return fetchSlidePolygons();
             }
         };
@@ -54,8 +54,10 @@ public class LoadPolygonDataCommand {
                 onDone.run();
             }
         });
-        task.setOnFailed(event ->
-            ImmuNetLog.error("Could not fetch polygon data", task.getException()));
+        task.setOnFailed(event -> {
+            ImmuNetLog.error("Could not fetch polygon data", task.getException());
+            if (onFailed != null) onFailed.run(); 
+        });
 
         Thread thread = new Thread(task, "fetch-polygons-" + selectedDataStore.getSelectedSlide().getDatasetName() + "-" + selectedDataStore.getSelectedSlide().getSlideName());
         thread.setDaemon(true);
@@ -68,6 +70,10 @@ public class LoadPolygonDataCommand {
 
     public void setOnDone(Runnable callback) {
         this.onDone = callback;
+    }
+
+    public void setOnFailed(Runnable callback) {
+        this.onFailed = callback;
     }
 
 
@@ -94,5 +100,6 @@ public class LoadPolygonDataCommand {
         }
 
     }
+
     
 }

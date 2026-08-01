@@ -115,7 +115,7 @@ public class ServerConnectionHandler implements PageFetcher {
             throw e;
         } catch(IOException ioe){
             ImmuNetLog.error("Could not fetch page : {}", localPath, ioe);
-            return null;
+            throw ioe;
         }
     }
 

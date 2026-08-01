@@ -7,37 +7,22 @@ import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.Polygon;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
-import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
-import org.computational_immunology.ext.ImmuNet.ui.commands.ClearImageViewerCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.LoadPolygonDataCommand;
-import org.computational_immunology.ext.ImmuNet.ui.commands.SlideLoadWorkflow;
 
-import javafx.animation.PauseTransition;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.Slider;
-import javafx.scene.control.Tooltip;
+import javafx.scene.control.Label;
 import javafx.scene.control.cell.CheckBoxListCell;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import qupath.lib.gui.QuPathGUI;
-import qupath.lib.gui.viewer.QuPathViewer;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.scene.control.ListView;
-import javafx.scene.control.cell.CheckBoxListCell;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class PolygonViewerTab extends CustomSidePanelTab {
@@ -70,25 +55,55 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         listView.setCellFactory(CheckBoxListCell.forListView(
                 item -> checkedMap.computeIfAbsent(item, k -> new SimpleBooleanProperty(false))
         ));
-        Button loadDataBtn = makeButton("Load Datasets", new Dimensions(40, 120));
+        Button loadDataBtn = makeButton("Load polygons", new Dimensions(40, 120));
+        Label statusLabel = new Label();
+
+        // bind to the selected slide property of the datastore, so that the button is only enabled when a slide is selected
+        // this continues working after the slide is cleaered, because when we click this button, we also
+        // clear the data from the datastore, which in turn enables the button again
+        loadDataBtn.disableProperty().bind(Bindings.isNull(selectedDataStore.selectedSlideProperty()));
+
+
         loadDataBtn.setOnAction(e -> {
-            ImmuNetLog.log("Load Datasets button clicked");
-            LoadPolygonDataCommand loadPolygonDataCommand = new LoadPolygonDataCommand(annotationRequestHandler, selectedDataStore);
-            loadPolygonDataCommand.build();
+        LoadPolygonDataCommand loadPolygonDataCommand = new LoadPolygonDataCommand(annotationRequestHandler, selectedDataStore);
+        loadPolygonDataCommand.build();
+            if (selectedDataStore.getSelectedSlide() == null) {
+                ImmuNetLog.log("No slide selected, cannot load polygons");
+                statusLabel.setText("No slide selected, cannot load polygons");
+                return;
+            }
+            ImmuNetLog.log("Load polygons button clicked");
             loadPolygonDataCommand.start();
+            
+            statusLabel.setText("Loading polygons...");
              // refresh the list right after loading
-             loadPolygonDataCommand.setOnDone(() -> {
-                 polygonNames.setAll(
-                         selectedDataStore.getPolygons().stream().map(Polygon::getName).toList()
-                 );
-             });
+            loadPolygonDataCommand.setOnDone(() -> {
+                //if there is no polygons, clear the list and update status label
+                if (selectedDataStore.getPolygons().isEmpty()) {
+                    polygonNames.clear();
+                    checkedMap.clear();
+                    ImmuNetLog.log("No polygons found");
+                    statusLabel.setText("No polygons found");
+                    return;
+                }
+                statusLabel.setText("Polygons loaded: " + selectedDataStore.getPolygons().size());
+                polygonNames.setAll(
+                        selectedDataStore.getPolygons().stream().map(Polygon::getName).toList()
+                );
+            });
+
+            loadPolygonDataCommand.setOnFailed(() -> {
+                ImmuNetLog.error("Failed to load polygons");
+                statusLabel.setText("Failed to load polygons");
+            });
         });
+    
 
         // checkbox to show or not the polygons
         CheckBox c = new CheckBox("Show polygons");
         c.setOnAction(e -> ImmuNetLog.log("Show polygons checkbox clicked"));
 
-        sidePanelTab.getChildren().addAll(loadDataBtn,c,listView);
+        sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,c,listView);
 
         return sidePanelTab;
     }
