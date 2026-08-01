@@ -1,6 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.ui.tabs;
 
 import java.util.HashMap;
+import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
@@ -8,6 +9,7 @@ import org.computational_immunology.ext.ImmuNet.core.Polygon;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.ui.commands.LoadPolygonDataCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.SelectAnnotationCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SetPolygonVisibilityCommand;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonTracker;
 
@@ -24,7 +26,9 @@ import javafx.scene.control.ListView;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.util.StringConverter;
+import qupath.lib.gui.QuPathGUI;
 import qupath.lib.objects.PathObject;
+import qupath.lib.objects.hierarchy.PathObjectHierarchy;
 
 import java.util.Map;
 
@@ -136,7 +140,12 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         ObservableList<PathObject> userAddedPolygons = polygonTracker.getNewAnnotations();
         //bind the userAddedPolygons list to the polygonTracker's newAnnotations list, so that any new polygons added by the user are automatically added to the list view
 
-        ListView<PathObject> userListView = new ListView<>(userAddedPolygons);        
+        ListView<PathObject> userListView = new ListView<>(userAddedPolygons);   
+        userListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
+            //what the user selects in the list view
+            SelectAnnotationCommand selectAnnotationCommand = new SelectAnnotationCommand(newSel);
+            selectAnnotationCommand.execute();
+        });     
 
         Button addDataBtn = makeButton("Add polygon", new Dimensions(40, 120));
         addDataBtn.setOnAction(e -> {
