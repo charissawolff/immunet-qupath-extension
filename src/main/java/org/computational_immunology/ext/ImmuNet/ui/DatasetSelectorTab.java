@@ -14,6 +14,7 @@ import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.viewer.QuPathViewer;
 
 import javafx.animation.PauseTransition;
+import javafx.beans.binding.Bindings;
 import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
@@ -63,6 +64,11 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         loadDataBtn.setOnAction(e -> MenuActions.updateListViewerBox(dsBox, getDatasets()));
         Button clearSelectionBtn = makeButton("Clear Image", new Dimensions(40, 120));
         clearSelectionBtn.setOnAction(e -> new ClearImageViewerCommand(selectedDataStore).execute());
+        // bind to the selected slide property of the datastore, so that the button is only enabled when a slide is selected
+        // this continues working after the slide is cleaered, because when we click this button, we also
+        // clear the data from the datastore, which in turn enables the button again
+        clearSelectionBtn.disableProperty().bind(Bindings.isNull(selectedDataStore.selectedSlideProperty()));
+
         BorderPane buttonRow = new BorderPane();
         buttonRow.setLeft(loadDataBtn);
         buttonRow.setRight(clearSelectionBtn);
@@ -122,7 +128,6 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                     if (newState == Worker.State.SUCCEEDED) {
                         openImgBtn.setStyle("-fx-text-fill: green;");
                         openImgBtn.setText("Success");
-                        clearSelectionBtn.setDisable(false);
                     } else if (newState == Worker.State.CANCELLED) {
                         openImgBtn.setStyle("-fx-text-fill: red;");
                         openImgBtn.setText("Cancelled");
@@ -145,7 +150,6 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
 
                 openImgBtn.setText("Cancel");
                 openImgBtn.setStyle("-fx-text-fill: black;");
-                clearSelectionBtn.setDisable(true);
                 statusLabel.setVisible(true);
                 statusLabel.setManaged(true);
                 //stop whatever pause is happening

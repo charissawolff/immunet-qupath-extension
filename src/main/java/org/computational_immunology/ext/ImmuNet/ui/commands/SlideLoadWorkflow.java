@@ -68,15 +68,17 @@ public class SlideLoadWorkflow {
         selectSlideCommand.getTask().stateProperty().addListener((obs, oldState, newState) -> {
             if (newState == Worker.State.FAILED || newState == Worker.State.CANCELLED) {
                 state.set(newState);
+            } else if (newState == Worker.State.SUCCEEDED) {
+                // Slide loading is done, but annotation fetching is about to start. We set the datastore's selected slide here
+                selectedDataStore.setSelectedSlide(new SelectedSlide(datasetName, slideName, selectSlideCommand.getTilesMetadata()));
             }
         });
         presentAnnotationsCommand.getTask().stateProperty().addListener((obs, oldState, newState) -> {
             state.set(newState);
             if (newState == Worker.State.SUCCEEDED) {
-                // Only known once annotation-fetching has actually finished, so build the final
                 List<PathObject> pathObjects = presentAnnotationsCommand.getTask().getValue();
                 message.set("Fetched " + pathObjects.size() + " annotations in " + presentAnnotationsCommand.getAnnotatedTileCount()
-                        + " tiles. There are a total of " + selectSlideCommand.getTilesMetadata().size() + " tiles.");
+                        + " tiles. There are a total of " + selectedDataStore.getSelectedSlide().getTileMetadataList().size() + " tiles.");
             }
             else if (newState == Worker.State.CANCELLED) {
                 //user cancelled the workflow while the slide was loading or while annotations were being fetched, so clear the viewer
@@ -86,12 +88,11 @@ public class SlideLoadWorkflow {
 
         // Only start fetching annotations once the slide itself has actually finished loading
         selectSlideCommand.setOnDone(() -> {
-            presentAnnotationsCommand.setTilesMetadata(selectSlideCommand.getTilesMetadata());
+            presentAnnotationsCommand.setTilesMetadata(selectedDataStore.getSelectedSlide().getTileMetadataList());
             presentAnnotationsCommand.setDownsampleComposite(SlideImageServer.getDownsampleComposite());
             presentAnnotationsCommand.start();
             if (onSlideReady != null) {
-                // set the selected slide here since it finished loading
-                onSlideReady.accept(new SelectedSlide(datasetName, slideName, selectSlideCommand.getTilesMetadata()));
+                onSlideReady.accept(selectedDataStore.getSelectedSlide());
             }
         });
     }
