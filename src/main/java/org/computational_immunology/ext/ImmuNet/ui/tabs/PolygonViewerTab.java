@@ -9,6 +9,7 @@ import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.ui.commands.LoadPolygonDataCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SetPolygonVisibilityCommand;
+import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonTracker;
 
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
@@ -23,6 +24,7 @@ import javafx.scene.control.ListView;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.util.StringConverter;
+import qupath.lib.objects.PathObject;
 
 import java.util.Map;
 
@@ -30,12 +32,14 @@ public class PolygonViewerTab extends CustomSidePanelTab {
 
     private final AnnotationRequestHandler annotationRequestHandler;
     private final SelectedDataStore selectedDataStore;
+    private static PolygonTracker polygonTracker;
 
     public PolygonViewerTab(AnnotationRequestHandler annotationRequestHandler,
-                               SelectedDataStore selectedDataStore) {
+                               SelectedDataStore selectedDataStore, PolygonTracker polygonTracker) {
         super("Polygon viewer");
         this.annotationRequestHandler = annotationRequestHandler;
         this.selectedDataStore = selectedDataStore;
+        PolygonViewerTab.polygonTracker = polygonTracker;
     }
 
      /**
@@ -129,6 +133,11 @@ public class PolygonViewerTab extends CustomSidePanelTab {
             });
         });
 
+        ObservableList<PathObject> userAddedPolygons = polygonTracker.getNewAnnotations();
+        //bind the userAddedPolygons list to the polygonTracker's newAnnotations list, so that any new polygons added by the user are automatically added to the list view
+
+        ListView<PathObject> userListView = new ListView<>(userAddedPolygons);        
+
         Button addDataBtn = makeButton("Add polygon", new Dimensions(40, 120));
         addDataBtn.setOnAction(e -> {
             ImmuNetLog.log("Add polygon button clicked");
@@ -137,7 +146,7 @@ public class PolygonViewerTab extends CustomSidePanelTab {
 
 
 
-        sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,c,listView);
+        sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,c,listView, userListView, addDataBtn);
 
         return sidePanelTab;
     }

@@ -46,12 +46,13 @@ public class ImmuNetExtension implements QuPathExtension {
         DatasetSelectorTab datasetTab = new DatasetSelectorTab(imageRequestHandler, annotationRequestHandler, selectedDataStore, tileHoverController);
         datasetTab.addCustomTab(qupath.getAnalysisTabPane());
 
+
+            //polygon tracker listener
+        PolygonTracker polygonTracker = new PolygonTracker();
         //polygon viewer tab
-        PolygonViewerTab polygonViewerTab = new PolygonViewerTab(annotationRequestHandler, selectedDataStore);
+        PolygonViewerTab polygonViewerTab = new PolygonViewerTab(annotationRequestHandler, selectedDataStore, polygonTracker);
         polygonViewerTab.addCustomTab(qupath.getAnalysisTabPane());
 
-        //polygon tracker listener
-        new PolygonTracker();
 
     }
 
