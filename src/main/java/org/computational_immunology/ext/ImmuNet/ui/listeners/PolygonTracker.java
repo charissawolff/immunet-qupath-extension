@@ -43,6 +43,9 @@ public class PolygonTracker implements PathObjectHierarchyListener  {
 
     @Override
     public void hierarchyChanged(PathObjectHierarchyEvent event) {
+        //change the newAnnotations list to only contain annotations that are still in the hierarchy, in case the user deleted some of them
+        //but that it wasn't registered (such as deleting from hierarchy tab)
+        newAnnotations.removeIf(obj -> obj.getParent() == null);
         ImmuNetLog.log("Hierarchy changed: " + event);
         //filter for polygon changes and log them
         if (event.getEventType() == PathObjectHierarchyEvent.HierarchyEventType.ADDED) {
