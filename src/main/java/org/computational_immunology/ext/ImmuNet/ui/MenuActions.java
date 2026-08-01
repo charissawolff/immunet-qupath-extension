@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
 
+import qupath.lib.gui.QuPathGUI;
+
 public class MenuActions {
     public static void connectToServer(String username, String hostname, String password, String dbuser, String dbpass) throws Exception {
         ServerConnectionHandler.getInstance().startSSHThread(username, hostname, password);
@@ -13,6 +15,15 @@ public class MenuActions {
     //todo: figure out what this is for
     public static void updateListViewerBox(ListViewerBox box, List<String> list){
         box.setItems(list);
+    }
+
+    public static void clearSelectionFromViewer() {
+        var viewer = QuPathGUI.getInstance().getViewer();
+        if (viewer != null) {
+            viewer.resetImageData();
+            return;
+        }
+        return;
     }
 
     // setStreamedServer/createSparseImageServer disabled: depended on ServerRequestHandler

@@ -15,7 +15,10 @@ import javafx.animation.PauseTransition;
 import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import javafx.scene.control.Label;
@@ -53,8 +56,15 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         ListViewerBox dsBox = new ListViewerBox(300, sidePanelTab.getMaxWidth()); // Dataset
         ListViewerBox tsBox = new ListViewerBox(300, sidePanelTab.getMaxWidth()); // Tissue slide
 
-        Button loadDataBtn = makeButton("Load Datasets", new Dimensions(40, 100));
+        //two buttons next to each other, one for loading datasets and one for clearing the current selection from viewer
+        Button loadDataBtn = makeButton("Load Datasets", new Dimensions(40, 120));
         loadDataBtn.setOnAction(e -> MenuActions.updateListViewerBox(dsBox, getDatasets()));
+        Button clearSelectionBtn = makeButton("Clear Image", new Dimensions(40, 120));
+        clearSelectionBtn.setOnAction(e -> { MenuActions.clearSelectionFromViewer(); });
+        BorderPane buttonRow = new BorderPane();
+        buttonRow.setLeft(loadDataBtn);
+        buttonRow.setRight(clearSelectionBtn);
+        
 
         Button openImgBtn = makeButton("Open Slide", new Dimensions(40, 100));
         Label statusLabel = new Label();
@@ -143,7 +153,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
 
         updateSlideByDataset(dsBox, tsBox);
 
-        sidePanelTab.getChildren().addAll(loadDataBtn, dsBox.getBox(), tsBox.getBox(), openImgBtn, statusLabel, sliderRow);
+        sidePanelTab.getChildren().addAll(buttonRow, dsBox.getBox(), tsBox.getBox(), openImgBtn, statusLabel, sliderRow);
 
         return sidePanelTab;
     }
