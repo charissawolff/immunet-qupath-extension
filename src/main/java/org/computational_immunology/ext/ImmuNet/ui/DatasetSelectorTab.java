@@ -75,6 +75,13 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         });
 
         openImgBtn.setOnAction(e -> {
+            if (dsBox.getListView().getSelectionModel().isEmpty() || tsBox.getListView().getSelectionModel().isEmpty()) {
+                ImmuNetLog.error("No dataset or slide selected for opening.");
+                statusLabel.setVisible(true);
+                statusLabel.setManaged(true);
+                statusLabel.setText("No dataset or slide selected for opening.");
+                return;
+            }
             try{
                 String dsName = dsBox.getListView().getSelectionModel().selectedItemProperty().getValue();
                 String tsName = tsBox.getListView().getSelectionModel().selectedItemProperty().getValue();

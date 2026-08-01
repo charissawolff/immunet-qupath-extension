@@ -25,7 +25,8 @@ import qupath.lib.objects.PathObject;
 import qupath.lib.objects.hierarchy.PathObjectHierarchy;
 
 public class PresentAnnotationsCommand {
-    // Annotation-fetching isn't cancelable once started so we set up a timeout per tile 
+    // Annotation-fetching is cancellable, but we also keep a timeout per tile so a single
+    // slow/stuck tile can't block the rest even when nothing has been cancelled.
     private static final long TILE_FETCH_TIMEOUT_SECONDS = 10;
 
     private final String datasetName;
@@ -36,6 +37,7 @@ public class PresentAnnotationsCommand {
     private List<TileMetadata> tilesMetadata;
     private double downsampleComposite;
     private int annotatedTileCount;
+    private volatile ExecutorService fetchExecutor;
 
     public PresentAnnotationsCommand(String datasetName, String slideName, AnnotationRequestHandler annotationRequestHandler) {
         this.datasetName = datasetName;
@@ -108,8 +110,14 @@ public class PresentAnnotationsCommand {
                 tileMetadataByCode.put( tileMetadata.getCode(), tileMetadata);
             }
 
+            if (task.isCancelled()) {
+                // avoid creating the executor at all if we were cancelled while fetching tile codes,
+                // so a cancelled fetch can never come up with a fresh pool after the caller was told we're done
+                return new ArrayList<>();
+            }
+
             List<PathObject> annotationPathObjects = new ArrayList<>();
-            ExecutorService fetchExecutor = Executors.newFixedThreadPool(64);
+            fetchExecutor = Executors.newFixedThreadPool(64);
             List<Future<List<PathObject>>> futureList = new ArrayList<>();
             int matchedTileCount = 0;
             for (String tileCode : tileCodes) {
@@ -126,17 +134,25 @@ public class PresentAnnotationsCommand {
             for (Future<List<PathObject>> future : futureList) {
                 try {
                     annotationPathObjects.addAll(future.get(TILE_FETCH_TIMEOUT_SECONDS, TimeUnit.SECONDS));
-                } catch (TimeoutException te) {
+                } catch (TimeoutException e) {
                     ImmuNetLog.error("Timed out after {} seconds waiting for a tile's annotations so we are skipping it", TILE_FETCH_TIMEOUT_SECONDS);
                     future.cancel(true);
                     annotatedTileCount--;
+                } catch (InterruptedException e) {
+                    ImmuNetLog.error("Cancelled while fetching annotations.", e);
+                    return new ArrayList<>();
                 }
             }
-            fetchExecutor.shutdown();
             return annotationPathObjects;
         } catch (Exception e) {
             ImmuNetLog.error("Error fetching annotations for dataset: " + datasetName + ", slide: " + slideName, e);
             return new ArrayList<>();
+        } finally {
+            // always runs so the pool can never be left running
+            // in the background after this method returns.
+            if (fetchExecutor != null) {
+                fetchExecutor.shutdownNow();
+            }
         }
     }
 
@@ -149,6 +165,11 @@ public class PresentAnnotationsCommand {
             ImmuNetLog.error("Error fetching annotations for dataset: " + datasetName + ", slide: " + slideName + ", tile: " + tileCode, e);
             return new ArrayList<>();
         }
+    }
+
+    public boolean isFullyStopped() {
+        ExecutorService e = fetchExecutor;
+        return e == null || e.isTerminated();
     }
 
 }

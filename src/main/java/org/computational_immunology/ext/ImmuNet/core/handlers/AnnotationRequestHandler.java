@@ -31,7 +31,7 @@ public class AnnotationRequestHandler {
         this.pageFetcher = pageFetcher;
     }
 
-    public List<String> fetchSlideAnnotations(String dataset, String slide) throws IOException, JSONException {
+    public List<String> fetchSlideAnnotations(String dataset, String slide) throws IOException, JSONException, InterruptedException {
         // Fetches the list of tile codes that have annotations for a given dataset and slide
         
         String path = String.format(SLIDE_ANNOTATIONS, dataset, slide);
@@ -60,7 +60,7 @@ public class AnnotationRequestHandler {
         return tileCodes;
     }
 
-    public List<AnnotationPoint> fetchAnnotations(String dataset, String slide, String tile) throws IOException, JSONException {
+    public List<AnnotationPoint> fetchAnnotations(String dataset, String slide, String tile) throws IOException, JSONException, InterruptedException {
         String path = String.format(TILE_ANNOTATIONS, dataset, slide, tile);
         List<AnnotationPoint> annotations = new ArrayList<>();
 
