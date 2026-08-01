@@ -41,7 +41,7 @@ public class ImmuNetExtension implements QuPathExtension {
         ServerConnectionTab serverConnectionTab = new ServerConnectionTab();
         serverConnectionTab.addCustomTab(qupath.getAnalysisTabPane());
 
-        DatasetSelectorTab datasetTab = new DatasetSelectorTab(imageRequestHandler, annotationRequestHandler, tileHoverController);
+        DatasetSelectorTab datasetTab = new DatasetSelectorTab(imageRequestHandler, annotationRequestHandler, selectedDataStore, tileHoverController);
         datasetTab.addCustomTab(qupath.getAnalysisTabPane());
     }
 
