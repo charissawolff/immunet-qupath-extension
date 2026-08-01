@@ -82,6 +82,7 @@ public class SlideLoadWorkflow {
             presentAnnotationsCommand.setDownsampleComposite(SlideImageServer.getDownsampleComposite());
             presentAnnotationsCommand.start();
             if (onSlideReady != null) {
+                // set the selected slide here since it finished loading
                 onSlideReady.accept(new SelectedSlide(datasetName, slideName, selectSlideCommand.getTilesMetadata()));
             }
         });
