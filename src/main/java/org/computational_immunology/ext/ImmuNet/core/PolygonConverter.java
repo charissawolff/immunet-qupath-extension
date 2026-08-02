@@ -44,7 +44,8 @@ public class PolygonConverter {
 
     public static Polygon fromPathObject(PathObject pathObject) {
         String id = (String) pathObject.getMetadata().get("id");
-        String name = (String) pathObject.getMetadata().get("name");
+        //read directly from pathObject metadata, since name can be changed by user
+        String name = pathObject.getName();
         String dataset = (String) pathObject.getMetadata().get("dataset");
         String slide = (String) pathObject.getMetadata().get("slide");
         String created = (String) pathObject.getMetadata().get("created");

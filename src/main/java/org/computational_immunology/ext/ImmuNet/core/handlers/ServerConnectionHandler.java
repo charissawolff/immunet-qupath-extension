@@ -169,9 +169,14 @@ public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .build();
-        HttpResponse<String> response = client.send(postRequest, BodyHandlers.ofString());
-        checkStatusCode(response.statusCode());
-        return response;
+        try{
+            HttpResponse<String> response = client.send(postRequest, BodyHandlers.ofString());
+            checkStatusCode(response.statusCode());
+            return response;
+        } catch (IOException | InterruptedException e) {
+            ImmuNetLog.error("Could not post object", e);
+            throw e;
+        }
     }
 
     private void setSessionCookie(String cookie) {
