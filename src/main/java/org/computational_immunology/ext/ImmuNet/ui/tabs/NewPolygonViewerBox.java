@@ -1,7 +1,10 @@
 package org.computational_immunology.ext.ImmuNet.ui.tabs;
 
+import org.computational_immunology.ext.ImmuNet.core.Polygon;
+import org.computational_immunology.ext.ImmuNet.core.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AddPolygonCommand;
+import org.json.JSONObject;
 
 import java.awt.image.BufferedImage;
 
@@ -98,7 +101,9 @@ public class NewPolygonViewerBox extends TableView<PathObject> {
 
     private void handleAddClicked(PathObject polygon, Button button) {
         button.setDisable(true);
-        AddPolygonCommand command = new AddPolygonCommand(polygon, dataUploadHandler);
+        Polygon polygonData = PolygonConverter.fromPathObject(polygon);
+        JSONObject polygonJson = PolygonConverter.toJSONObject(polygonData);
+        AddPolygonCommand command = new AddPolygonCommand(polygonJson, dataUploadHandler);
         command.build();
         //visible on screen and not editable anymore
         command.setOnDone(() -> { polygon.setLocked(true); refresh(); });
