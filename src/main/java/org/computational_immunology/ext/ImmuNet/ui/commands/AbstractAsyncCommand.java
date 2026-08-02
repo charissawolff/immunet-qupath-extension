@@ -12,7 +12,6 @@ public abstract class AbstractAsyncCommand<T> {
     protected Runnable onCancelled;
     protected Task<T> task;
     
-
     public void setOnDone(Runnable onDone) {
         this.onDone = onDone;
     }
@@ -79,5 +78,7 @@ public abstract class AbstractAsyncCommand<T> {
 
     protected abstract T execute(Consumer<String> progressReporter) throws Exception;
 
-    protected abstract String getThreadName();
+    protected String getThreadName() {
+        return getClass().getSimpleName();
+    }
 }

@@ -8,9 +8,6 @@ import org.json.JSONObject;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
 
-
-import qupath.lib.objects.PathObject;
-
 public class AddPolygonCommand extends AbstractAsyncCommand<JSONObject> {
     private final JSONObject polygonJson;
     private final JsonDataUploadHandler dataUploadHandler;
@@ -21,13 +18,8 @@ public class AddPolygonCommand extends AbstractAsyncCommand<JSONObject> {
     }
 
     @Override
-    protected String getThreadName() {
-       return "add-polygon-" + polygonJson.get("id");
-    }
-
-    @Override
-    public void onSuccess(JSONObject result) {
-        ImmuNetLog.log("Successfully uploaded polygon with ID: " + polygonJson.get("id"));
+    protected void onSuccess(JSONObject result) {
+        ImmuNetLog.log("Successfully uploaded polygon! result: " + result.toString());
     }
 
     @Override
@@ -38,10 +30,7 @@ public class AddPolygonCommand extends AbstractAsyncCommand<JSONObject> {
             JSONObject response = dataUploadHandler.uploadPolygonAnnotations(new JSONArray(List.of(polygonJson)));
             return response;
         } catch (Exception e) {
-            ImmuNetLog.error("Could not upload polygon data", e);
             throw new RuntimeException("Could not upload polygon data", e);
         }
     }
-
-    
 }
