@@ -18,7 +18,7 @@ public class JsonDataUploadHandler {
     public JsonDataUploadHandler(PagePoster<JSONArray> pagePoster) {
         this.pagePoster = pagePoster;
     }
-    
+
 
     public JSONObject uploadCellAnnotations(JSONArray cellAnnotations) throws IOException, InterruptedException {
         HttpResponse<String> response = pagePoster.postObject(CELL_ANNOTATION_UPLOAD, cellAnnotations);
@@ -30,6 +30,20 @@ public class JsonDataUploadHandler {
     }
 
     public JSONObject uploadPolygonAnnotations(JSONArray polygonAnnotations) throws IOException, InterruptedException {
+        //check if all the polygons have the required fields: name, dataset, slide, created, vertices
+        for (int i = 0; i < polygonAnnotations.length(); i++) {
+            JSONObject polygon = polygonAnnotations.getJSONObject(i);
+            StringBuilder missing = new StringBuilder();
+            if (!polygon.has("name")) missing.append("name ");
+            if (!polygon.has("dataset")) missing.append("dataset ");
+            if (!polygon.has("slide")) missing.append("slide ");
+            if (!polygon.has("created")) missing.append("created ");
+            if (!polygon.has("vertices")) missing.append("vertices ");
+
+            if (missing.length() > 0) {
+                throw new IOException("Polygon annotation is missing required fields: " + missing);
+            }
+        }
         HttpResponse<String> response = pagePoster.postObject(POLYGON_ANNOTATION_UPLOAD, polygonAnnotations);
         int status = response.statusCode();
         if (status < 200 || status >= 300) {

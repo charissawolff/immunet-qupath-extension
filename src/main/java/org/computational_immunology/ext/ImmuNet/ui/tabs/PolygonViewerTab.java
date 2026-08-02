@@ -1,7 +1,6 @@
 package org.computational_immunology.ext.ImmuNet.ui.tabs;
 
 import java.util.HashMap;
-import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
@@ -27,9 +26,7 @@ import javafx.scene.control.ListView;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.util.StringConverter;
-import qupath.lib.gui.QuPathGUI;
 import qupath.lib.objects.PathObject;
-import qupath.lib.objects.hierarchy.PathObjectHierarchy;
 
 import java.util.Map;
 

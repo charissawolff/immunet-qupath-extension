@@ -69,10 +69,7 @@ public class PolygonConverter {
 
         JSONArray verticesArray = new JSONArray();
         for (Vertex vertex : polygon.getVertices()) {
-            JSONObject vertexObject = new JSONObject();
-            vertexObject.put("x", vertex.getX());
-            vertexObject.put("y", vertex.getY());
-            verticesArray.put(vertexObject);
+            verticesArray.put(new JSONArray().put(vertex.getX()).put(vertex.getY()));
         }
         jsonObject.put("vertices", verticesArray);
 
