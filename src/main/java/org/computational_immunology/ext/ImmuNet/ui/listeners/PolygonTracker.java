@@ -15,6 +15,11 @@ import qupath.lib.objects.hierarchy.PathObjectHierarchy;
 import qupath.lib.objects.hierarchy.events.PathObjectHierarchyEvent;
 import qupath.lib.objects.hierarchy.events.PathObjectHierarchyListener;
 
+/* 
+Tracks changes to the polygon hierarchy
+Specifically, tracks when user ADDS a new polygon, so that we can save it to the server 
+
+*/
 public class PolygonTracker implements PathObjectHierarchyListener  {
     PathObjectHierarchy hierarchy;
     private final ObservableList<PathObject> newAnnotations = FXCollections.observableArrayList();
