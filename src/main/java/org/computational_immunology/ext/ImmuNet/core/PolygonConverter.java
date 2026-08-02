@@ -1,6 +1,12 @@
 package org.computational_immunology.ext.ImmuNet.core;
 
+import java.util.Collection;
 import java.util.List;
+
+import org.computational_immunology.ext.ImmuNet.core.Polygon.Vertex;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONString;
 
 import qupath.lib.geom.Point2;
 import qupath.lib.objects.PathObject;
@@ -34,5 +40,49 @@ public class PolygonConverter {
 
     private PolygonConverter() {
         /* This utility class should not be instantiated */
+    }
+
+    public static Polygon fromPathObject(PathObject pathObject) {
+        String id = (String) pathObject.getMetadata().get("id");
+        String name = (String) pathObject.getMetadata().get("name");
+        String dataset = (String) pathObject.getMetadata().get("dataset");
+        String slide = (String) pathObject.getMetadata().get("slide");
+        String created = (String) pathObject.getMetadata().get("created");
+
+        ROI roi = pathObject.getROI();
+        List<Point2> vertices = roi.getAllPoints();
+        List<Vertex> vertexList = vertices.stream()
+            .map(point -> new Vertex(point.getX(), point.getY()))
+            .toList();
+
+        return new Polygon(id, vertexList, name, dataset, slide, created);
+    }
+
+    public static JSONObject toJSONObject(Polygon polygon) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("id", polygon.getId());
+        jsonObject.put("name", polygon.getName());
+        jsonObject.put("dataset", polygon.getDataset());
+        jsonObject.put("slide", polygon.getSlide());
+        jsonObject.put("created", polygon.getCreated());
+
+        JSONArray verticesArray = new JSONArray();
+        for (Vertex vertex : polygon.getVertices()) {
+            JSONObject vertexObject = new JSONObject();
+            vertexObject.put("x", vertex.getX());
+            vertexObject.put("y", vertex.getY());
+            verticesArray.put(vertexObject);
+        }
+        jsonObject.put("vertices", verticesArray);
+
+        return jsonObject;
+    }
+
+    public static JSONArray toJSONArray(Collection<Polygon> polygons) {
+        JSONArray array = new JSONArray();
+        for (Polygon polygon : polygons) {
+            array.put(toJSONObject(polygon));
+        }
+        return array;
     }
 }
