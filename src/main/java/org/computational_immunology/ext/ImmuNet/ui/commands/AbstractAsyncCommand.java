@@ -38,6 +38,9 @@ public abstract class AbstractAsyncCommand<T> {
         ImmuNetLog.error("Failed: " + getThreadName(), exception);
     }
 
+    /**
+     * the background Task behind this command, or null before build() has been called.
+     */
     public Task<T> getTask() {
         return task;
     }
