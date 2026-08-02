@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 
 import javax.imageio.ImageIO;
+
 import java.awt.image.BufferedImage;
 
 import org.computational_immunology.ext.ImmuNet.core.AnnotationPoint;
@@ -17,6 +18,8 @@ import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.Tile;
 import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.TileMetadata.ImageType;
+import org.computational_immunology.ext.ImmuNet.core.Polygon;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,6 +29,7 @@ public class AnnotationRequestHandler {
     private final PageFetcher pageFetcher;
     private static final String SLIDE_ANNOTATIONS = "/v/annotations/%s/%s/"; // datasetName, slideName
     private static final String TILE_ANNOTATIONS = "v/datasets/%s/%s/%s/annotations.json"; // datasetName, slideName, tileCode
+    private static final String SLIDE_POLYGONS = "v/datasets/%s/%s/polygons.json"; // datasetName, slideName
 
     public AnnotationRequestHandler(PageFetcher pageFetcher) {
         this.pageFetcher = pageFetcher;
@@ -85,6 +89,52 @@ public class AnnotationRequestHandler {
             annotations.add(jsonToAnnotation(array.getJSONObject(i)));
         }
         return annotations;
+    }
+
+    public List<Polygon> fetchPolygons(String dataset, String slide) throws IOException, JSONException, InterruptedException {
+        String path = String.format(SLIDE_POLYGONS, dataset, slide);
+        List<Polygon> polygons = new ArrayList<>();
+
+        HttpResponse<String> response = pageFetcher.fetchStringPage(path);
+
+        int status = response.statusCode();
+        if (status == 404) {
+            return polygons; // no polygons for this dataset/slide
+        }
+        if (status < 200 || status >= 300) {
+            throw new IOException("Could not fetch polygons for dataset: " + dataset
+                    + " with slide: " + slide + " (status " + status + ")");
+        }
+
+        String body = response.body().trim();
+        if (body.isEmpty()) {
+            return polygons; // empty body means there are no polygons
+        }
+
+        JSONArray array = new JSONArray(body);
+        for (int i = 0; i < array.length(); i++) {
+            JSONObject jsonPolygon = array.getJSONObject(i);
+
+            JSONArray jsonVertices = jsonPolygon.getJSONArray("vertices");
+            List<Polygon.Vertex> vertices = new ArrayList<>(jsonVertices.length());
+            for (int j = 0; j < jsonVertices.length(); j++) {
+                JSONArray point = jsonVertices.getJSONArray(j); // e.g. [11255.70, 3696.45]
+                double x = point.getDouble(0);
+                double y = point.getDouble(1);
+                vertices.add(new Polygon.Vertex(x, y));
+            }
+
+            Polygon polygon = new Polygon(
+                    jsonPolygon.optString("_id", null),
+                    vertices,
+                    jsonPolygon.optString("name", null),
+                    jsonPolygon.optString("dataset", null),
+                    jsonPolygon.optString("slide", null),
+                    jsonPolygon.optString("created", null)
+            );
+            polygons.add(polygon);
+        }
+        return polygons;
     }
 
     private AnnotationPoint jsonToAnnotation(JSONObject json) throws JSONException {

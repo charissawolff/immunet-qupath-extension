@@ -8,7 +8,6 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Objects;
 
-import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
 
@@ -63,7 +62,6 @@ public class TileHoverOverlay extends AbstractOverlay {
             // if i hover over a tile, then i want to see it highlighted, so i can see where it is on the slide
             Shape hoveredShape = tileShape(hovered);
             PathObjectPainter.paintShape(hoveredShape, g, null, null, wash);
-            ImmuNetLog.log("Hovering over tile: " + hovered);
         }
 
         g.dispose();

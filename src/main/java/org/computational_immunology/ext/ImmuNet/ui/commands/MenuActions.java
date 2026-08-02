@@ -1,8 +1,9 @@
-package org.computational_immunology.ext.ImmuNet.ui;
+package org.computational_immunology.ext.ImmuNet.ui.commands;
 
 import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
+import org.computational_immunology.ext.ImmuNet.ui.tabs.ListViewerBox;
 
 public class MenuActions {
     public static void connectToServer(String username, String hostname, String password, String dbuser, String dbpass) throws Exception {

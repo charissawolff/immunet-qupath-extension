@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.ui;
+package org.computational_immunology.ext.ImmuNet.ui.tabs;
 
 import org.computational_immunology.ext.ImmuNet.core.Dimensions;
 

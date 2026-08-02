@@ -1,6 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.core.handlers;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
+import org.json.JSONArray;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-public class ServerConnectionHandler implements PageFetcher {
+public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray> {
     private static final ServerConnectionHandler INSTANCE = new ServerConnectionHandler();
 
     //service port is 8082
@@ -115,7 +116,7 @@ public class ServerConnectionHandler implements PageFetcher {
             throw e;
         } catch(IOException ioe){
             ImmuNetLog.error("Could not fetch page : {}", localPath, ioe);
-            return null;
+            throw ioe;
         }
     }
 
@@ -158,6 +159,24 @@ public class ServerConnectionHandler implements PageFetcher {
         List<String> cookies = headers.allValues("Set-Cookie");
         setSessionCookie(cookies.get(0));
         return cookies.get(0);
+    }
+
+    public HttpResponse<String> postObject(String localPath, JSONArray payload) throws IOException, InterruptedException {
+        // Send a POST request to the specified local path with the provided JSON payload
+        HttpRequest postRequest = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8082/" + localPath))
+                .header("Cookie", sessionCookie)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
+                .build();
+        try{
+            HttpResponse<String> response = client.send(postRequest, BodyHandlers.ofString());
+            checkStatusCode(response.statusCode());
+            return response;
+        } catch (IOException | InterruptedException e) {
+            ImmuNetLog.error("Could not post object", e);
+            throw e;
+        }
     }
 
     private void setSessionCookie(String cookie) {
