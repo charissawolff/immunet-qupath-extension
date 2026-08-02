@@ -19,6 +19,9 @@ import qupath.lib.objects.hierarchy.events.PathObjectHierarchyListener;
 Tracks changes to the polygon hierarchy
 Specifically, tracks when user ADDS a new polygon, so that we can save it to the server 
 
+Note: when I change the figure of a polygon currently there, the events change other fire, and then it's reigistered as "added"
+SOmetimes when I create the polygon it also first fired change other and then added. I have to 
+check if the polygon is already in the newAnnotations list before adding it, to avoid duplicates.
 */
 public class PolygonTracker implements PathObjectHierarchyListener  {
     PathObjectHierarchy hierarchy;
@@ -63,16 +66,22 @@ public class PolygonTracker implements PathObjectHierarchyListener  {
         } else if (event.getEventType() == PathObjectHierarchyEvent.HierarchyEventType.CHANGE_MEASUREMENTS) {
             ImmuNetLog.log("Polygon changed: " + event);
         }
-
         if (event.getChangedObjects() != null){ 
             ImmuNetLog.log("Polygon class changed: " + event.getChangedObjects());
         }
+        
 
         // any newly drawn annotation gets tracked so it can later be sent to the server, except points
         if (event.getEventType() == PathObjectHierarchyEvent.HierarchyEventType.ADDED) {
             for (PathObject addedObject : event.getChangedObjects()) {
                 if (!addedObject.getROI().isPoint()) {
-                    newAnnotations.add(addedObject);
+                    ImmuNetLog.log("Tracking new polygon annotation: " + addedObject);
+                    ImmuNetLog.log("Tracking new polygon annotation: " + addedObject.getROI().getClass().getSimpleName());
+                    ImmuNetLog.log("It had the type of " + event.getEventType());
+                    newAnnotations.remove(addedObject); //remove it first in case it was already there, to avoid duplicates
+                    if (!newAnnotations.contains(addedObject)) {
+                        newAnnotations.add(addedObject);
+                    }
                 }
             }
         }
