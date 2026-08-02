@@ -63,7 +63,6 @@ public class TileHoverOverlay extends AbstractOverlay {
             // if i hover over a tile, then i want to see it highlighted, so i can see where it is on the slide
             Shape hoveredShape = tileShape(hovered);
             PathObjectPainter.paintShape(hoveredShape, g, null, null, wash);
-            ImmuNetLog.log("Hovering over tile: " + hovered);
         }
 
         g.dispose();

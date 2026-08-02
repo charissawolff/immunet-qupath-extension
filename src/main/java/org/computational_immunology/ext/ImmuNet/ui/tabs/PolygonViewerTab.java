@@ -8,6 +8,7 @@ import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.Polygon;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
 import org.computational_immunology.ext.ImmuNet.ui.commands.LoadPolygonDataCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SelectAnnotationCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SetPolygonVisibilityCommand;
@@ -35,13 +36,16 @@ import java.util.Map;
 public class PolygonViewerTab extends CustomSidePanelTab {
 
     private final AnnotationRequestHandler annotationRequestHandler;
+    private final JsonDataUploadHandler dataUploadHandler;
     private final SelectedDataStore selectedDataStore;
     private static PolygonTracker polygonTracker;
 
     public PolygonViewerTab(AnnotationRequestHandler annotationRequestHandler,
-                               SelectedDataStore selectedDataStore, PolygonTracker polygonTracker) {
+                            JsonDataUploadHandler dataUploadHandler,
+                            SelectedDataStore selectedDataStore, PolygonTracker polygonTracker) {
         super("Polygon viewer");
         this.annotationRequestHandler = annotationRequestHandler;
+        this.dataUploadHandler = dataUploadHandler;
         this.selectedDataStore = selectedDataStore;
         PolygonViewerTab.polygonTracker = polygonTracker;
     }
@@ -140,22 +144,14 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         ObservableList<PathObject> userAddedPolygons = polygonTracker.getNewAnnotations();
         //bind the userAddedPolygons list to the polygonTracker's newAnnotations list, so that any new polygons added by the user are automatically added to the list view
 
-        ListView<PathObject> userListView = new ListView<>(userAddedPolygons);   
-        userListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
+        NewPolygonViewerBox newPolygonViewerBox = new NewPolygonViewerBox(userAddedPolygons, dataUploadHandler);
+        newPolygonViewerBox.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
             //what the user selects in the list view
             SelectAnnotationCommand selectAnnotationCommand = new SelectAnnotationCommand(newSel);
             selectAnnotationCommand.execute();
-        });     
+        });    
 
-        Button addDataBtn = makeButton("Add polygon", new Dimensions(40, 120));
-        addDataBtn.setOnAction(e -> {
-            ImmuNetLog.log("Add polygon button clicked");
-        });
-
-
-
-
-        sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,c,listView, userListView, addDataBtn);
+        sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,c,listView, newPolygonViewerBox);
 
         return sidePanelTab;
     }

@@ -3,9 +3,11 @@ package org.computational_immunology.ext.ImmuNet;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverOverlay;
+import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonMetadataAdder;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonTracker;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.DatasetSelectorTab;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.PolygonViewerTab;
@@ -32,6 +34,7 @@ public class ImmuNetExtension implements QuPathExtension {
         // Built once here and injected down, this will be used to retrieve specifically tile images from the server
         ImageRequestHandler imageRequestHandler = new ImageRequestHandler(ServerConnectionHandler.getInstance());
         AnnotationRequestHandler annotationRequestHandler = new AnnotationRequestHandler(ServerConnectionHandler.getInstance());
+        JsonDataUploadHandler jsonDataUploadHandler = new JsonDataUploadHandler(ServerConnectionHandler.getInstance());
 
         // Built once and injected down. THis tracks the currently loaded slide and the currently
         // selected tile, and wires mouse hover/click on the viewer to the tile highlight overlay.
@@ -49,8 +52,10 @@ public class ImmuNetExtension implements QuPathExtension {
 
             //polygon tracker listener
         PolygonTracker polygonTracker = new PolygonTracker();
+        // polygon metadata added
+        PolygonMetadataAdder polygonMetadataAdder = new PolygonMetadataAdder(polygonTracker, selectedDataStore);
         //polygon viewer tab
-        PolygonViewerTab polygonViewerTab = new PolygonViewerTab(annotationRequestHandler, selectedDataStore, polygonTracker);
+        PolygonViewerTab polygonViewerTab = new PolygonViewerTab(annotationRequestHandler, jsonDataUploadHandler, selectedDataStore, polygonTracker);
         polygonViewerTab.addCustomTab(qupath.getAnalysisTabPane());
 
 

@@ -33,13 +33,16 @@ public class PolygonTracker implements PathObjectHierarchyListener  {
             this.hierarchy = viewer.getImageData().getHierarchy();
             this.hierarchy.addListener(this);
         }
-        //if the viewer changes, we need to update the hierarchy listener
+        //if the viewer changes, we need to update the hierarchy listener AND the newAnnotations list 
         ReadOnlyObjectProperty<ImageData<BufferedImage>> imageDataProperty = viewer.imageDataProperty();
         imageDataProperty.addListener((observable, oldValue, newValue) -> {
+            newAnnotations.clear(); //clear the newAnnotations list when the viewer changes,
+                //  since we don't want to keep track of polygons from a different image
             if (this.hierarchy != null) {
                 this.hierarchy.removeListener(this);
             }
             this.hierarchy = newValue == null ? null : newValue.getHierarchy();
+            
             if (this.hierarchy != null) {
                 this.hierarchy.addListener(this);
             }
