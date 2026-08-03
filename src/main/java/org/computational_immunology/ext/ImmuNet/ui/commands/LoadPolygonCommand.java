@@ -28,17 +28,14 @@ public class LoadPolygonCommand extends AbstractAsyncCommand<List<Polygon>> {
     //on success, add the polygons to the selectedDataStore and also add them to the QuPath hierarchy, so they are visible in the viewer
     protected void onSuccess(List<Polygon> polygons) {
         selectedDataStore.setPolygons(polygons);
-        List<PathObject> pathObjects = new ArrayList<>();
+        List<PathObject> polygonPathObjects = new ArrayList<>();
         for (Polygon p: polygons) {
-            pathObjects.add(PolygonConverter.toPathObject(p));
+            polygonPathObjects.add(PolygonConverter.toPathObject(p));
             ImmuNetLog.log("Fetched polygon with ID: " + p.getId() + " for dataset: " + selectedDataStore.getSelectedSlide().getDatasetName() + ", slide: " + selectedDataStore.getSelectedSlide().getSlideName());
         }
-        QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
-        if (viewer != null && viewer.getImageData() != null) {
-            PathObjectHierarchy hierarchy = viewer.getImageData().getHierarchy();
-            hierarchy.addObjects(pathObjects);
-            ImmuNetLog.log("Added " + pathObjects.size() + " server polygon(s) for " + selectedDataStore.getSelectedSlide().getDatasetName() + ", slide: " + selectedDataStore.getSelectedSlide().getSlideName());
-        }
+        AttachPathObjectsToViewerCommand attachCommand = new AttachPathObjectsToViewerCommand(polygonPathObjects);
+        attachCommand.execute();
+
     }
 
     @Override
