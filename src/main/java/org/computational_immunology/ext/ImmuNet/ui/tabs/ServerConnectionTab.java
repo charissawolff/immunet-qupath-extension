@@ -69,7 +69,19 @@ public class ServerConnectionTab extends CustomSidePanelTab{
         
         Button connectBtn = makeButton("Connect", new Dimensions(40, 100));
         EventHandler<ActionEvent> connectEvent = sendCredentials();
+
+        //add listener to make sure all fields are filled before enabling the connect button
+        connectBtn.disableProperty().bind(Bindings.createBooleanBinding(() ->
+                Arrays.stream(allLoginBoxes).anyMatch(s-> s.field.getText().isEmpty()),
+                hostnameField.field.textProperty(),
+                usernameField.field.textProperty(),
+                passwordField.field.textProperty(),
+                dbUserField.field.textProperty(),
+                dbPassField.field.textProperty()
+        ));
+        
         connectBtn.setOnAction(connectEvent);
+
         
         sidePanelTab.getChildren().addAll(hostnameField, usernameField, passwordField, dbUserField, dbPassField, connectBtn, statusLabel);
         return sidePanelTab;

@@ -5,15 +5,12 @@ import java.util.function.Consumer;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
 
-import javafx.beans.property.SimpleStringProperty;
-
 public class ConnectToServerCommand extends AbstractAsyncCommand<Boolean> {
     private final String username;
     private final String hostname;
     private final String password;
     private final String dbuser;
     private final String dbpass;
-    private final SimpleStringProperty message = new SimpleStringProperty("");
 
     public ConnectToServerCommand(String username, String hostname, String password, String dbuser, String dbpass){
         this.username = username;
