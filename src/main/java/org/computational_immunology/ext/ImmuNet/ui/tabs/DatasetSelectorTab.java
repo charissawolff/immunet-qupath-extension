@@ -6,9 +6,12 @@ import org.computational_immunology.ext.ImmuNet.core.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.MiscDataRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.commands.ClearImageViewerCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.LoadDatasetsCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.LoadSlideDataCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.MenuActions;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SlideLoadWorkflow;
 
@@ -32,16 +35,18 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
 
     private final ImageRequestHandler imageRequestHandler;
     private final AnnotationRequestHandler annotationRequestHandler;
+    private final MiscDataRequestHandler miscDatarequestHandler;
     private final TileHoverController tileHoverController;
     private final SelectedDataStore selectedDataStore;
     private SlideLoadWorkflow currentWorkflow;
     private final PauseTransition buttonPause = new PauseTransition((Duration.seconds(2)));
 
-    public DatasetSelectorTab(ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler,
-                               SelectedDataStore selectedDataStore, TileHoverController tileHoverController) {
+    public DatasetSelectorTab(ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler, 
+                                MiscDataRequestHandler miscDatarequestHandler, SelectedDataStore selectedDataStore, TileHoverController tileHoverController) {
         super("Image selector");
         this.imageRequestHandler = imageRequestHandler;
         this.annotationRequestHandler = annotationRequestHandler;
+        this.miscDatarequestHandler = miscDatarequestHandler;
         this.selectedDataStore = selectedDataStore;
         this.tileHoverController = tileHoverController;
 
@@ -63,7 +68,19 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
 
         //two buttons next to each other, one for loading datasets and one for clearing the current selection from viewer
         Button loadDataBtn = makeButton("Load Datasets", new Dimensions(40, 120));
-        loadDataBtn.setOnAction(e -> MenuActions.updateListViewerBox(dsBox, getDatasets()));
+        loadDataBtn.setOnAction(e -> {
+            LoadDatasetsCommand loadDatasetCommand = new LoadDatasetsCommand(miscDatarequestHandler);
+            loadDatasetCommand.build();
+            loadDatasetCommand.setOnDone(() -> {
+                List<String> datasets = loadDatasetCommand.getTask().getValue();
+                updateListViewerBox(dsBox, datasets);
+            });
+            loadDatasetCommand.setOnFailed(() -> {
+                ImmuNetLog.error("Failed to load dataset data", loadDatasetCommand.getTask().getException());
+            });
+            loadDatasetCommand.start();
+        });
+
         Button clearSelectionBtn = makeButton("Clear Image", new Dimensions(40, 120));
         clearSelectionBtn.setOnAction(e -> new ClearImageViewerCommand(selectedDataStore).execute());
         // bind to the selected slide property of the datastore, so that the button is only enabled when a slide is selected
@@ -176,17 +193,26 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         return imageRequestHandler.getWebpageAsList("datasets/");
     }
 
-    private List<String> getSlides(String dataset){
-        return imageRequestHandler.getWebpageAsList("datasets/" + dataset + "/");
-    }
-
     private void updateSlideByDataset(ListViewerBox datasetBox, ListViewerBox slideBox){
         datasetBox.getListView().getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
                 if (newValue != null){
-                    MenuActions.updateListViewerBox(slideBox, getSlides(newValue)); // Update tissue slide box
+                    LoadSlideDataCommand loadSlideDataCommand = new LoadSlideDataCommand(miscDatarequestHandler, newValue);
+                    loadSlideDataCommand.build(); // Update tissue slide box
+                    loadSlideDataCommand.setOnDone(() -> {
+                        List<String> slides = loadSlideDataCommand.getTask().getValue();
+                        updateListViewerBox(slideBox, slides);
+                    });
+                    loadSlideDataCommand.setOnFailed(() -> {
+                        ImmuNetLog.error("Failed to load slide data for dataset: " + newValue, loadSlideDataCommand.getTask().getException());
+                    });
+                    loadSlideDataCommand.start();
                     ImmuNetLog.log("Selected: " + newValue);
                 }
             }
         );
+    }
+
+    private static void updateListViewerBox(ListViewerBox box, List<String> list){
+        box.setItems(list);
     }
 }

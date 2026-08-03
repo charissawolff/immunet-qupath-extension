@@ -4,6 +4,7 @@ import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.MiscDataRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverOverlay;
@@ -34,6 +35,7 @@ public class ImmuNetExtension implements QuPathExtension {
         // Built once here and injected down, this will be used to retrieve specifically tile images from the server
         ImageRequestHandler imageRequestHandler = new ImageRequestHandler(ServerConnectionHandler.getInstance());
         AnnotationRequestHandler annotationRequestHandler = new AnnotationRequestHandler(ServerConnectionHandler.getInstance());
+        MiscDataRequestHandler miscDataRequestHandler = new MiscDataRequestHandler(ServerConnectionHandler.getInstance());
         JsonDataUploadHandler jsonDataUploadHandler = new JsonDataUploadHandler(ServerConnectionHandler.getInstance());
 
         // Built once and injected down. THis tracks the currently loaded slide and the currently
@@ -46,7 +48,7 @@ public class ImmuNetExtension implements QuPathExtension {
         ServerConnectionTab serverConnectionTab = new ServerConnectionTab();
         serverConnectionTab.addCustomTab(qupath.getAnalysisTabPane());
 
-        DatasetSelectorTab datasetTab = new DatasetSelectorTab(imageRequestHandler, annotationRequestHandler, selectedDataStore, tileHoverController);
+        DatasetSelectorTab datasetTab = new DatasetSelectorTab(imageRequestHandler, annotationRequestHandler, miscDataRequestHandler, selectedDataStore, tileHoverController);
         datasetTab.addCustomTab(qupath.getAnalysisTabPane());
 
 
