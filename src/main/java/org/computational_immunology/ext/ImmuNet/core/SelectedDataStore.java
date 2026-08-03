@@ -21,6 +21,14 @@ public class SelectedDataStore {
         selectedTile.set(null);
     }
 
+    public void clear() {
+        selectedSlide.set(null);
+        selectedTile.set(null);
+        downSampleComposite.set(null);
+        Polygons.set(null);
+        annotationPoints.set(null);
+    }
+
     public TileMetadata getSelectedTile() {
         return selectedTile.get();
     }
