@@ -37,8 +37,8 @@ public class ImageRequestHandler {
         List<TileMetadata> tileMetadatas;
         String allTilesJson = pageFetcher.fetchStringPage(path).body();
 
-        ImmuNetLog.log("Path at getAllTileMetadatas is " + path);
-        ImmuNetLog.log(allTilesJson);
+        //ImmuNetLog.log("Path at getAllTileMetadatas is " + path);
+        //ImmuNetLog.log(allTilesJson);
 
         JSONArray parsedOutput = new JSONArray(allTilesJson);
         ImmuNetLog.log("Fetched all tiles json");

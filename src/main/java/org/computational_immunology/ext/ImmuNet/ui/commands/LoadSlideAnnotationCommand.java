@@ -1,9 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.ui.commands;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -19,10 +17,7 @@ import org.computational_immunology.ext.ImmuNet.core.AnnotationPointConverter;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 
-import qupath.lib.gui.QuPathGUI;
-import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.objects.PathObject;
-import qupath.lib.objects.hierarchy.PathObjectHierarchy;
 
 public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<AnnotationPoint>>  {
     // Annotation-fetching is cancellable, but we also keep a timeout per tile so a single
@@ -44,8 +39,6 @@ public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<Annota
 
     }
 
-
-
     @Override
     protected void onSuccess(List<AnnotationPoint> annotationPoints) {
         selectedDataStore.setAnnotationPoints(annotationPoints);
@@ -54,7 +47,6 @@ public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<Annota
         attachCommand.execute();
         ImmuNetLog.log("Attempted: Added " + pathObjects.size() + " server annotation(s) for {}/{}", datasetName, slideName);
     }
-
 
     @Override
     protected List<AnnotationPoint> execute(Consumer<String> progressReporter) throws Exception {

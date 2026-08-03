@@ -79,14 +79,11 @@ public class SlideLoadWorkflow {
         });
         presentAnnotationsCommand.getTask().stateProperty().addListener((obs, oldState, newState) -> {
             state.set(newState);
-            if (newState == Worker.State.SUCCEEDED) {
-                List<AnnotationPoint> annotationPoints = presentAnnotationsCommand.getTask().getValue();
-                message.set("Fetched " + annotationPoints.size() + " annotations in " + selectedDataStore.getAnnotationPoints().size()
-                        + " tiles. There are a total of " + selectedDataStore.getSelectedSlide().getTileMetadataList().size() + " tiles.");
-                
-            }
-            else if (newState == Worker.State.CANCELLED) {
+            if (newState == Worker.State.CANCELLED) {
                 //user cancelled the workflow while the slide was loading or while annotations were being fetched, so clear the viewer
+                new ClearImageViewerCommand(selectedDataStore).execute();
+            } else if (newState == Worker.State.FAILED) {
+                //failed, so clear the viewer
                 new ClearImageViewerCommand(selectedDataStore).execute();
             }
         });
@@ -98,6 +95,16 @@ public class SlideLoadWorkflow {
                 onSlideReady.accept(selectedDataStore.getSelectedSlide());
             }
         });
+
+        //only after we are sure that the annotations have been fetched, we can update the message to show how many annotations were fetched
+        presentAnnotationsCommand.setOnDone(() -> {
+            List<AnnotationPoint> annotationPoints = presentAnnotationsCommand.getTask().getValue();
+            message.set("Fetched " + annotationPoints.size() + " annotations in " + selectedDataStore.getAnnotationPoints().size()
+                    + " tiles. There are a total of " + selectedDataStore.getSelectedSlide().getTileMetadataList().size() + " tiles.");
+            
+        });
+        //TODO: set on failed and set on cancelled can also have their own message
+
     }
 
     public void start() {
