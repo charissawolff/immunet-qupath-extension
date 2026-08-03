@@ -108,6 +108,7 @@ public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray
         HttpRequest getRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8082/" + localPath))
                 .header("Cookie", sessionCookie)
+                .timeout(REQUEST_TIMEOUT_SECONDS)
                 .GET()
                 .build();
         try{
