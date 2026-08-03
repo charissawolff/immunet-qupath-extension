@@ -8,15 +8,15 @@ public class AnnotationPoint {
     private final String slide;
     private final String dataset;
     private final String tile;
-    private final int x;
-    private final int y;
+    private final double x;
+    private final double y;
     private final String t;
     private final String annotator;
     private final String purpose;
     private final String created;
 
     public AnnotationPoint(String id, String slide, String dataset, String tile,
-                       int x, int y, String t, String annotator,
+                       double x, double y, String t, String annotator,
                        String purpose, String created) {
         this.id = id;
         this.slide = slide;
@@ -35,8 +35,8 @@ public class AnnotationPoint {
     public String getSlide() { return slide; }
     public String getDataset() { return dataset; }
     public String getTile() { return tile; }
-    public int getX() { return x; }
-    public int getY() { return y; }
+    public double getX() { return x; }
+    public double getY() { return y; }
     public String getT() { return t; }
     public String getAnnotator() { return annotator; }
     public String getPurpose() { return purpose; }

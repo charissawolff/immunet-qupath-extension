@@ -144,11 +144,4 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
     public List<TileMetadata> getTilesMetadata() {
         return tilesMetadata == null ? null : Collections.unmodifiableList(tilesMetadata);
     }
-
-    public boolean isFullyStopped() {
-        // check if the executor is null or terminated, which means all tasks are done or cancelled 
-        ExecutorService e = prefetchExecutor;
-        return e == null || e.isTerminated();
-    }
-
 }

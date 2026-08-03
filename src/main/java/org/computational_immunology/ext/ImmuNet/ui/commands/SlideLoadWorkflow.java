@@ -1,5 +1,6 @@
 package org.computational_immunology.ext.ImmuNet.ui.commands;
 
+import org.computational_immunology.ext.ImmuNet.core.AnnotationPoint;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.SelectedSlide;
 import org.computational_immunology.ext.ImmuNet.core.SlideImageServer;
@@ -21,14 +22,14 @@ import qupath.lib.objects.PathObject;
  * Combines SelectSlideCommand (open the slide) and PresentAnnotationsCommand (fetch its
  * annotations) behind one Task-shaped surface, so callers bind to a single message/state pair
  * instead of tracking two Tasks by hand.
- * cancelling the workflow cancels both phases, and the workflow is only considered done once both phases are fully stopped.
+ * cancelling the workflow cancels both phases, and the workflow is only considered done once both phases reach terminated.
  */
 public class SlideLoadWorkflow {
 
     private final String datasetName;
     private final String slideName;
     private final SelectSlideCommand selectSlideCommand;
-    private final PresentAnnotationsCommand presentAnnotationsCommand;
+    private final LoadSlideAnnotationCommand presentAnnotationsCommand;
     private final SelectedDataStore selectedDataStore;
 
     private final StringProperty message = new SimpleStringProperty("");
@@ -42,7 +43,7 @@ public class SlideLoadWorkflow {
         this.datasetName = datasetName;
         this.slideName = slideName;
         this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
-        this.presentAnnotationsCommand = new PresentAnnotationsCommand(datasetName, slideName, annotationRequestHandler);
+        this.presentAnnotationsCommand = new LoadSlideAnnotationCommand(selectedDataStore, annotationRequestHandler);
         this.selectedDataStore = selectedDataStore;
     }
 
@@ -63,38 +64,36 @@ public class SlideLoadWorkflow {
         selectSlideCommand.getTask().messageProperty().addListener((obs, oldMsg, newMsg) -> message.set(newMsg));
         presentAnnotationsCommand.getTask().messageProperty().addListener((obs, oldMsg, newMsg) -> message.set(newMsg));
 
-        // Reaching SUCCEEDED here only means slide loading is done and annotation fetching is about to start, not
-        // that the whole workflow is done, so don't forward it as a terminal state. 
-        selectSlideCommand.getTask().stateProperty().addListener((obs, oldState, newState) -> {
-            if (newState == Worker.State.FAILED || newState == Worker.State.CANCELLED) {
-                state.set(newState);
-            } else if (newState == Worker.State.SUCCEEDED) {
-                // Slide loading is done, but annotation fetching is about to start. We set the datastore's selected slide here
-                selectedDataStore.setSelectedSlide(new SelectedSlide(datasetName, slideName, selectSlideCommand.getTilesMetadata()));
-            }
-        });
-        presentAnnotationsCommand.getTask().stateProperty().addListener((obs, oldState, newState) -> {
-            state.set(newState);
-            if (newState == Worker.State.SUCCEEDED) {
-                List<PathObject> pathObjects = presentAnnotationsCommand.getTask().getValue();
-                message.set("Fetched " + pathObjects.size() + " annotations in " + presentAnnotationsCommand.getAnnotatedTileCount()
-                        + " tiles. There are a total of " + selectedDataStore.getSelectedSlide().getTileMetadataList().size() + " tiles.");
-            }
-            else if (newState == Worker.State.CANCELLED) {
-                //user cancelled the workflow while the slide was loading or while annotations were being fetched, so clear the viewer
-                new ClearImageViewerCommand(selectedDataStore).execute();
-            }
-        });
-
-        // Only start fetching annotations once the slide itself has actually finished loading
+        selectSlideCommand.setOnFailed(() -> state.set(Worker.State.FAILED));
+        selectSlideCommand.setOnCancelled(() -> state.set(Worker.State.CANCELLED));
         selectSlideCommand.setOnDone(() -> {
-            presentAnnotationsCommand.setTilesMetadata(selectedDataStore.getSelectedSlide().getTileMetadataList());
-            presentAnnotationsCommand.setDownsampleComposite(SlideImageServer.getDownsampleComposite());
+            // Slide loading is done, but annotation fetching is about to start. Set the data in the store for the app to use.
+            selectedDataStore.setSelectedSlide(new SelectedSlide(datasetName, slideName, selectSlideCommand.getTilesMetadata()));
+            selectedDataStore.setDownSampleComposite(SlideImageServer.getDownsampleComposite());
+
             presentAnnotationsCommand.start();
             if (onSlideReady != null) {
                 onSlideReady.accept(selectedDataStore.getSelectedSlide());
             }
         });
+
+        presentAnnotationsCommand.setOnDone(() -> {
+            state.set(Worker.State.SUCCEEDED);
+            List<AnnotationPoint> annotationPoints = presentAnnotationsCommand.getTask().getValue();
+            message.set("Fetched " + annotationPoints.size() + " annotations in " + selectedDataStore.getAnnotationPoints().size() + ". There are a total of " + selectedDataStore.getSelectedSlide().getTileMetadataList().size() + " tiles.");
+        });
+        //if failed, don't clear the datastore, as the slide is still loaded and can be used. 
+        presentAnnotationsCommand.setOnFailed(() -> {
+            state.set(Worker.State.FAILED);
+            message.set("Failed to fetch annotations.");
+        });
+        //if cancelled, we have to clear the datastore AND the viewer, else the other 
+        // commands will still think there is a slide loaded and can try to use it,
+        presentAnnotationsCommand.setOnCancelled(() -> {
+            state.set(Worker.State.CANCELLED);
+            selectedDataStore.clear();
+            new ClearImageViewerCommand(selectedDataStore).execute();
+        }); 
     }
 
     public void start() {
@@ -104,21 +103,18 @@ public class SlideLoadWorkflow {
 
     public void cancel() {
         //user cancelled the workflow while the slide was loading or while annotations were being fetched, so cancel both tasks and clear the viewer
+        // also clear the datastore
         selectSlideCommand.getTask().cancel();
         presentAnnotationsCommand.getTask().cancel();
+        selectedDataStore.clear();
         new ClearImageViewerCommand(selectedDataStore).execute();
     }
 
     public boolean isDone() {
         Worker.State slideState = selectSlideCommand.getTask().getState();
         Worker.State annotationState = presentAnnotationsCommand.getTask().getState();
-        if ((isCancelledOrFailed(slideState) || isCancelledOrFailed(annotationState)) || (slideState == Worker.State.SUCCEEDED && annotationState == Worker.State.SUCCEEDED)) {
-            if (selectSlideCommand.isFullyStopped() && presentAnnotationsCommand.isFullyStopped()) {
-                return true;
-            }
-            return false; // still waiting for executors to finish
-        }
-        return false;
+        return isCancelledOrFailed(slideState) || isCancelledOrFailed(annotationState)
+                || (slideState == Worker.State.SUCCEEDED && annotationState == Worker.State.SUCCEEDED);
     }
 
     private static boolean isCancelledOrFailed(Worker.State state) {

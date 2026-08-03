@@ -9,6 +9,8 @@ import qupath.lib.images.servers.ImageChannel;
 import qupath.lib.images.servers.PixelType;
 import qupath.lib.images.servers.TileRequest;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URI;
@@ -73,6 +75,9 @@ public class TileImageServer extends AbstractTileableImageServer {
         } catch(InterruptedException e) {
             ImmuNetLog.log("Error in reading Tile in Tile image server");
             throw new IOException("Interrupted fetching tile " + vectraTileMetadata.getCode(), e); 
+        } catch (IOException e) {
+            ImmuNetLog.log("Could not fetch tile image for tile code: " + vectraTileMetadata.getCode() + " at dataset: " + datasetName + ", slide: " + slideName, e);
+            return blankTile(requestedWidth, requestedHeight);
         }
     }
 
@@ -103,5 +108,16 @@ public class TileImageServer extends AbstractTileableImageServer {
     @Override
     public ImageServerMetadata getOriginalMetadata() {
         return metadata;
+    }
+
+    private BufferedImage blankTile(int width, int height) {
+        //GENERATE A black blank tile to avoid crashes when a tile cannot be fetched. 
+        // This is better than returning null, which will crash the viewer.
+        BufferedImage blankImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = blankImage.createGraphics();
+        g2d.setColor(Color.DARK_GRAY);
+        g2d.fillRect(0, 0, width, height);
+        g2d.dispose();
+        return blankImage;
     }
 }

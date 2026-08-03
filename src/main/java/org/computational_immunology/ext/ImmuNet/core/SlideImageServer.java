@@ -2,6 +2,7 @@ package org.computational_immunology.ext.ImmuNet.core;
 
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 
+import qupath.lib.images.servers.ImageServer;
 import qupath.lib.images.servers.SparseImageServer;
 import qupath.lib.regions.ImageRegion;
 
@@ -114,7 +115,16 @@ public class SlideImageServer {
         double thumbDownsample = sparseServer.getPreferredDownsamples()[1];
         List<TileImageServer> thumbServers = new ArrayList<>();
         for (ImageRegion region : sparseServer.getManager().getRegions()) {
-            thumbServers.add((TileImageServer) sparseServer.getManager().getServer(region, thumbDownsample));
+            try {
+                ImageServer<BufferedImage> server = sparseServer.getManager().getServer(region, thumbDownsample);
+                if (server instanceof TileImageServer tileImageServer) {
+                    thumbServers.add(tileImageServer);
+                } else {
+                    ImmuNetLog.error("No thumb server registered for region {}, skipping its prefetch", region);
+                }
+            } catch (IOException e) {
+                ImmuNetLog.error("Could not build thumb server for region " + region + " skipping its prefetch", e);
+            }
         }
         return thumbServers;
     }
