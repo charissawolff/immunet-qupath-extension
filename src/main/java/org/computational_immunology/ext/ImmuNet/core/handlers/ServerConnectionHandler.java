@@ -19,8 +19,6 @@ import java.util.concurrent.TimeUnit;
 public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray> {
     private static final Duration REQUEST_TIMEOUT_SECONDS = Duration.ofSeconds(10);
     private static final ServerConnectionHandler INSTANCE = new ServerConnectionHandler();
-    
-
     //service port is 8082
     //forward to local 8080
     //used to tell main thread that the ssh tunnel is now ready
