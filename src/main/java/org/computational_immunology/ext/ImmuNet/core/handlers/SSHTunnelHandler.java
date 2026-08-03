@@ -66,4 +66,14 @@ public class SSHTunnelHandler implements Runnable{
             System.out.println(Event);
         }
     }
+
+    public void closeSSHTunnel() throws IOException {
+        if (clientSession != null) {
+            clientSession.close();
+        }
+        if (sshClient != null) {
+            sshClient.stop();
+        }
+    }
 }
+

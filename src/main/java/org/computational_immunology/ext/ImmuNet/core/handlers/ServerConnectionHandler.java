@@ -24,6 +24,7 @@ public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray
     //used to tell main thread that the ssh tunnel is now ready
     CompletableFuture<Boolean> SSHReady;
     Thread SSHThread;
+    SSHTunnelHandler sshTunnelHandler;
     private String sessionCookie; // obtained with successful webpage login
     HttpClient client = HttpClient.newHttpClient();
 
@@ -44,21 +45,32 @@ public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray
     public void startSSHThread(String username, String hostname, String password) throws Exception {
 
         //resetting
-       if (SSHThread != null)
-       {
+        if (SSHThread != null){
            SSHReady = new CompletableFuture<>();
            SSHThread.interrupt();
            SSHThread = null;
-       }
+        }
+        if (sshTunnelHandler != null){
+           sshTunnelHandler.closeSSHTunnel();
+           sshTunnelHandler = null;
+        }
 
-        SSHTunnelHandler handler = new SSHTunnelHandler(username, hostname, password);
-        SSHThread = new Thread(handler);
+        sshTunnelHandler = new SSHTunnelHandler(username, hostname, password);
+        SSHThread = new Thread(sshTunnelHandler);
         SSHThread.start();
 
         try {
             ImmuNetLog.log("Waiting for SSH thread.");
             SSHReady.get(5, TimeUnit.SECONDS);
         } catch (Exception e) {
+            //END THREAD and ssh tunnel IF IT WAS STARTED
+            if (SSHThread != null) {
+                SSHThread.interrupt();
+                SSHThread = null;
+                ImmuNetLog.log("SSH thread interrupted.");
+                sshTunnelHandler.closeSSHTunnel();
+            }
+            ImmuNetLog.error("SSH connection failed.", e);
             throw new Exception (e);
         }
     }
@@ -72,6 +84,13 @@ public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray
             ImmuNetLog.log("Successfully got session cookie");
         } catch (IOException | InterruptedException e) {
             ImmuNetLog.error("Invalid database credentials. Interrupting SSH Thread.", e);
+            //close the SSH tunnel/ thread if we can't log into the database
+            if (SSHThread != null) {
+                SSHThread.interrupt();
+                SSHThread = null;
+                ImmuNetLog.log("SSH thread interrupted.");
+                sshTunnelHandler.closeSSHTunnel();
+            }
             throw new IOException(e);
         }
     }
