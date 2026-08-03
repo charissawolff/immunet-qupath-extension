@@ -16,7 +16,6 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.concurrent.Worker;
 
-import qupath.lib.objects.PathObject;
 
 /**
  * Combines SelectSlideCommand (open the slide) and PresentAnnotationsCommand (fetch its
@@ -92,12 +91,13 @@ public class SlideLoadWorkflow {
         presentAnnotationsCommand.setOnCancelled(() -> {
             state.set(Worker.State.CANCELLED);
             selectedDataStore.clear();
-            new ClearImageViewerCommand(selectedDataStore).execute();
+            ClearImageViewerCommand.execute();
         }); 
     }
 
     public void start() {
-        new ClearImageViewerCommand(selectedDataStore).execute();
+        selectedDataStore.clear();
+        ClearImageViewerCommand.execute();
         selectSlideCommand.start();
     }
 
@@ -107,7 +107,7 @@ public class SlideLoadWorkflow {
         selectSlideCommand.getTask().cancel();
         presentAnnotationsCommand.getTask().cancel();
         selectedDataStore.clear();
-        new ClearImageViewerCommand(selectedDataStore).execute();
+        ClearImageViewerCommand.execute();
     }
 
     public boolean isDone() {

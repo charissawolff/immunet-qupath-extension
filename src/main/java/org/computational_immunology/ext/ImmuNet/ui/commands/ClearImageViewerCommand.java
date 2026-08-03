@@ -1,5 +1,8 @@
 package org.computational_immunology.ext.ImmuNet.ui.commands;
 
+import java.util.List;
+
+import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 
 import qupath.lib.gui.QuPathGUI;
@@ -11,17 +14,21 @@ import qupath.lib.gui.viewer.QuPathViewer;
  */
 public class ClearImageViewerCommand {
 
-    private final SelectedDataStore selectedDataStore;
 
-    public ClearImageViewerCommand(SelectedDataStore selectedDataStore) {
-        this.selectedDataStore = selectedDataStore;
+    private ClearImageViewerCommand() {
+        /*Souldn't be initialized */
     }
 
-    public void execute() {
+    public static void execute() {
+        //check if there are multiple viewers open
+        List<QuPathViewer> viewers = QuPathGUI.getInstance().getAllViewers();
+        if (viewers.size() > 1) {
+            ImmuNetLog.log("Multiple viewers open, clearing the single open viewer");
+        }
+        ImmuNetLog.log("Clearing single viewer");
         QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
         if (viewer != null) {
             viewer.resetImageData();
         }
-        selectedDataStore.setSelectedSlide(null);
     }
 }
