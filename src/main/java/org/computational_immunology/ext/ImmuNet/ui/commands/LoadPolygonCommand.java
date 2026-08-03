@@ -25,6 +25,7 @@ public class LoadPolygonCommand extends AbstractAsyncCommand<List<Polygon>> {
     }
 
     @Override
+    //on success, add the polygons to the selectedDataStore and also add them to the QuPath hierarchy, so they are visible in the viewer
     protected void onSuccess(List<Polygon> polygons) {
         selectedDataStore.setPolygons(polygons);
         List<PathObject> pathObjects = new ArrayList<>();
