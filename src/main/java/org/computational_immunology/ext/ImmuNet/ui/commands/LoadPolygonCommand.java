@@ -10,10 +10,7 @@ import org.computational_immunology.ext.ImmuNet.core.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 
-import qupath.lib.gui.QuPathGUI;
-import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.objects.PathObject;
-import qupath.lib.objects.hierarchy.PathObjectHierarchy;
 
 public class LoadPolygonCommand extends AbstractAsyncCommand<List<Polygon>> {
     private final SelectedDataStore selectedDataStore;

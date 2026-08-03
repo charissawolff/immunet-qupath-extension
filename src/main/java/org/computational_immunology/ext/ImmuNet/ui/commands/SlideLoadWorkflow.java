@@ -1,5 +1,6 @@
 package org.computational_immunology.ext.ImmuNet.ui.commands;
 
+import org.computational_immunology.ext.ImmuNet.core.AnnotationPoint;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.SelectedSlide;
 import org.computational_immunology.ext.ImmuNet.core.SlideImageServer;
@@ -30,6 +31,7 @@ public class SlideLoadWorkflow {
     private final SelectSlideCommand selectSlideCommand;
     private final LoadAnnotationCommand presentAnnotationsCommand;
     private final SelectedDataStore selectedDataStore;
+    private final double compositeSwitchDownsample;
 
     private final StringProperty message = new SimpleStringProperty("");
     private final ObjectProperty<Worker.State> state = new SimpleObjectProperty<>(Worker.State.READY);
@@ -42,8 +44,9 @@ public class SlideLoadWorkflow {
         this.datasetName = datasetName;
         this.slideName = slideName;
         this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
-        this.presentAnnotationsCommand = new LoadAnnotationCommand(datasetName, slideName, annotationRequestHandler);
+        this.presentAnnotationsCommand = new LoadAnnotationCommand(selectedDataStore, annotationRequestHandler);
         this.selectedDataStore = selectedDataStore;
+        this.compositeSwitchDownsample = compositeSwitchDownsample;
     }
 
     /**
@@ -69,16 +72,20 @@ public class SlideLoadWorkflow {
             if (newState == Worker.State.FAILED || newState == Worker.State.CANCELLED) {
                 state.set(newState);
             } else if (newState == Worker.State.SUCCEEDED) {
-                // Slide loading is done, but annotation fetching is about to start. We set the datastore's selected slide here
+                // Slide loading is done, but annotation fetching is about to start. We set the datastore's selected slide here           
+            // set the datastore's selected slide here, so that the annotation fetcher can use it to get the tile metadata
                 selectedDataStore.setSelectedSlide(new SelectedSlide(datasetName, slideName, selectSlideCommand.getTilesMetadata()));
+                //set the downsample composite value in the datastore, so that the annotation fetcher can use it to get the downsample composite value
+                selectedDataStore.setDownSampleComposite(SlideImageServer.getDownsampleComposite());
             }
         });
         presentAnnotationsCommand.getTask().stateProperty().addListener((obs, oldState, newState) -> {
             state.set(newState);
             if (newState == Worker.State.SUCCEEDED) {
-                List<PathObject> pathObjects = presentAnnotationsCommand.getTask().getValue();
-                message.set("Fetched " + pathObjects.size() + " annotations in " + presentAnnotationsCommand.getAnnotatedTileCount()
+                List<AnnotationPoint> annotationPoints = presentAnnotationsCommand.getTask().getValue();
+                message.set("Fetched " + annotationPoints.size() + " annotations in " + presentAnnotationsCommand.getAnnotatedTileCount()
                         + " tiles. There are a total of " + selectedDataStore.getSelectedSlide().getTileMetadataList().size() + " tiles.");
+                
             }
             else if (newState == Worker.State.CANCELLED) {
                 //user cancelled the workflow while the slide was loading or while annotations were being fetched, so clear the viewer
@@ -88,8 +95,6 @@ public class SlideLoadWorkflow {
 
         // Only start fetching annotations once the slide itself has actually finished loading
         selectSlideCommand.setOnDone(() -> {
-            presentAnnotationsCommand.setTilesMetadata(selectedDataStore.getSelectedSlide().getTileMetadataList());
-            presentAnnotationsCommand.setDownsampleComposite(SlideImageServer.getDownsampleComposite());
             presentAnnotationsCommand.start();
             if (onSlideReady != null) {
                 onSlideReady.accept(selectedDataStore.getSelectedSlide());

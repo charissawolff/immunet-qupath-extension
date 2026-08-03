@@ -17,47 +17,43 @@ import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestH
 
 import org.computational_immunology.ext.ImmuNet.core.AnnotationPointConverter;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
+import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.objects.PathObject;
 import qupath.lib.objects.hierarchy.PathObjectHierarchy;
 
-public class LoadAnnotationCommand extends AbstractAsyncCommand<List<PathObject>>  {
+public class LoadAnnotationCommand extends AbstractAsyncCommand<List<AnnotationPoint>>  {
     // Annotation-fetching is cancellable, but we also keep a timeout per tile so a single
     // slow/stuck tile can't block the rest even when nothing has been cancelled.
     private static final long TILE_FETCH_TIMEOUT_SECONDS = 10;
 
-    private final String datasetName;
-    private final String slideName;
+    private final SelectedDataStore selectedDataStore;
     private final AnnotationRequestHandler annotationRequestHandler;
-    private List<TileMetadata> tilesMetadata;
-    private double downsampleComposite;
     private int annotatedTileCount;
     private volatile ExecutorService fetchExecutor;
+    private String datasetName;
+    private String slideName;
+    private List<TileMetadata> tilesMetadata;
+    private double downsampleComposite;
 
-    public LoadAnnotationCommand(String datasetName, String slideName, AnnotationRequestHandler annotationRequestHandler) {
-        this.datasetName = datasetName;
-        this.slideName = slideName;
+
+    public LoadAnnotationCommand(SelectedDataStore selectedDataStore, AnnotationRequestHandler annotationRequestHandler) {
+        this.selectedDataStore = selectedDataStore;
         this.annotationRequestHandler = annotationRequestHandler;
+
     }
 
-    public void setTilesMetadata(List<TileMetadata> tilesMetadata) {
-        this.tilesMetadata = tilesMetadata;
-    }
 
-    public void setDownsampleComposite(double downsampleComposite) {
-        this.downsampleComposite = downsampleComposite;
-    }
 
     @Override
-    protected void onSuccess(List<PathObject> pathObjects) {
-        QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
-        if (viewer != null && viewer.getImageData() != null) {
-            PathObjectHierarchy hierarchy = viewer.getImageData().getHierarchy();
-            hierarchy.addObjects(pathObjects);
-            ImmuNetLog.log("Added " + pathObjects.size() + " server annotation(s) for {}/{}", datasetName, slideName);
-        }
+    protected void onSuccess(List<AnnotationPoint> annotationPoints) {
+        selectedDataStore.setAnnotationPoints(annotationPoints);
+        List<PathObject> pathObjects = AnnotationPointConverter.toPathObjects(annotationPoints, tilesMetadata, downsampleComposite);
+        AttachPathObjectsToViewerCommand attachCommand = new AttachPathObjectsToViewerCommand(pathObjects);
+        attachCommand.execute();
+        ImmuNetLog.log("Attempted: Added " + pathObjects.size() + " server annotation(s) for {}/{}", datasetName, slideName);
     }
 
     public int getAnnotatedTileCount() {
@@ -65,7 +61,11 @@ public class LoadAnnotationCommand extends AbstractAsyncCommand<List<PathObject>
     }
 
     @Override
-    protected List<PathObject> execute(Consumer<String> progressReporter) throws Exception {
+    protected List<AnnotationPoint> execute(Consumer<String> progressReporter) throws Exception {
+        datasetName = selectedDataStore.getSelectedSlide().getDatasetName();
+        slideName = selectedDataStore.getSelectedSlide().getSlideName();
+        tilesMetadata = selectedDataStore.getSelectedSlide().getTileMetadataList();
+        downsampleComposite = selectedDataStore.getDownSampleComposite();
         progressReporter.accept("Fetching annotations for dataset: " + datasetName + ", slide: " + slideName);
         if (tilesMetadata == null) {
             ImmuNetLog.error("fetchSlideAnnotations called without tile metadata set. You need to call setTilesMetadata first for dataset: "
@@ -85,9 +85,8 @@ public class LoadAnnotationCommand extends AbstractAsyncCommand<List<PathObject>
                 return new ArrayList<>();
             }
 
-            List<PathObject> annotationPathObjects = new ArrayList<>();
             fetchExecutor = Executors.newFixedThreadPool(64);
-            List<Future<List<PathObject>>> futureList = new ArrayList<>();
+            List<Future<List<AnnotationPoint>>> futureList = new ArrayList<>();
             int matchedTileCount = 0;
             for (String tileCode : tileCodes) {
                 TileMetadata tileMetadata = tileMetadataByCode.get(tileCode);
@@ -96,13 +95,14 @@ public class LoadAnnotationCommand extends AbstractAsyncCommand<List<PathObject>
                     continue;
                 }
                 matchedTileCount++;
-                Future<List<PathObject>> future = fetchExecutor.submit(() -> fetchTileAnnotations(tileCode, tileMetadata));
+                Future<List<AnnotationPoint>> future = fetchExecutor.submit(() -> fetchTileAnnotations(tileCode, tilesMetadata));
                 futureList.add(future);
             }
+            List<AnnotationPoint> annotations = new ArrayList<>();
             annotatedTileCount = matchedTileCount;
-            for (Future<List<PathObject>> future : futureList) {
+            for (Future<List<AnnotationPoint>> future : futureList) {
                 try {
-                    annotationPathObjects.addAll(future.get(TILE_FETCH_TIMEOUT_SECONDS, TimeUnit.SECONDS));
+                    annotations.addAll(future.get(TILE_FETCH_TIMEOUT_SECONDS, TimeUnit.SECONDS));
                 } catch (TimeoutException e) {
                     progressReporter.accept("Timed out after " + TILE_FETCH_TIMEOUT_SECONDS + " seconds waiting for a tile's annotations so we are skipping it");
                     ImmuNetLog.error("Timed out after {} seconds waiting for a tile's annotations so we are skipping it", TILE_FETCH_TIMEOUT_SECONDS);
@@ -113,7 +113,7 @@ public class LoadAnnotationCommand extends AbstractAsyncCommand<List<PathObject>
                     return new ArrayList<>();
                 }
             }
-            return annotationPathObjects;
+            return annotations;
         } catch (Exception e) {
             ImmuNetLog.error("Error fetching annotations for dataset: " + datasetName + ", slide: " + slideName, e);
             return new ArrayList<>();
@@ -126,11 +126,10 @@ public class LoadAnnotationCommand extends AbstractAsyncCommand<List<PathObject>
         }
     }
 
-    public List<PathObject> fetchTileAnnotations(String tileCode, TileMetadata tileMetadata) {
+    public List<AnnotationPoint> fetchTileAnnotations(String tileCode, List<TileMetadata> tileMetadataList) {
         try{
             List<AnnotationPoint> annotations = annotationRequestHandler.fetchAnnotations(datasetName, slideName, tileCode);
-            List<PathObject> annotationPathObjects = AnnotationPointConverter.toPathObjects(annotations, tileMetadata, downsampleComposite);
-            return annotationPathObjects;
+            return annotations;
         } catch (Exception e) {
             ImmuNetLog.error("Error fetching annotations for dataset: " + datasetName + ", slide: " + slideName + ", tile: " + tileCode, e);
             return new ArrayList<>();
