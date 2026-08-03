@@ -16,6 +16,10 @@ public abstract class AbstractAsyncCommand<T> {
         this.onDone = onDone;
     }
 
+    public void setOnSuccess(Runnable onSuccess) {
+        this.onDone = onSuccess;
+    }
+
     public void setOnFailed(Runnable onFailed) {
         this.onFailed = onFailed;
     }

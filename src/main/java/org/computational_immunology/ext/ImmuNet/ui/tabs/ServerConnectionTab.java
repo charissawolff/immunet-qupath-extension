@@ -4,13 +4,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 
 import org.computational_immunology.ext.ImmuNet.core.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
+import org.computational_immunology.ext.ImmuNet.ui.commands.ConnectToServerCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.MenuActions;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -137,22 +140,38 @@ public class ServerConnectionTab extends CustomSidePanelTab{
             String dbUsername   = dbUserField.field.getText();
             String dbPass       = dbPassField.field.getText();
 
-            if (Arrays.stream(allLoginBoxes).noneMatch(s-> s.field.getText().isEmpty()) )// Credentials entered
-            {
-                try {
-                    MenuActions.connectToServer(username, hostname, password, dbUsername, dbPass); // Connect to server
-                    saveConfig(); //if we didn't catch an exception the credentials were right
-                    ImmuNetLog.log("Valid SSH connection. Credentials saved.");
+            // Credentials entered
+            if (Arrays.stream(allLoginBoxes).noneMatch(s-> s.field.getText().isEmpty()) ){
+                ConnectToServerCommand connectCommand = new ConnectToServerCommand(username, hostname, password, dbUsername, dbPass);
+                statusLabel.setStyle("-fx-text-fill: black;");
+                connectCommand.build();
+                connectCommand.getTask().messageProperty().addListener((obs, oldMsg, newMsg) -> statusLabel.setText(newMsg));
+                connectCommand.start();
+                connectCommand.setOnDone(() -> {
+                    try {
+                        //get result of the command to check if the connection was successful
+                        Boolean result = connectCommand.getTask().getValue();
+                        if (result) {
+                            saveConfig(); //if we didn't catch an exception the credentials were right
+                            ImmuNetLog.log("Valid SSH connection. Credentials saved.");
+                            statusLabel.setText("● Connected");
+                            statusLabel.setStyle("-fx-text-fill: green;");
+                        } else {
+                            ImmuNetLog.log("Invalid SSH connection. Credentials not saved.");
+                            String errorText = statusLabel.getText();
+                            statusLabel.setText("● " + (errorText.isEmpty() ? "" : ": " + errorText));
+                            statusLabel.setStyle("-fx-text-fill: red;");
+                        }
+                    } catch (IOException ex) {
+                        ImmuNetLog.error("Failed to save credentials after successful connection.", ex);
+                    }
+                });
 
-                    statusLabel.setText("● Connected");
-                    statusLabel.setStyle("-fx-text-fill: green;");
-
-                } catch (Exception ex) {
-                    ImmuNetLog.error("Connection fail:", ex);
-
-                    statusLabel.setText("● Connection failed");
+                connectCommand.setOnFailed(() -> {
+                    ImmuNetLog.error("Connection failed:");
+                    statusLabel.setText("Error while connecting to server. Check logs for details.");
                     statusLabel.setStyle("-fx-text-fill: red;");
-                }
+                });
             }
         };
     }
