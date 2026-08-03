@@ -12,7 +12,6 @@ import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.commands.ClearImageViewerCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.LoadDatasetsCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.LoadSlideDataCommand;
-import org.computational_immunology.ext.ImmuNet.ui.commands.MenuActions;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SlideLoadWorkflow;
 
 import qupath.lib.gui.QuPathGUI;
@@ -59,12 +58,15 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
     @Override
     public VBox getContent(){
         VBox sidePanelTab = new VBox();
-        sidePanelTab.setPadding(new Insets(10, 10, 10, 10)); // Box margins
+        sidePanelTab.setPadding(new Insets(10, 10, 10, 10)); // Box padding
         sidePanelTab.setSpacing(5); // Space between buttons and boxes
 
         // Interactive selection boxes
-        ListViewerBox dsBox = new ListViewerBox(300, sidePanelTab.getMaxWidth()); // Dataset
-        ListViewerBox tsBox = new ListViewerBox(300, sidePanelTab.getMaxWidth()); // Tissue slide
+        ListViewerBox dsBox = new ListViewerBox(250, sidePanelTab.getMaxWidth()); // Dataset
+        ListViewerBox tsBox = new ListViewerBox(250, sidePanelTab.getMaxWidth()); // slides
+        VBox.setMargin(tsBox.getBox(), new Insets(15, 2, 2, 2)); // Box padding
+        VBox.setMargin(dsBox.getBox(), new Insets(5, 2, 2, 2)); // Box padding
+
 
         //two buttons next to each other, one for loading datasets and one for clearing the current selection from viewer
         Button loadDataBtn = makeButton("Load Datasets", new Dimensions(40, 120));
@@ -187,10 +189,6 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         sidePanelTab.getChildren().addAll(buttonRow, dsBox.getBox(), tsBox.getBox(), openImgBtn, statusLabel, sliderRow);
 
         return sidePanelTab;
-    }
-
-    private List<String> getDatasets(){
-        return imageRequestHandler.getWebpageAsList("datasets/");
     }
 
     private void updateSlideByDataset(ListViewerBox datasetBox, ListViewerBox slideBox){
