@@ -28,7 +28,7 @@ public class SlideLoadWorkflow {
     private final String datasetName;
     private final String slideName;
     private final SelectSlideCommand selectSlideCommand;
-    private final PresentAnnotationsCommand presentAnnotationsCommand;
+    private final LoadAnnotationCommand presentAnnotationsCommand;
     private final SelectedDataStore selectedDataStore;
 
     private final StringProperty message = new SimpleStringProperty("");
@@ -42,7 +42,7 @@ public class SlideLoadWorkflow {
         this.datasetName = datasetName;
         this.slideName = slideName;
         this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
-        this.presentAnnotationsCommand = new PresentAnnotationsCommand(datasetName, slideName, annotationRequestHandler);
+        this.presentAnnotationsCommand = new LoadAnnotationCommand(datasetName, slideName, annotationRequestHandler);
         this.selectedDataStore = selectedDataStore;
     }
 

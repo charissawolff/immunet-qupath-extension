@@ -23,7 +23,7 @@ import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.objects.PathObject;
 import qupath.lib.objects.hierarchy.PathObjectHierarchy;
 
-public class PresentAnnotationsCommand extends AbstractAsyncCommand<List<PathObject>>  {
+public class LoadAnnotationCommand extends AbstractAsyncCommand<List<PathObject>>  {
     // Annotation-fetching is cancellable, but we also keep a timeout per tile so a single
     // slow/stuck tile can't block the rest even when nothing has been cancelled.
     private static final long TILE_FETCH_TIMEOUT_SECONDS = 10;
@@ -36,7 +36,7 @@ public class PresentAnnotationsCommand extends AbstractAsyncCommand<List<PathObj
     private int annotatedTileCount;
     private volatile ExecutorService fetchExecutor;
 
-    public PresentAnnotationsCommand(String datasetName, String slideName, AnnotationRequestHandler annotationRequestHandler) {
+    public LoadAnnotationCommand(String datasetName, String slideName, AnnotationRequestHandler annotationRequestHandler) {
         this.datasetName = datasetName;
         this.slideName = slideName;
         this.annotationRequestHandler = annotationRequestHandler;
