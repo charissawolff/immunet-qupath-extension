@@ -99,8 +99,7 @@ public class SlideLoadWorkflow {
         //only after we are sure that the annotations have been fetched, we can update the message to show how many annotations were fetched
         presentAnnotationsCommand.setOnDone(() -> {
             List<AnnotationPoint> annotationPoints = presentAnnotationsCommand.getTask().getValue();
-            message.set("Fetched " + annotationPoints.size() + " annotations in " + selectedDataStore.getAnnotationPoints().size()
-                    + " tiles. There are a total of " + selectedDataStore.getSelectedSlide().getTileMetadataList().size() + " tiles.");
+            message.set("Fetched " + selectedDataStore.getAnnotationPoints().size() + " annotations. There are a total of " + selectedDataStore.getSelectedSlide().getTileMetadataList().size() + " tiles.");
             
         });
         //TODO: set on failed and set on cancelled can also have their own message
@@ -136,9 +135,5 @@ public class SlideLoadWorkflow {
 
     public ObjectProperty<Worker.State> stateProperty() {
         return state;
-    }
-
-    public boolean isFullyStopped() {
-        return selectSlideCommand.isFullyStopped() && presentAnnotationsCommand.isFullyStopped();
     }
 }

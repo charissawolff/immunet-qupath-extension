@@ -117,10 +117,4 @@ public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<Annota
             return new ArrayList<>();
         }
     }
-
-    public boolean isFullyStopped() {
-        ExecutorService e = fetchExecutor;
-        return e == null || e.isTerminated();
-    }
-
 }
