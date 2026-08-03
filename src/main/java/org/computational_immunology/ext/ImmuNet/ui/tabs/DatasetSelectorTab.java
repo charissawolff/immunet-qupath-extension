@@ -35,7 +35,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
     private final TileHoverController tileHoverController;
     private final SelectedDataStore selectedDataStore;
     private SlideLoadWorkflow currentWorkflow;
-    private final PauseTransition buttonPause = new PauseTransition((Duration.seconds(3)));
+    private final PauseTransition buttonPause = new PauseTransition((Duration.seconds(2)));
 
     public DatasetSelectorTab(ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler,
                                SelectedDataStore selectedDataStore, TileHoverController tileHoverController) {
