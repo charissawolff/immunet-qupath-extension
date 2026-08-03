@@ -24,14 +24,13 @@ import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.objects.PathObject;
 import qupath.lib.objects.hierarchy.PathObjectHierarchy;
 
-public class LoadAnnotationCommand extends AbstractAsyncCommand<List<AnnotationPoint>>  {
+public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<AnnotationPoint>>  {
     // Annotation-fetching is cancellable, but we also keep a timeout per tile so a single
     // slow/stuck tile can't block the rest even when nothing has been cancelled.
     private static final long TILE_FETCH_TIMEOUT_SECONDS = 10;
 
     private final SelectedDataStore selectedDataStore;
     private final AnnotationRequestHandler annotationRequestHandler;
-    private int annotatedTileCount;
     private volatile ExecutorService fetchExecutor;
     private String datasetName;
     private String slideName;
@@ -39,7 +38,7 @@ public class LoadAnnotationCommand extends AbstractAsyncCommand<List<AnnotationP
     private double downsampleComposite;
 
 
-    public LoadAnnotationCommand(SelectedDataStore selectedDataStore, AnnotationRequestHandler annotationRequestHandler) {
+    public LoadSlideAnnotationCommand(SelectedDataStore selectedDataStore, AnnotationRequestHandler annotationRequestHandler) {
         this.selectedDataStore = selectedDataStore;
         this.annotationRequestHandler = annotationRequestHandler;
 
@@ -56,9 +55,6 @@ public class LoadAnnotationCommand extends AbstractAsyncCommand<List<AnnotationP
         ImmuNetLog.log("Attempted: Added " + pathObjects.size() + " server annotation(s) for {}/{}", datasetName, slideName);
     }
 
-    public int getAnnotatedTileCount() {
-        return annotatedTileCount;
-    }
 
     @Override
     protected List<AnnotationPoint> execute(Consumer<String> progressReporter) throws Exception {
@@ -74,32 +70,34 @@ public class LoadAnnotationCommand extends AbstractAsyncCommand<List<AnnotationP
         }
         try {
             List<String> tileCodes = annotationRequestHandler.fetchSlideAnnotations(datasetName, slideName);
-            Map<String, TileMetadata> tileMetadataByCode = new HashMap<>();
-            for (TileMetadata tileMetadata : tilesMetadata) {
-                tileMetadataByCode.put( tileMetadata.getCode(), tileMetadata);
-            }
-
             if (task.isCancelled()) {
                 // avoid creating the executor at all if we were cancelled while fetching tile codes,
                 // so a cancelled fetch can never come up with a fresh pool after the caller was told we're done
                 return new ArrayList<>();
             }
+            List<AnnotationPoint> annotations = fetchAnnotations(tileCodes, tilesMetadata, progressReporter);
+            return annotations;
+        } catch (Exception e) {
+            ImmuNetLog.error("Error fetching annotations for dataset: " + datasetName + ", slide: " + slideName, e);
+            //return empty list
+            return new ArrayList<AnnotationPoint>();
+        }
+    }
 
-            fetchExecutor = Executors.newFixedThreadPool(64);
+    private List<AnnotationPoint> fetchAnnotations(List<String> tileCodes, List<TileMetadata> tileMetadataList, Consumer<String> progressReporter) {
+        try { 
+        fetchExecutor = Executors.newFixedThreadPool(64);
             List<Future<List<AnnotationPoint>>> futureList = new ArrayList<>();
-            int matchedTileCount = 0;
             for (String tileCode : tileCodes) {
-                TileMetadata tileMetadata = tileMetadataByCode.get(tileCode);
+                TileMetadata tileMetadata = TileMetadata.findByCode(tileCode, tileMetadataList);
                 if (tileMetadata == null) {
                     ImmuNetLog.error("No tile metadata found for tile code: {} skipping its annotations", tileCode);
                     continue;
                 }
-                matchedTileCount++;
                 Future<List<AnnotationPoint>> future = fetchExecutor.submit(() -> fetchTileAnnotations(tileCode, tilesMetadata));
                 futureList.add(future);
             }
             List<AnnotationPoint> annotations = new ArrayList<>();
-            annotatedTileCount = matchedTileCount;
             for (Future<List<AnnotationPoint>> future : futureList) {
                 try {
                     annotations.addAll(future.get(TILE_FETCH_TIMEOUT_SECONDS, TimeUnit.SECONDS));
@@ -107,16 +105,15 @@ public class LoadAnnotationCommand extends AbstractAsyncCommand<List<AnnotationP
                     progressReporter.accept("Timed out after " + TILE_FETCH_TIMEOUT_SECONDS + " seconds waiting for a tile's annotations so we are skipping it");
                     ImmuNetLog.error("Timed out after {} seconds waiting for a tile's annotations so we are skipping it", TILE_FETCH_TIMEOUT_SECONDS);
                     future.cancel(true);
-                    annotatedTileCount--;
                 } catch (InterruptedException e) {
                     ImmuNetLog.error("Cancelled while fetching annotations.", e);
-                    return new ArrayList<>();
+                    return new ArrayList<AnnotationPoint>();
                 }
             }
             return annotations;
         } catch (Exception e) {
             ImmuNetLog.error("Error fetching annotations for dataset: " + datasetName + ", slide: " + slideName, e);
-            return new ArrayList<>();
+            return new ArrayList<AnnotationPoint>();
         } finally {
             // always runs so the pool can never be left running
             // in the background after this method returns.

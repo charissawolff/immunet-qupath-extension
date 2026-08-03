@@ -1,5 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.core;
 
+import java.util.List;
+
 public record TileMetadata(int id, String code, ImageType type, double x, double y, double w, double h) {
 
     public enum ImageType {
@@ -54,4 +56,12 @@ public record TileMetadata(int id, String code, ImageType type, double x, double
         return new TileMetadata(id, code, newType, x, y, w, h);
     }
 
+    public static TileMetadata findByCode(String code, List<TileMetadata> tiles) {
+        for (TileMetadata tile : tiles) {
+            if (tile.getCode().equals(code)) {
+                return tile;
+            }
+        }
+        return null;
+    }
 }

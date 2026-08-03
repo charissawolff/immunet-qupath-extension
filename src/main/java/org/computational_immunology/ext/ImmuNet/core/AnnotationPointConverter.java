@@ -71,7 +71,7 @@ public class AnnotationPointConverter {
 
             Map<String, String> metadata = pathObject.getMetadata();
             String tileId = metadata.get("tile");
-            TileMetadata tileMetadata = findTileMetadata(tileId, tileMetadatas);
+            TileMetadata tileMetadata = TileMetadata.findByCode(tileId, tileMetadatas);
             if (tileMetadata == null) {
                 ImmuNetLog.error("No tile metadata found for tile code: {}, skipping this annotation", tileId);
                 continue;
@@ -103,7 +103,7 @@ public class AnnotationPointConverter {
     public static List<PathObject> toPathObjects(List<AnnotationPoint> points, List<TileMetadata> tileMetadatas, double downsampleComposite) {
         List<PathObject> pathObjects = new ArrayList<>();
         for (AnnotationPoint point : points) {
-            TileMetadata tileMetadata = findTileMetadata(point.getTile(), tileMetadatas);
+            TileMetadata tileMetadata = TileMetadata.findByCode(point.getTile(), tileMetadatas);
             if (tileMetadata == null) {
                 ImmuNetLog.error("No tile metadata found for tile code: {}, skipping this annotation", point.getTile());
                 continue;
@@ -112,15 +112,4 @@ public class AnnotationPointConverter {
         }
         return pathObjects;
     }
-
-    private static TileMetadata findTileMetadata(String tileCode, List<TileMetadata> tileMetadatas) {
-        for (TileMetadata tileMetadata : tileMetadatas) {
-            if (tileMetadata.getCode().equals(tileCode)) {
-                return tileMetadata;
-            }
-        }
-        return null;
-    }
-
-    
 }

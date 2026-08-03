@@ -100,6 +100,10 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
             //statusLabel.setManaged(false);
         });
 
+        //WE HAVE to make that if this button is clicked while the workflow is running, 
+        // it will ONLY cancel the workflow and clear the viewer. 
+        // Otherwise, if the user clicks this button again, it will start a new workflow while the old one is still running,
+        //  which can cause problems.
         openImgBtn.setOnAction(e -> {
             if (dsBox.getListView().getSelectionModel().isEmpty() || tsBox.getListView().getSelectionModel().isEmpty()) {
                 ImmuNetLog.error("No dataset or slide selected for opening.");

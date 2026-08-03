@@ -22,16 +22,15 @@ import qupath.lib.objects.PathObject;
  * Combines SelectSlideCommand (open the slide) and PresentAnnotationsCommand (fetch its
  * annotations) behind one Task-shaped surface, so callers bind to a single message/state pair
  * instead of tracking two Tasks by hand.
- * cancelling the workflow cancels both phases, and the workflow is only considered done once both phases are fully stopped.
+ * cancelling the workflow cancels both phases, and the workflow is only considered done once both phases reach terminated.
  */
 public class SlideLoadWorkflow {
 
     private final String datasetName;
     private final String slideName;
     private final SelectSlideCommand selectSlideCommand;
-    private final LoadAnnotationCommand presentAnnotationsCommand;
+    private final LoadSlideAnnotationCommand presentAnnotationsCommand;
     private final SelectedDataStore selectedDataStore;
-    private final double compositeSwitchDownsample;
 
     private final StringProperty message = new SimpleStringProperty("");
     private final ObjectProperty<Worker.State> state = new SimpleObjectProperty<>(Worker.State.READY);
@@ -44,9 +43,8 @@ public class SlideLoadWorkflow {
         this.datasetName = datasetName;
         this.slideName = slideName;
         this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
-        this.presentAnnotationsCommand = new LoadAnnotationCommand(selectedDataStore, annotationRequestHandler);
+        this.presentAnnotationsCommand = new LoadSlideAnnotationCommand(selectedDataStore, annotationRequestHandler);
         this.selectedDataStore = selectedDataStore;
-        this.compositeSwitchDownsample = compositeSwitchDownsample;
     }
 
     /**
@@ -83,7 +81,7 @@ public class SlideLoadWorkflow {
             state.set(newState);
             if (newState == Worker.State.SUCCEEDED) {
                 List<AnnotationPoint> annotationPoints = presentAnnotationsCommand.getTask().getValue();
-                message.set("Fetched " + annotationPoints.size() + " annotations in " + presentAnnotationsCommand.getAnnotatedTileCount()
+                message.set("Fetched " + annotationPoints.size() + " annotations in " + selectedDataStore.getAnnotationPoints().size()
                         + " tiles. There are a total of " + selectedDataStore.getSelectedSlide().getTileMetadataList().size() + " tiles.");
                 
             }
@@ -117,13 +115,8 @@ public class SlideLoadWorkflow {
     public boolean isDone() {
         Worker.State slideState = selectSlideCommand.getTask().getState();
         Worker.State annotationState = presentAnnotationsCommand.getTask().getState();
-        if ((isCancelledOrFailed(slideState) || isCancelledOrFailed(annotationState)) || (slideState == Worker.State.SUCCEEDED && annotationState == Worker.State.SUCCEEDED)) {
-            if (selectSlideCommand.isFullyStopped() && presentAnnotationsCommand.isFullyStopped()) {
-                return true;
-            }
-            return false; // still waiting for executors to finish
-        }
-        return false;
+        return isCancelledOrFailed(slideState) || isCancelledOrFailed(annotationState)
+                || (slideState == Worker.State.SUCCEEDED && annotationState == Worker.State.SUCCEEDED);
     }
 
     private static boolean isCancelledOrFailed(Worker.State state) {
@@ -136,5 +129,9 @@ public class SlideLoadWorkflow {
 
     public ObjectProperty<Worker.State> stateProperty() {
         return state;
+    }
+
+    public boolean isFullyStopped() {
+        return selectSlideCommand.isFullyStopped() && presentAnnotationsCommand.isFullyStopped();
     }
 }
