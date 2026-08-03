@@ -12,6 +12,7 @@ import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.commands.ClearImageViewerCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.LoadDatasetsCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.LoadSlideDataCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.SetPolygonVisibilityCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SlideLoadWorkflow;
 
 import qupath.lib.gui.QuPathGUI;
@@ -22,6 +23,7 @@ import javafx.beans.binding.Bindings;
 import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -82,6 +84,18 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
             });
             loadDatasetCommand.start();
         });
+        
+        // checkbox to show or not the tile overlay
+        CheckBox tileOverlayCheckbox = new CheckBox("Show tile overlay when hovering");
+        tileOverlayCheckbox.setSelected(true);
+        tileOverlayCheckbox.selectedProperty().addListener((obs, wasSelected, isSelected) -> { 
+            if (isSelected) {
+                tileHoverController.setShow();
+            } else {
+                tileHoverController.setDontShow();
+            }
+        });
+            
 
         Button clearSelectionBtn = makeButton("Clear Image", new Dimensions(40, 120));
         clearSelectionBtn.setOnAction(e -> new ClearImageViewerCommand(selectedDataStore).execute());
@@ -186,7 +200,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
 
         updateSlideByDataset(dsBox, tsBox);
 
-        sidePanelTab.getChildren().addAll(buttonRow, dsBox.getBox(), tsBox.getBox(), openImgBtn, statusLabel, sliderRow);
+        sidePanelTab.getChildren().addAll(buttonRow, dsBox.getBox(), tsBox.getBox(), openImgBtn, statusLabel, sliderRow, tileOverlayCheckbox);
 
         return sidePanelTab;
     }

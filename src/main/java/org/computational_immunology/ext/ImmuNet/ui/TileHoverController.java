@@ -17,6 +17,7 @@ public class TileHoverController {
 
     private final SelectedDataStore selectedDataStore;
     private final TileHoverOverlay overlay;
+    private volatile Boolean paintCompletely;
 
     private final EventHandler<MouseEvent> mouseMovedHandler = this::handleMouseMoved;
     private final EventHandler<MouseEvent> mouseExitedHandler = this::handleMouseExited;
@@ -27,6 +28,7 @@ public class TileHoverController {
     public TileHoverController(SelectedDataStore selectedDataStore, TileHoverOverlay overlay) {
         this.selectedDataStore = selectedDataStore;
         this.overlay = overlay;
+        this.paintCompletely = true;
     }
 
     /**
@@ -39,6 +41,14 @@ public class TileHoverController {
         overlay.setHoveredTileMetadata(null);
         selectedDataStore.setSelectedSlide(slide);
         viewer.repaint();
+    }
+
+    public void setDontShow(){
+        overlay.setOpacity(0.0);
+    }
+
+    public void setShow(){
+        overlay.setOpacity(1.0);
     }
 
     public void attachTo(QuPathViewer viewer) {
