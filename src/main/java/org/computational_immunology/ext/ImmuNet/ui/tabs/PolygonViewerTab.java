@@ -21,7 +21,10 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.cell.CheckBoxListCell;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.control.ListView;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -61,7 +64,13 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         ObservableList<Polygon> polygonNames = FXCollections.observableArrayList();
         Map<String, BooleanProperty> checkedMap = new HashMap<>();
 
+
+        Label listViewTitle = new Label("Polygon list");
+        listViewTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
         ListView<Polygon> listView = new ListView<>(polygonNames);
+        listView.setPrefHeight(150);
+        VBox.setMargin(listView, new Insets(1, 2, 5, 2)); // Space between list and buttons
+
         listView.setCellFactory(CheckBoxListCell.forListView(
                 p -> checkedMap.computeIfAbsent(p.getId(), id -> {
                     BooleanProperty visible = new SimpleBooleanProperty(true); // checked = visible, matches "Show polygons" label
@@ -141,14 +150,22 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         ObservableList<PathObject> userAddedPolygons = polygonTracker.getNewAnnotations();
         //bind the userAddedPolygons list to the polygonTracker's newAnnotations list, so that any new polygons added by the user are automatically added to the list view
 
+        //add Title to the list view
+        Label newPolygonListTitle = new Label("User added polygons");
+        newPolygonListTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
+
         NewPolygonViewerBox newPolygonViewerBox = new NewPolygonViewerBox(userAddedPolygons, dataUploadHandler);
+        newPolygonViewerBox.setPrefHeight(250);
+        VBox.setMargin(newPolygonListTitle, new Insets(10, 2, 0, 2)); // Space between list and buttons
+        VBox.setMargin(newPolygonViewerBox, new Insets(2, 2, 50, 2)); // Space between list and buttons
+        VBox.setVgrow(newPolygonViewerBox, Priority.ALWAYS);
         newPolygonViewerBox.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
             //what the user selects in the list view
             SelectAnnotationCommand selectAnnotationCommand = new SelectAnnotationCommand(newSel);
             selectAnnotationCommand.execute();
         });    
 
-        sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,c,listView, newPolygonViewerBox);
+        sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,listViewTitle,c,listView, newPolygonListTitle, newPolygonViewerBox);
 
         return sidePanelTab;
     }

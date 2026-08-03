@@ -33,6 +33,7 @@ public class NewPolygonViewerBox extends TableView<PathObject> {
         super(items);
         this.dataUploadHandler = dataUploadHandler;
         setEditable(true);
+        setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         getColumns().add(buildThumbnailColumn());
         getColumns().add(buildNameColumn());
         getColumns().add(buildDatasetColumn());

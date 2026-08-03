@@ -12,7 +12,6 @@ import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.commands.ClearImageViewerCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.LoadDatasetsCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.LoadSlideDataCommand;
-import org.computational_immunology.ext.ImmuNet.ui.commands.MenuActions;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SlideLoadWorkflow;
 
 import qupath.lib.gui.QuPathGUI;

@@ -9,7 +9,6 @@ import java.util.concurrent.ExecutionException;
 import org.computational_immunology.ext.ImmuNet.core.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.ui.commands.ConnectToServerCommand;
-import org.computational_immunology.ext.ImmuNet.ui.commands.MenuActions;
 import org.json.JSONException;
 import org.json.JSONObject;
 
