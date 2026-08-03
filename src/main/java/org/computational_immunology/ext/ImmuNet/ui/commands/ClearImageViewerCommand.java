@@ -14,13 +14,12 @@ import qupath.lib.gui.viewer.QuPathViewer;
  */
 public class ClearImageViewerCommand {
 
-    private final SelectedDataStore selectedDataStore;
 
-    public ClearImageViewerCommand(SelectedDataStore selectedDataStore) {
-        this.selectedDataStore = selectedDataStore;
+    private ClearImageViewerCommand() {
+        /*Souldn't be initialized */
     }
 
-    public void execute() {
+    public static void execute() {
         //check if there are multiple viewers open
         List<QuPathViewer> viewers = QuPathGUI.getInstance().getAllViewers();
         if (viewers.size() > 1) {
@@ -31,6 +30,5 @@ public class ClearImageViewerCommand {
         if (viewer != null) {
             viewer.resetImageData();
         }
-        selectedDataStore.setSelectedSlide(null);
     }
 }

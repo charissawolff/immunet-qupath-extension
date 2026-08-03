@@ -98,7 +98,10 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
             
 
         Button clearSelectionBtn = makeButton("Clear Image", new Dimensions(40, 120));
-        clearSelectionBtn.setOnAction(e -> new ClearImageViewerCommand(selectedDataStore).execute());
+        clearSelectionBtn.setOnAction(e -> {
+            selectedDataStore.clear();
+            ClearImageViewerCommand.execute();
+        });
         // bind to the selected slide property of the datastore, so that the button is only enabled when a slide is selected
         // this continues working after the slide is cleaered, because when we click this button, we also
         // clear the data from the datastore, which in turn enables the button again
