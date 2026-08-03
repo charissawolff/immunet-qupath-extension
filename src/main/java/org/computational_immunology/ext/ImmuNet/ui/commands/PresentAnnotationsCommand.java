@@ -9,12 +9,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 import org.computational_immunology.ext.ImmuNet.core.AnnotationPoint;
 import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
-
-import javafx.concurrent.Task;
 
 import org.computational_immunology.ext.ImmuNet.core.AnnotationPointConverter;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
@@ -24,7 +23,7 @@ import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.objects.PathObject;
 import qupath.lib.objects.hierarchy.PathObjectHierarchy;
 
-public class PresentAnnotationsCommand {
+public class PresentAnnotationsCommand extends AbstractAsyncCommand<List<PathObject>>  {
     // Annotation-fetching is cancellable, but we also keep a timeout per tile so a single
     // slow/stuck tile can't block the rest even when nothing has been cancelled.
     private static final long TILE_FETCH_TIMEOUT_SECONDS = 10;
@@ -32,8 +31,6 @@ public class PresentAnnotationsCommand {
     private final String datasetName;
     private final String slideName;
     private final AnnotationRequestHandler annotationRequestHandler;
-    private Task<List<PathObject>> task;
-    private Runnable onDone;
     private List<TileMetadata> tilesMetadata;
     private double downsampleComposite;
     private int annotatedTileCount;
@@ -53,51 +50,23 @@ public class PresentAnnotationsCommand {
         this.downsampleComposite = downsampleComposite;
     }
 
-    public void build() {
-        task = new Task<>() {
-            @Override
-            protected List<PathObject> call() {
-                updateMessage("Fetching annotations...");
-                return fetchSlideAnnotations();
-            }
-        };
-    }
-
-    public void start() {
-        task.setOnSucceeded(event -> {
-            List<PathObject> pathObjects = task.getValue();
-            QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
-            if (viewer != null && viewer.getImageData() != null) {
-                PathObjectHierarchy hierarchy = viewer.getImageData().getHierarchy();
-                hierarchy.addObjects(pathObjects);
-                ImmuNetLog.log("Added " + pathObjects.size() + " server annotation(s) for {}/{}", datasetName, slideName);
-            }
-            if (onDone != null) {
-                onDone.run();
-            }
-        });
-
-        task.setOnFailed(event ->
-                ImmuNetLog.error("Could not present annotations for " + datasetName + "/" + slideName, task.getException()));
-
-        Thread thread = new Thread(task, "present-annotations-" + datasetName + "-" + slideName);
-        thread.setDaemon(true);
-        thread.start();
-    }
-
-    public Task<List<PathObject>> getTask() {
-        return task;
-    }
-
-    public void setOnDone(Runnable callback) {
-        this.onDone = callback;
+    @Override
+    protected void onSuccess(List<PathObject> pathObjects) {
+        QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
+        if (viewer != null && viewer.getImageData() != null) {
+            PathObjectHierarchy hierarchy = viewer.getImageData().getHierarchy();
+            hierarchy.addObjects(pathObjects);
+            ImmuNetLog.log("Added " + pathObjects.size() + " server annotation(s) for {}/{}", datasetName, slideName);
+        }
     }
 
     public int getAnnotatedTileCount() {
         return annotatedTileCount;
     }
 
-    public List<PathObject> fetchSlideAnnotations() {
+    @Override
+    protected List<PathObject> execute(Consumer<String> progressReporter) throws Exception {
+        progressReporter.accept("Fetching annotations for dataset: " + datasetName + ", slide: " + slideName);
         if (tilesMetadata == null) {
             ImmuNetLog.error("fetchSlideAnnotations called without tile metadata set. You need to call setTilesMetadata first for dataset: "
                     + datasetName + ", slide: " + slideName);
@@ -135,6 +104,7 @@ public class PresentAnnotationsCommand {
                 try {
                     annotationPathObjects.addAll(future.get(TILE_FETCH_TIMEOUT_SECONDS, TimeUnit.SECONDS));
                 } catch (TimeoutException e) {
+                    progressReporter.accept("Timed out after " + TILE_FETCH_TIMEOUT_SECONDS + " seconds waiting for a tile's annotations so we are skipping it");
                     ImmuNetLog.error("Timed out after {} seconds waiting for a tile's annotations so we are skipping it", TILE_FETCH_TIMEOUT_SECONDS);
                     future.cancel(true);
                     annotatedTileCount--;

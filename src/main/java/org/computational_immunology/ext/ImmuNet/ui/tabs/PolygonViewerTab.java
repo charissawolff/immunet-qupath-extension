@@ -8,7 +8,7 @@ import org.computational_immunology.ext.ImmuNet.core.Polygon;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
-import org.computational_immunology.ext.ImmuNet.ui.commands.LoadPolygonDataCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.LoadPolygonCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SelectAnnotationCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SetPolygonVisibilityCommand;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonTracker;
@@ -91,7 +91,7 @@ public class PolygonViewerTab extends CustomSidePanelTab {
 
 
         loadDataBtn.setOnAction(e -> {
-        LoadPolygonDataCommand loadPolygonDataCommand = new LoadPolygonDataCommand(annotationRequestHandler, selectedDataStore);
+        LoadPolygonCommand loadPolygonDataCommand = new LoadPolygonCommand(annotationRequestHandler, selectedDataStore);
         loadPolygonDataCommand.build();
             if (selectedDataStore.getSelectedSlide() == null) {
                 ImmuNetLog.log("No slide selected, cannot load polygons");

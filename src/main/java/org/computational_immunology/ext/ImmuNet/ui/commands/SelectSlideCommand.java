@@ -6,8 +6,6 @@ import org.computational_immunology.ext.ImmuNet.core.TileImageServer;
 import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 
-import javafx.concurrent.Task;
-
 import qupath.fx.utils.FXUtils;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.viewer.QuPathViewer;
@@ -21,20 +19,23 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 /**
  * Captures the selected dataset/slide once at click time, then loads it in a cancellable
- * background Task. 
+ * background Task.
+ *
+ * <p>Callers that may supersede this command (e.g. selecting a different slide) should hold onto
+ * {@code getTask()} and call {@code cancel()} on it before starting a new one.
  */
-public class SelectSlideCommand {
+
+public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> {
 
     private final String datasetName;
     private final String slideName;
     private final ImageRequestHandler imageRequestHandler;
     private final double compositeSwitchDownsample;
-    private Task<SparseImageServer> task;
     private volatile ExecutorService prefetchExecutor;
-    private Runnable onDone;
     private List<TileMetadata> tilesMetadata;
 
     public SelectSlideCommand(String datasetName, String slideName, double compositeSwitchDownsample, ImageRequestHandler imageRequestHandler) {
@@ -44,106 +45,96 @@ public class SelectSlideCommand {
         this.imageRequestHandler = imageRequestHandler;
     }
 
-    public void build() {
-        task = new Task<>() {
-            {
-                updateMessage("Opening...");
-            }
-            @Override
-            protected SparseImageServer call() throws Exception {
-                updateMessage("Fetching slide metadata...");
-                tilesMetadata = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
-                SparseImageServer sparseServer = SlideImageServer.build(tilesMetadata, datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
-                List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
-                int amountTiles = allThumbServers.size();
-                AtomicInteger completedCount = new AtomicInteger(0);
+    @Override
+    protected SparseImageServer execute(Consumer<String> progressReporter) throws Exception {
+        progressReporter.accept("Fetching slide metadata...");
+        tilesMetadata = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
+        SparseImageServer sparseServer = SlideImageServer.build(tilesMetadata, datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
+        List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
 
-                // initialize countdownlatch to make it possible to cancel midway of the executor
-                CountDownLatch latch = new CountDownLatch(amountTiles);
+        if (task.isCancelled()) {
+            // check if the task was cancelled before starting the executor, to avoid that the user cancels 
+            // the task and the executor still runs in the background
+            return null;
+        }
+        prefetchThumbnails(allThumbServers, progressReporter);
+        progressReporter.accept("Drawing slide...");
 
-                if (isCancelled()) {
-                    // check if the task was cancelled before starting the executor, to avoid that the user cancels 
-                    // the task and the executor still runs in the background
-                    return null;
-                }
-                prefetchExecutor = Executors.newFixedThreadPool(64);
-                for (TileImageServer thumbServer : allThumbServers) {
-                    prefetchExecutor.submit(() -> {
-                        try {
-                            thumbServer.getDefaultThumbnail(0, 0);
-                        } catch (IOException e) {
-                            ImmuNetLog.error("Prefetch failed for a thumb tile", e);
-                        } finally {
-                            latch.countDown();
-                            int n = completedCount.incrementAndGet();
-                            updateMessage("Loading tile " + n + "/" + amountTiles );
-                        }
-                    });
-                }
+        attachToViewer(sparseServer);
+        return sparseServer;
+    };
+
+    private void prefetchThumbnails(List<TileImageServer> allThumbServers, Consumer<String> progressReporter) throws InterruptedException {
+        int amountTiles = allThumbServers.size();
+        AtomicInteger completedCount = new AtomicInteger(0);
+
+        // initialize countdownlatch to make it possible to cancel midway of the executor
+        CountDownLatch latch = new CountDownLatch(amountTiles);
+
+        prefetchExecutor = Executors.newFixedThreadPool(64);
+        for (TileImageServer thumbServer : allThumbServers) {
+            prefetchExecutor.submit(() -> {
                 try {
-                    latch.await(); 
-                } catch (InterruptedException e) {
-                    prefetchExecutor.shutdownNow();
-                    throw e;
+                    thumbServer.getDefaultThumbnail(0, 0);
+                } catch (IOException e) {
+                    ImmuNetLog.error("Prefetch failed for a thumb tile", e);
+                } finally {
+                    latch.countDown();
+                    int n = completedCount.incrementAndGet();
+                    progressReporter.accept("Loading tile " + n + "/" + amountTiles );
                 }
-                updateMessage("Drawing slide...");
-                prefetchExecutor.close();
-
-                // Attach the slide to the viewer here, on the FX thread but blocking this background
-                // thread until it's done. That way, a failure to display becomes a real Task failure
-                // (thrown below) instead of an uncaught exception later on the FX thread.
-                QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
-                if (viewer != null) {
-                    Throwable displayError = FXUtils.callOnApplicationThread(() -> {
-                        // Re-check cancellation on the FX thread itself: if cancel() was called while we
-                        // were waiting here, skip attaching an already-cancelled slide to the viewer.
-                        if (isCancelled()) {
-                            return null;
-                        }
-                        try {
-                            viewer.setImageData(new ImageData<>(sparseServer));
-                            return null;
-                        } catch (Exception | UnsatisfiedLinkError e) {
-                            // setImageData rethrows UnsatisfiedLinkError as well as Exception, and an
-                            // Error would otherwise escape uncaught here and pop up QuPath's own dialog
-                            return e;
-                        }
-                    });
-                    if (displayError != null) {
-                        throw new IOException("Could not set image data for " + datasetName + "/" + slideName, displayError);
-                    }
-                }
-                return sparseServer;
-            }
-        };
+            });
+        }
+        try {
+            latch.await(); 
+        } catch (InterruptedException e) {
+            prefetchExecutor.shutdownNow();
+            throw e;
+        }
+        prefetchExecutor.close();
     }
 
-    public void start() {
-         task.setOnSucceeded(event -> {
-            ImmuNetLog.log("Successfully opened {}/{}", datasetName, slideName);
-            if (onDone != null) {
-                onDone.run();
+    private void attachToViewer(SparseImageServer sparseServer) throws IOException {
+        // Attach the slide to the viewer here, on the FX thread but blocking this background
+        // thread until it's done. That way, a failure to display becomes a real Task failure
+        // (thrown below) instead of an uncaught exception later on the FX thread.
+        QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
+        if (viewer == null) {
+            return;
+        }
+        Throwable displayError = FXUtils.callOnApplicationThread(() -> {
+            // Re-check cancellation on the FX thread itself: if cancel() was called while we
+            // were waiting here, skip attaching an already-cancelled slide to the viewer.
+            if (task.isCancelled()) {
+                return null;
+            }
+            try {
+                viewer.setImageData(new ImageData<>(sparseServer));
+                return null;
+            } catch (Exception | UnsatisfiedLinkError e) {
+                // setImageData rethrows UnsatisfiedLinkError as well as Exception, and an
+                // Error would otherwise escape uncaught here and pop up QuPath's own dialog
+                return e;
             }
         });
-
-        task.setOnFailed(event ->
-                ImmuNetLog.error("Could not open " + datasetName + "/" + slideName, task.getException()));
-
-        task.setOnCancelled(event ->
-                ImmuNetLog.log("Cancelled opening {}/{}", datasetName, slideName));
-
-        Thread thread = new Thread(task, "select-slide-" + datasetName + "-" + slideName);
-        thread.setDaemon(true);
-        thread.start();
+        if (displayError != null) {
+            throw new IOException("Could not set image data for " + datasetName + "/" + slideName, displayError);
+        }
     }
 
-    /**
-     * @return the background Task backing this command, or null before build() has been called.
-     * Callers that may supersede this command (e.g. selecting a different slide) should hold onto
-     * this and call cancel() on it before starting a new one.
-     */
-    public Task<SparseImageServer> getTask() {
-        return task;
+    @Override
+    protected void onSuccess(SparseImageServer result) {
+        ImmuNetLog.log("Successfully opened {}/{}", datasetName, slideName);
+    }
+
+    @Override
+    protected void onCancellation() {
+        ImmuNetLog.log("Cancelled while opening {}/{}", datasetName, slideName);
+    }
+
+    @Override
+    protected void onFailure(Throwable exception) {
+        ImmuNetLog.error("Failed to open " + datasetName + "/" + slideName, exception);
     }
 
     /**
@@ -152,10 +143,6 @@ public class SelectSlideCommand {
      */
     public List<TileMetadata> getTilesMetadata() {
         return tilesMetadata == null ? null : Collections.unmodifiableList(tilesMetadata);
-    }
-
-    public void setOnDone(Runnable callback) {
-        this.onDone = callback;
     }
 
     public boolean isFullyStopped() {
