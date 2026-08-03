@@ -51,17 +51,26 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
         tilesMetadata = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
         SparseImageServer sparseServer = SlideImageServer.build(tilesMetadata, datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
         List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
-        int amountTiles = allThumbServers.size();
-        AtomicInteger completedCount = new AtomicInteger(0);
-
-        // initialize countdownlatch to make it possible to cancel midway of the executor
-        CountDownLatch latch = new CountDownLatch(amountTiles);
 
         if (task.isCancelled()) {
             // check if the task was cancelled before starting the executor, to avoid that the user cancels 
             // the task and the executor still runs in the background
             return null;
         }
+        prefetchThumbnails(allThumbServers, progressReporter);
+        progressReporter.accept("Drawing slide...");
+
+        attachToViewer(sparseServer);
+        return sparseServer;
+    };
+
+    private void prefetchThumbnails(List<TileImageServer> allThumbServers, Consumer<String> progressReporter) throws InterruptedException {
+        int amountTiles = allThumbServers.size();
+        AtomicInteger completedCount = new AtomicInteger(0);
+
+        // initialize countdownlatch to make it possible to cancel midway of the executor
+        CountDownLatch latch = new CountDownLatch(amountTiles);
+
         prefetchExecutor = Executors.newFixedThreadPool(64);
         for (TileImageServer thumbServer : allThumbServers) {
             prefetchExecutor.submit(() -> {
@@ -82,35 +91,36 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
             prefetchExecutor.shutdownNow();
             throw e;
         }
-        progressReporter.accept("Drawing slide...");
         prefetchExecutor.close();
+    }
 
+    private void attachToViewer(SparseImageServer sparseServer) throws IOException {
         // Attach the slide to the viewer here, on the FX thread but blocking this background
         // thread until it's done. That way, a failure to display becomes a real Task failure
         // (thrown below) instead of an uncaught exception later on the FX thread.
         QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
-        if (viewer != null) {
-            Throwable displayError = FXUtils.callOnApplicationThread(() -> {
-                // Re-check cancellation on the FX thread itself: if cancel() was called while we
-                // were waiting here, skip attaching an already-cancelled slide to the viewer.
-                if (task.isCancelled()) {
-                    return null;
-                }
-                try {
-                    viewer.setImageData(new ImageData<>(sparseServer));
-                    return null;
-                } catch (Exception | UnsatisfiedLinkError e) {
-                    // setImageData rethrows UnsatisfiedLinkError as well as Exception, and an
-                    // Error would otherwise escape uncaught here and pop up QuPath's own dialog
-                    return e;
-                }
-            });
-            if (displayError != null) {
-                throw new IOException("Could not set image data for " + datasetName + "/" + slideName, displayError);
-            }
+        if (viewer == null) {
+            return;
         }
-        return sparseServer;
-    };
+        Throwable displayError = FXUtils.callOnApplicationThread(() -> {
+            // Re-check cancellation on the FX thread itself: if cancel() was called while we
+            // were waiting here, skip attaching an already-cancelled slide to the viewer.
+            if (task.isCancelled()) {
+                return null;
+            }
+            try {
+                viewer.setImageData(new ImageData<>(sparseServer));
+                return null;
+            } catch (Exception | UnsatisfiedLinkError e) {
+                // setImageData rethrows UnsatisfiedLinkError as well as Exception, and an
+                // Error would otherwise escape uncaught here and pop up QuPath's own dialog
+                return e;
+            }
+        });
+        if (displayError != null) {
+            throw new IOException("Could not set image data for " + datasetName + "/" + slideName, displayError);
+        }
+    }
 
     @Override
     protected void onSuccess(SparseImageServer result) {
