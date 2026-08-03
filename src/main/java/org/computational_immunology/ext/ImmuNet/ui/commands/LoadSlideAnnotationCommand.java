@@ -2,11 +2,10 @@ package org.computational_immunology.ext.ImmuNet.ui.commands;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import org.computational_immunology.ext.ImmuNet.core.AnnotationPoint;
@@ -20,10 +19,6 @@ import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import qupath.lib.objects.PathObject;
 
 public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<AnnotationPoint>>  {
-    // Annotation-fetching is cancellable, but we also keep a timeout per tile so a single
-    // slow/stuck tile can't block the rest even when nothing has been cancelled.
-    private static final long TILE_FETCH_TIMEOUT_SECONDS = 10;
-
     private final SelectedDataStore selectedDataStore;
     private final AnnotationRequestHandler annotationRequestHandler;
     private volatile ExecutorService fetchExecutor;
@@ -92,11 +87,9 @@ public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<Annota
             List<AnnotationPoint> annotations = new ArrayList<>();
             for (Future<List<AnnotationPoint>> future : futureList) {
                 try {
-                    annotations.addAll(future.get(TILE_FETCH_TIMEOUT_SECONDS, TimeUnit.SECONDS));
-                } catch (TimeoutException e) {
-                    progressReporter.accept("Timed out after " + TILE_FETCH_TIMEOUT_SECONDS + " seconds waiting for a tile's annotations so we are skipping it");
-                    ImmuNetLog.error("Timed out after {} seconds waiting for a tile's annotations so we are skipping it", TILE_FETCH_TIMEOUT_SECONDS);
-                    future.cancel(true);
+                    annotations.addAll(future.get());
+                } catch (ExecutionException e) {
+                    ImmuNetLog.error("Unexpected error fetching a tile's annotations", e);
                 } catch (InterruptedException e) {
                     ImmuNetLog.error("Cancelled while fetching annotations.", e);
                     return new ArrayList<AnnotationPoint>();

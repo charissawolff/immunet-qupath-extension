@@ -11,12 +11,15 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray> {
+    private static final Duration REQUEST_TIMEOUT_SECONDS = Duration.ofSeconds(10);
     private static final ServerConnectionHandler INSTANCE = new ServerConnectionHandler();
+    
 
     //service port is 8082
     //forward to local 8080
@@ -87,6 +90,7 @@ public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray
         HttpRequest getRequest = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8082/" + localPath))
                 .header("Cookie", sessionCookie)
+                .timeout(REQUEST_TIMEOUT_SECONDS)
                 .GET()
                 .build();
         try{
