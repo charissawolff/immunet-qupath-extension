@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.HBox;
 
 public class CachedLoginBox extends HBox {
@@ -15,7 +16,8 @@ public class CachedLoginBox extends HBox {
 
     public enum BoxType {
         NORMAL,
-        PASS
+        PASS,
+        PORT
     }
 
     public CachedLoginBox(@NonNull String json_key, String name, BoxType type) {
@@ -23,8 +25,20 @@ public class CachedLoginBox extends HBox {
         this.json_key = json_key;
         if (type == BoxType.NORMAL)
             field = new TextField();
-        else
+        else if (type == BoxType.PASS)
             field = new PasswordField();
+        else if (type == BoxType.PORT) {
+            field = new TextField();
+            ((TextField) field).setTextFormatter(new TextFormatter<>(change -> {
+                String newText = change.getControlNewText();
+                if (newText.matches("\\d*")) {
+                    return change;
+                }
+                return null;
+            }));
+        } else {
+                throw new IllegalArgumentException("Unknown BoxType: " + type);
+        }
         setSpacing(10); // Space between label and text field
         getChildren().addAll(label, field);
     }

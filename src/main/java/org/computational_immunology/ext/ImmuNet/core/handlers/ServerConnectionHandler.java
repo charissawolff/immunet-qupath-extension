@@ -19,13 +19,13 @@ import java.util.concurrent.TimeUnit;
 public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray> {
     private static final Duration REQUEST_TIMEOUT_SECONDS = Duration.ofSeconds(10);
     private static final ServerConnectionHandler INSTANCE = new ServerConnectionHandler();
-    //service port is 8082
-    //forward to local 8080
+
     //used to tell main thread that the ssh tunnel is now ready
     CompletableFuture<Boolean> SSHReady;
     Thread SSHThread;
     SSHTunnelHandler sshTunnelHandler;
     private String sessionCookie; // obtained with successful webpage login
+    private int localPort; // local end of the SSH tunnel; user-configurable
     HttpClient client = HttpClient.newHttpClient();
 
     public static ServerConnectionHandler getInstance() {
@@ -37,12 +37,12 @@ public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray
     }
 
     /**
-     * Creates and starts an SSH Thread that connects to the remote machine. Creates a tunnel on local port 8082
-     * for remote port 80.
+     * Creates and starts an SSH Thread that connects to the remote machine. Creates a tunnel on the given
+     * local port, forwarding to the given remote port.
      *
      * @throws IOException if there were issues with the credentials.
      */
-    public void startSSHThread(String username, String hostname, String password) throws Exception {
+    public void startSSHThread(String username, String hostname, String password, int localPort, int remotePort) throws Exception {
 
         //resetting
         if (SSHThread != null){
@@ -54,8 +54,8 @@ public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray
            sshTunnelHandler.closeSSHTunnel();
            sshTunnelHandler = null;
         }
-
-        sshTunnelHandler = new SSHTunnelHandler(username, hostname, password);
+        this.localPort = localPort;
+        sshTunnelHandler = new SSHTunnelHandler(username, hostname, password, localPort, remotePort);
         SSHThread = new Thread(sshTunnelHandler);
         SSHThread.start();
 
@@ -96,16 +96,23 @@ public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray
     }
 
     /**
+     * Builds the URI for a path on the local end of the SSH tunnel.
+     */
+    private URI buildUri(String path) {
+        return URI.create("http://localhost:" + localPort + "/" + path);
+    }
+
+    /**
      * Fetch the content of a page with a GET request
      *
-     * @param localPath path to webpage. Appended to http://localhost:8082/
+     * @param localPath path to webpage, appended to the local tunnel's base URL
      * @return full response package of the webpage incl. headers and body
      * @throws IOException
      * @throws InterruptedException
      */
     public HttpResponse<InputStream> fetchPage(String localPath) throws IOException, InterruptedException {
         HttpRequest getRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8082/" + localPath))
+                .uri(buildUri(localPath))
                 .header("Cookie", sessionCookie)
                 .timeout(REQUEST_TIMEOUT_SECONDS)
                 .GET()
@@ -125,7 +132,7 @@ public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray
     // Fetch content with type String
     public HttpResponse<String> fetchStringPage(String localPath) throws IOException, InterruptedException {
         HttpRequest getRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8082/" + localPath))
+                .uri(buildUri(localPath))
                 .header("Cookie", sessionCookie)
                 .timeout(REQUEST_TIMEOUT_SECONDS)
                 .GET()
@@ -151,7 +158,7 @@ public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray
      */
     public HttpResponse<String> postRequestVectraLogin(String username, String password) throws InterruptedException {
         HttpRequest postRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8082/v/login"))
+                .uri(buildUri("v/login"))
                 .POST(HttpRequest.BodyPublishers.ofString("username=" + username + "&password=" + password))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .build();
@@ -186,7 +193,7 @@ public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray
     public HttpResponse<String> postObject(String localPath, JSONArray payload) throws IOException, InterruptedException {
         // Send a POST request to the specified local path with the provided JSON payload
         HttpRequest postRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8082/" + localPath))
+                .uri(buildUri(localPath))
                 .header("Cookie", sessionCookie)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))

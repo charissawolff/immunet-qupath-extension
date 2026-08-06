@@ -31,6 +31,9 @@ public class ServerConnectionTab extends CustomSidePanelTab{
     CachedLoginBox dbUserField;
     CachedLoginBox dbPassField;
 
+    CachedLoginBox dbLocalPortField;
+    CachedLoginBox dbRemotePortField;
+
     CachedLoginBox[] allLoginBoxes;
 
     Label statusLabel = new Label();
@@ -61,7 +64,14 @@ public class ServerConnectionTab extends CustomSidePanelTab{
         dbUserField  = new CachedLoginBox("dbuser", "Database User", CachedLoginBox.BoxType.NORMAL);
         dbPassField  = new CachedLoginBox("dbpass", "Database Pass", CachedLoginBox.BoxType.PASS);
         
-        allLoginBoxes = new CachedLoginBox[]{hostnameField, usernameField, passwordField, dbUserField, dbPassField};
+        dbLocalPortField  = new CachedLoginBox("dblocalport", "Local Port", CachedLoginBox.BoxType.PORT);
+        dbRemotePortField  = new CachedLoginBox("dbremoteport", "Remote Port", CachedLoginBox.BoxType.PORT);
+        
+        // Set defaults before loadConfig() so saved values (if any) still override these
+        dbLocalPortField.field.setText("8082");
+        dbRemotePortField.field.setText("80");
+
+        allLoginBoxes = new CachedLoginBox[]{hostnameField, usernameField, passwordField, dbUserField, dbPassField, dbLocalPortField, dbRemotePortField};
         
         loadConfig();
         
@@ -75,13 +85,15 @@ public class ServerConnectionTab extends CustomSidePanelTab{
                 usernameField.field.textProperty(),
                 passwordField.field.textProperty(),
                 dbUserField.field.textProperty(),
-                dbPassField.field.textProperty()
+                dbPassField.field.textProperty(),
+                dbLocalPortField.field.textProperty(),
+                dbRemotePortField.field.textProperty()
         ));
         
         connectBtn.setOnAction(connectEvent);
 
         
-        sidePanelTab.getChildren().addAll(hostnameField, usernameField, passwordField, dbUserField, dbPassField, connectBtn, statusLabel);
+        sidePanelTab.getChildren().addAll(hostnameField, usernameField, passwordField, dbUserField, dbPassField, dbLocalPortField, dbRemotePortField, connectBtn, statusLabel);
         return sidePanelTab;
     }
 
@@ -149,10 +161,12 @@ public class ServerConnectionTab extends CustomSidePanelTab{
             String password     = passwordField.field.getText();
             String dbUsername   = dbUserField.field.getText();
             String dbPass       = dbPassField.field.getText();
+            int dbLocalPort = Integer.parseInt(dbLocalPortField.field.getText());
+            int dbRemotePort = Integer.parseInt(dbRemotePortField.field.getText());
 
             // Credentials entered
             if (Arrays.stream(allLoginBoxes).noneMatch(s-> s.field.getText().isEmpty()) ){
-                ConnectToServerCommand connectCommand = new ConnectToServerCommand(username, hostname, password, dbUsername, dbPass);
+                ConnectToServerCommand connectCommand = new ConnectToServerCommand(username, hostname, password, dbUsername, dbPass, dbLocalPort, dbRemotePort);
                 statusLabel.setStyle("-fx-text-fill: black;");
                 connectCommand.build();
                 connectCommand.getTask().messageProperty().addListener((obs, oldMsg, newMsg) -> statusLabel.setText(newMsg));
