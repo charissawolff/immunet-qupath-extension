@@ -1,10 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.ui.commands.annotations;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 
@@ -34,7 +31,6 @@ public class RegisterNewClassificationsCommand {
         if (!newClasses.isEmpty()) {
             newClasses.add(PathClass.StandardPathClasses.IGNORE);
             availablePathClasses.clear();
-            //newClasses.removeAll(availablePathClasses);
             availablePathClasses.setAll(newClasses);
             ImmuNetLog.log("Registered " + newClasses.size() + " new classification(s) in the Class list: " + newClasses);
         }
