@@ -17,6 +17,7 @@ import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AttachPathObjectsToViewerCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.annotations.RegisterNewClassificationsCommand;
 
 import qupath.lib.objects.PathObject;
 
@@ -40,6 +41,8 @@ public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<Annota
     protected void onSuccess(List<AnnotationPoint> annotationPoints) {
         selectedDataStore.setAnnotationPoints(annotationPoints);
         List<PathObject> pathObjects = AnnotationPointConverter.toPathObjects(annotationPoints, tilesMetadata, downsampleComposite);
+        RegisterNewClassificationsCommand registerClassificationsCommand = new RegisterNewClassificationsCommand(pathObjects);
+        registerClassificationsCommand.execute();
         AttachPathObjectsToViewerCommand attachCommand = new AttachPathObjectsToViewerCommand(pathObjects);
         attachCommand.execute();
         ImmuNetLog.log("Attempted: Added " + pathObjects.size() + " server annotation(s) for {}/{}", datasetName, slideName);
