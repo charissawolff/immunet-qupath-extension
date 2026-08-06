@@ -1,6 +1,8 @@
 package org.computational_immunology.ext.ImmuNet.ui.tabs;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
@@ -10,6 +12,7 @@ import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestH
 import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SelectPathObjectCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.LoadPolygonCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.MergePolygonsCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.SetPolygonVisibilityCommand;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonTracker;
 
@@ -26,6 +29,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.control.ListView;
+import javafx.scene.control.SelectionMode;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.util.StringConverter;
@@ -157,15 +161,32 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         NewPolygonViewerBox newPolygonViewerBox = new NewPolygonViewerBox(userAddedPolygons, dataUploadHandler);
         newPolygonViewerBox.setPrefHeight(250);
         VBox.setMargin(newPolygonListTitle, new Insets(10, 2, 0, 2)); // Space between list and buttons
-        VBox.setMargin(newPolygonViewerBox, new Insets(2, 2, 50, 2)); // Space between list and buttons
+        VBox.setMargin(newPolygonViewerBox, new Insets(2, 2, 10, 2)); // Space between list and buttons
         VBox.setVgrow(newPolygonViewerBox, Priority.ALWAYS);
+        newPolygonViewerBox.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         newPolygonViewerBox.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
             //what the user selects in the list view
             SelectPathObjectCommand selectAnnotationCommand = new SelectPathObjectCommand(newSel);
             selectAnnotationCommand.execute();
         });    
+        
 
-        sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,listViewTitle,c,listView, newPolygonListTitle, newPolygonViewerBox);
+
+        Button mergeBtn = makeButton("Merge selected polygons", new Dimensions(20, 180));
+        mergeBtn.disableProperty().bind(Bindings.createBooleanBinding(() -> {
+                var selected = newPolygonViewerBox.getSelectionModel().getSelectedItems();
+                return selected.size() < 2 || selected.stream().anyMatch(PathObject::isLocked);
+            },
+            newPolygonViewerBox.getSelectionModel().getSelectedItems()
+        ));
+
+        mergeBtn.setOnAction(e -> {
+            List<PathObject> selectedPolygons = new ArrayList<>(newPolygonViewerBox.getSelectionModel().getSelectedItems());
+            MergePolygonsCommand mergePolygonsCommand = new MergePolygonsCommand(selectedPolygons);
+            mergePolygonsCommand.execute();
+        });
+
+        sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,listViewTitle,c,listView, newPolygonListTitle, newPolygonViewerBox, mergeBtn);
 
         return sidePanelTab;
     }
