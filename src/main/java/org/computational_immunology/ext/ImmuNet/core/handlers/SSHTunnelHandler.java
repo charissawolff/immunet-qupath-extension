@@ -14,16 +14,20 @@ public class SSHTunnelHandler implements Runnable{
     String username;
     String hostname;
     String password;
+    int localPort;
+    int remotePort;
 
     SshClient sshClient;
     ClientSession clientSession;
     CompletableFuture<Boolean> Ready;
 
-    public SSHTunnelHandler(String username, String hostname, String password)
+    public SSHTunnelHandler(String username, String hostname, String password, int localPort, int remotePort)
     {
         this.username = username;
         this.hostname = hostname;
         this.password = password;
+        this.localPort = localPort;
+        this.remotePort = remotePort;
     }
 
     @Override
@@ -50,8 +54,8 @@ public class SSHTunnelHandler implements Runnable{
 
         SshdSocketAddress remoteSocketAddress;
         SshdSocketAddress  sshdSocketAddress;
-        sshdSocketAddress = new SshdSocketAddress("localhost", 8082);
-        remoteSocketAddress = new SshdSocketAddress("localhost", 80);
+        sshdSocketAddress = new SshdSocketAddress("localhost", localPort);
+        remoteSocketAddress = new SshdSocketAddress("localhost", remotePort);
         session.startLocalPortForwarding(sshdSocketAddress, remoteSocketAddress);
 
         ImmuNetLog.log("Port forwarding success");

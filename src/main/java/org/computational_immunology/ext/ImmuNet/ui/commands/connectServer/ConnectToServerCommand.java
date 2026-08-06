@@ -12,20 +12,23 @@ public class ConnectToServerCommand extends AbstractAsyncCommand<Boolean> {
     private final String password;
     private final String dbuser;
     private final String dbpass;
+    private final int localPort;
+    private final int remotePort;
 
-    public ConnectToServerCommand(String username, String hostname, String password, String dbuser, String dbpass){
+    public ConnectToServerCommand(String username, String hostname, String password, String dbuser, String dbpass, int localPort, int remotePort){
         this.username = username;
         this.hostname = hostname;
         this.password = password;
         this.dbuser = dbuser;
         this.dbpass = dbpass;
-
+        this.localPort = localPort;
+        this.remotePort = remotePort;
     }
 
     protected Boolean execute(Consumer<String> progressReporter) throws Exception {
         progressReporter.accept("Logging into server...");
         try {
-            ServerConnectionHandler.getInstance().startSSHThread(username, hostname, password);
+            ServerConnectionHandler.getInstance().startSSHThread(username, hostname, password, localPort, remotePort);
         } catch (Exception e) {
             ImmuNetLog.error("SSH connection failed.", e);
             progressReporter.accept("SSH connection failed. Probably wrong credentials for username, hostname and password." );
