@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.ui.commands;
+package org.computational_immunology.ext.ImmuNet.ui.commands.polygon;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 

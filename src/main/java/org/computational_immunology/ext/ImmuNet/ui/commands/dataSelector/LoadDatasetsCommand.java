@@ -1,10 +1,11 @@
-package org.computational_immunology.ext.ImmuNet.ui.commands;
+package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
 import org.computational_immunology.ext.ImmuNet.core.handlers.MiscDataRequestHandler;
+import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
 import org.json.JSONArray;
 
 public class LoadDatasetsCommand extends AbstractAsyncCommand<List<String>> {

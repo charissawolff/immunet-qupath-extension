@@ -9,11 +9,11 @@ import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandle
 import org.computational_immunology.ext.ImmuNet.core.handlers.MiscDataRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
-import org.computational_immunology.ext.ImmuNet.ui.commands.ClearImageViewerCommand;
-import org.computational_immunology.ext.ImmuNet.ui.commands.LoadDatasetsCommand;
-import org.computational_immunology.ext.ImmuNet.ui.commands.LoadSlideDataCommand;
-import org.computational_immunology.ext.ImmuNet.ui.commands.SetPolygonVisibilityCommand;
-import org.computational_immunology.ext.ImmuNet.ui.commands.SlideLoadWorkflow;
+import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.ClearImageViewerCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.LoadDatasetsCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.LoadSlideDataCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.SetPolygonVisibilityCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.SlideLoadWorkflow;
 
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.viewer.QuPathViewer;

@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.ui.commands;
+package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +15,8 @@ import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestH
 import org.computational_immunology.ext.ImmuNet.core.AnnotationPointConverter;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
+import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.AttachPathObjectsToViewerCommand;
 
 import qupath.lib.objects.PathObject;
 
