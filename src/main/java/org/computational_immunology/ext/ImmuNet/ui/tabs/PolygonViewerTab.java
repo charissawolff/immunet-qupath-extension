@@ -186,7 +186,7 @@ public class PolygonViewerTab extends CustomSidePanelTab {
             mergePolygonsCommand.execute();
         });
 
-        sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,listViewTitle,c,listView, newPolygonListTitle, newPolygonViewerBox, mergeBtn, mergePolygonsLabel);
+        sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,listViewTitle,c,listView, newPolygonListTitle, newPolygonViewerBox, mergeBtn);
 
         return sidePanelTab;
     }
