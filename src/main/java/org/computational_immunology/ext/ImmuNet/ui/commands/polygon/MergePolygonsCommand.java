@@ -10,6 +10,7 @@ import qupath.lib.objects.hierarchy.PathObjectHierarchy;
 
 public class MergePolygonsCommand {
     private final List<PathObject> polygons;
+    private Runnable onDone;
 
     public MergePolygonsCommand(List<PathObject> polygons) {
         this.polygons = polygons;
@@ -23,5 +24,4 @@ public class MergePolygonsCommand {
         hierarchy.removeObjects(polygons, false);
         hierarchy.addObject(mergedPolygon);
     }
-    
 }
