@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.ui.commands;
+package org.computational_immunology.ext.ImmuNet.ui.commands.polygon;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +9,8 @@ import org.computational_immunology.ext.ImmuNet.core.Polygon;
 import org.computational_immunology.ext.ImmuNet.core.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
+import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.AttachPathObjectsToViewerCommand;
 
 import qupath.lib.objects.PathObject;
 

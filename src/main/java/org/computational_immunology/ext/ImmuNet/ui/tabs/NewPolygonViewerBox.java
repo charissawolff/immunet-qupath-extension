@@ -3,7 +3,7 @@ package org.computational_immunology.ext.ImmuNet.ui.tabs;
 import org.computational_immunology.ext.ImmuNet.core.Polygon;
 import org.computational_immunology.ext.ImmuNet.core.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
-import org.computational_immunology.ext.ImmuNet.ui.commands.AddPolygonCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.AddPolygonCommand;
 import org.json.JSONObject;
 
 import java.awt.image.BufferedImage;

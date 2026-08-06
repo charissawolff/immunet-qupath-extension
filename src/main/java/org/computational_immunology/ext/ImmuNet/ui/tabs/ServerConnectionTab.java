@@ -4,11 +4,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
 
 import org.computational_immunology.ext.ImmuNet.core.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.ui.commands.ConnectToServerCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.connectServer.ConnectToServerCommand;
 import org.json.JSONException;
 import org.json.JSONObject;
 

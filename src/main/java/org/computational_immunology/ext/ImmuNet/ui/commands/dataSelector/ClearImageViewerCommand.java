@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.ui.commands;
+package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 
 import java.util.List;
 

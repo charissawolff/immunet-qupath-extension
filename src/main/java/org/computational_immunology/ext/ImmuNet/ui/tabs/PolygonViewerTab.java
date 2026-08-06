@@ -8,9 +8,9 @@ import org.computational_immunology.ext.ImmuNet.core.Polygon;
 import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
-import org.computational_immunology.ext.ImmuNet.ui.commands.LoadPolygonCommand;
-import org.computational_immunology.ext.ImmuNet.ui.commands.SelectAnnotationCommand;
-import org.computational_immunology.ext.ImmuNet.ui.commands.SetPolygonVisibilityCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.SelectPathObjectCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.LoadPolygonCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.SetPolygonVisibilityCommand;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonTracker;
 
 import javafx.beans.property.SimpleBooleanProperty;
@@ -161,7 +161,7 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         VBox.setVgrow(newPolygonViewerBox, Priority.ALWAYS);
         newPolygonViewerBox.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
             //what the user selects in the list view
-            SelectAnnotationCommand selectAnnotationCommand = new SelectAnnotationCommand(newSel);
+            SelectPathObjectCommand selectAnnotationCommand = new SelectPathObjectCommand(newSel);
             selectAnnotationCommand.execute();
         });    
 
