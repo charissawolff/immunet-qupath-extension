@@ -10,10 +10,10 @@ import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.objects.PathObject;
 import qupath.lib.objects.hierarchy.PathObjectHierarchy;
 
-public class SelectAnnotationCommand {
+public class SelectPathObjectCommand {
     private final PathObject selectedObject;
 
-    public SelectAnnotationCommand(PathObject selectedObject) {
+    public SelectPathObjectCommand(PathObject selectedObject) {
         this.selectedObject = selectedObject;
     }
 
