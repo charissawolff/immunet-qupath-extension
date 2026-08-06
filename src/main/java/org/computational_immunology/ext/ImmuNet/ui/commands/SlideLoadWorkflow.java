@@ -79,7 +79,7 @@ public class SlideLoadWorkflow {
         presentAnnotationsCommand.setOnDone(() -> {
             state.set(Worker.State.SUCCEEDED);
             List<AnnotationPoint> annotationPoints = presentAnnotationsCommand.getTask().getValue();
-            message.set("Fetched " + annotationPoints.size() + " annotations in " + selectedDataStore.getAnnotationPoints().size() + ". There are a total of " + selectedDataStore.getSelectedSlide().getTileMetadataList().size() + " tiles.");
+            message.set("Fetched " + annotationPoints.size() + " annotations. There are a total of " + selectedDataStore.getSelectedSlide().getTileMetadataList().size() + " tiles.");
         });
         //if failed, don't clear the datastore, as the slide is still loaded and can be used. 
         presentAnnotationsCommand.setOnFailed(() -> {
