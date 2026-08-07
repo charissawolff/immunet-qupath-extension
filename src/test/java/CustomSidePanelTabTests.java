@@ -1,4 +1,4 @@
-import org.computational_immunology.ext.ImmuNet.core.Dimensions;
+import org.computational_immunology.ext.ImmuNet.core.models.Dimensions;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.CustomSidePanelTab;
 import org.junit.jupiter.api.Test;
 

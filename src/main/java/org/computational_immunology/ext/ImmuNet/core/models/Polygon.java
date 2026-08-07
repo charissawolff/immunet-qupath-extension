@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.core;
+package org.computational_immunology.ext.ImmuNet.core.models;
 
 import java.util.List;
 import java.util.Objects;

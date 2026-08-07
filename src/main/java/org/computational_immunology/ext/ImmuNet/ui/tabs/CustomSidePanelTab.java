@@ -1,6 +1,6 @@
 package org.computational_immunology.ext.ImmuNet.ui.tabs;
 
-import org.computational_immunology.ext.ImmuNet.core.Dimensions;
+import org.computational_immunology.ext.ImmuNet.core.models.Dimensions;
 
 import javafx.scene.control.Button;
 import javafx.scene.control.Tab;

@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.core;
+package org.computational_immunology.ext.ImmuNet.core.models;
 
 import java.util.List;
 
@@ -50,6 +50,19 @@ public record TileMetadata(int id, String code, ImageType type, double x, double
     }
     public double getHeight() {
         return h;
+    }
+
+    public int getPixelX() {
+        return (int) Math.round(x);
+    }
+    public int getPixelY() {
+        return (int) Math.round(y);
+    }
+    public int getPixelWidth() {
+        return (int) Math.round(x + w) - getPixelX();
+    }
+    public int getPixelHeight() {
+        return (int) Math.round(y + h) - getPixelY();
     }
 
     public TileMetadata withType(ImageType newType) {

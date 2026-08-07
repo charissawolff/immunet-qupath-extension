@@ -12,9 +12,9 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.Tile;
-import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
-import org.computational_immunology.ext.ImmuNet.core.TileMetadata.ImageType;
+import org.computational_immunology.ext.ImmuNet.core.models.Tile;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -54,24 +54,36 @@ public class ImageRequestHandler {
         
         String path = String.format(TILE_IMAGE_PATH_FORMAT, datasetName, slideName, tileMetadata.getCode(), tileMetadata.getType().toString());
         Semaphore semaphore = tileMetadata.getType() == TileMetadata.ImageType.THUMB ? thumbSemaphore : compositeSemaphore;
+        try {
+            return new Tile(tileMetadata, fetchImage(path, semaphore));
+        } catch (IOException e) {
+            ImmuNetLog.error("Error fetching tile image for tile code: " + tileMetadata.getCode() + " at path: " + path, e);
+            throw e; // Rethrow the exception to be handled by the caller
+        } catch (InterruptedException e) {
+            ImmuNetLog.error("Thread interrupted while fetching tile image for tile code: " + tileMetadata.getCode() + " at path: " + path, e);
+            throw e; // Rethrow the exception to be handled by the caller
+        }
+    }
+
+    public byte[] fetchBytes(String path) throws IOException, InterruptedException {
         var response = pageFetcher.fetchPage(path);
         if (response == null) {
-            throw new IOException("Could not fetch tile image for tile code: " + tileMetadata.getCode() + " at path: " + path);
+            throw new IOException("Could not fetch image at path: " + path);
         }
-        byte[] imageBytes;
         try (InputStream imageInputStream = response.body()) {
-            imageBytes = imageInputStream.readAllBytes();
+            return imageInputStream.readAllBytes();
         }
+    }
+
+    public BufferedImage fetchImage(String path, Semaphore semaphore) throws IOException, InterruptedException {
+        byte[] imageBytes = fetchBytes(path);
         semaphore.acquire();
         try {
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
             if (image == null) {
-                throw new IOException("Could not decode image data for tile code: " + tileMetadata.getCode() + " at path: " + path);
+                throw new IOException("Could not decode image data request at path: " + path);
             }
-            return new Tile(tileMetadata, image);
-        } catch (IOException e) {
-            ImmuNetLog.error("Error fetching tile image for tile code: " + tileMetadata.getCode() + " at path: " + path, e);
-            throw e;
+            return image;
         } finally {
             semaphore.release();
         }

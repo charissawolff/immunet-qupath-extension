@@ -1,11 +1,13 @@
 package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 
-import org.computational_immunology.ext.ImmuNet.core.AnnotationPoint;
-import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.SelectedSlide;
-import org.computational_immunology.ext.ImmuNet.core.SlideImageServer;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.MiscDataRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.TiffImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.imageServers.SlideImageServer;
+import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
+import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -37,11 +39,13 @@ public class SlideLoadWorkflow {
     private Consumer<SelectedSlide> onSlideReady;
 
     public SlideLoadWorkflow(String datasetName, String slideName, double compositeSwitchDownsample,
-                              ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler,
+                              ImageRequestHandler imageRequestHandler, 
+                              MiscDataRequestHandler miscDataRequestHandler,
+                              AnnotationRequestHandler annotationRequestHandler, TiffImageRequestHandler tiffImageRequestHandler,  Boolean useTiffComposite,
                               SelectedDataStore selectedDataStore) {
         this.datasetName = datasetName;
         this.slideName = slideName;
-        this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
+        this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, compositeSwitchDownsample, imageRequestHandler, miscDataRequestHandler, tiffImageRequestHandler, useTiffComposite);
         this.presentAnnotationsCommand = new LoadSlideAnnotationCommand(selectedDataStore, annotationRequestHandler);
         this.selectedDataStore = selectedDataStore;
     }

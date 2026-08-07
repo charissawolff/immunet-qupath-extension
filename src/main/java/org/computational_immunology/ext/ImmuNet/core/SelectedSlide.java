@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
+
 public record SelectedSlide(String datasetName, String slideName, List<TileMetadata> tileMetadataList) {
 
     public SelectedSlide {

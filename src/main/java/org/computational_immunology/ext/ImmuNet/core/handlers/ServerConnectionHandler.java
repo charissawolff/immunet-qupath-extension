@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray> {
-    private static final Duration REQUEST_TIMEOUT_SECONDS = Duration.ofSeconds(10);
+    private static final Duration REQUEST_TIMEOUT_SECONDS = Duration.ofSeconds(60);
     private static final ServerConnectionHandler INSTANCE = new ServerConnectionHandler();
 
     //used to tell main thread that the ssh tunnel is now ready
@@ -124,7 +124,7 @@ public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray
         } catch (InterruptedException e) {
             throw e;
         } catch(IOException e){
-            ImmuNetLog.error("Could not fetch page {}", localPath );
+            ImmuNetLog.error("Could not fetch page {}", localPath, e);
             return null;
         }
     }

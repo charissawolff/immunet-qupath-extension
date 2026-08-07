@@ -1,9 +1,9 @@
-package org.computational_immunology.ext.ImmuNet.core;
+package org.computational_immunology.ext.ImmuNet.core.models;
 
 import java.util.Collection;
 import java.util.List;
 
-import org.computational_immunology.ext.ImmuNet.core.Polygon.Vertex;
+import org.computational_immunology.ext.ImmuNet.core.models.Polygon.Vertex;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONString;
