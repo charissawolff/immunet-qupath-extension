@@ -1,8 +1,8 @@
 import java.awt.image.BufferedImage;
 
-import org.computational_immunology.ext.ImmuNet.core.Tile;
-import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
-import org.computational_immunology.ext.ImmuNet.core.TileMetadata.ImageType;
+import org.computational_immunology.ext.ImmuNet.core.models.Tile;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

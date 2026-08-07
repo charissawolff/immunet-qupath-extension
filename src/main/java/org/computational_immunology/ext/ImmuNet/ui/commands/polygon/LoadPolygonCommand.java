@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.Polygon;
-import org.computational_immunology.ext.ImmuNet.core.PolygonConverter;
-import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.models.Polygon;
+import org.computational_immunology.ext.ImmuNet.core.models.PolygonConverter;
+import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AttachPathObjectsToViewerCommand;
 

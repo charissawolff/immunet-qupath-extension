@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.core;
+package org.computational_immunology.ext.ImmuNet.core.models;
 
 public class Dimensions {
     double height;

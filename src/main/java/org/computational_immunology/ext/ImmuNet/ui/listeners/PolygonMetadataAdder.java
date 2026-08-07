@@ -1,8 +1,8 @@
 package org.computational_immunology.ext.ImmuNet.ui.listeners;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.SelectedSlide;
+import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 
 import javafx.collections.ListChangeListener;
 import qupath.lib.objects.PathObject;

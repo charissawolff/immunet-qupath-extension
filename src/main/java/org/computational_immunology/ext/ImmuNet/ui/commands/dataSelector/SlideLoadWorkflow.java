@@ -1,11 +1,11 @@
 package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 
-import org.computational_immunology.ext.ImmuNet.core.AnnotationPoint;
-import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.SelectedSlide;
-import org.computational_immunology.ext.ImmuNet.core.SlideImageServer;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.imageServers.SlideImageServer;
+import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
+import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 
 import java.util.List;
 import java.util.function.Consumer;

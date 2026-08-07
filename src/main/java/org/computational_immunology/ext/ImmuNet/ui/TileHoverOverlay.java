@@ -8,8 +8,8 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Objects;
 
-import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
-import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
+import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 
 import qupath.lib.color.ColorToolsAwt;
 import qupath.lib.gui.viewer.OverlayOptions;

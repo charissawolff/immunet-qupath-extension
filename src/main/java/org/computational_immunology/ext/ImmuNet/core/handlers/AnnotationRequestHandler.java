@@ -13,13 +13,12 @@ import javax.imageio.ImageIO;
 
 import java.awt.image.BufferedImage;
 
-import org.computational_immunology.ext.ImmuNet.core.AnnotationPoint;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.Tile;
-import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
-import org.computational_immunology.ext.ImmuNet.core.TileMetadata.ImageType;
-import org.computational_immunology.ext.ImmuNet.core.Polygon;
-
+import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
+import org.computational_immunology.ext.ImmuNet.core.models.Polygon;
+import org.computational_immunology.ext.ImmuNet.core.models.Tile;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

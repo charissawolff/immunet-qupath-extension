@@ -1,10 +1,10 @@
 package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.SlideImageServer;
-import org.computational_immunology.ext.ImmuNet.core.TileImageServer;
-import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.imageServers.SlideImageServer;
+import org.computational_immunology.ext.ImmuNet.core.imageServers.TileImageServer;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
 
 import qupath.fx.utils.FXUtils;

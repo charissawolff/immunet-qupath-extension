@@ -1,6 +1,9 @@
-package org.computational_immunology.ext.ImmuNet.core;
+package org.computational_immunology.ext.ImmuNet.core.imageServers;
 
+import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.models.Tile;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 
 import qupath.lib.images.servers.ImageServerMetadata;
 import qupath.lib.images.servers.ImageServerBuilder;

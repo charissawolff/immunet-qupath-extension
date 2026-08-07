@@ -1,8 +1,10 @@
-package org.computational_immunology.ext.ImmuNet.core;
+package org.computational_immunology.ext.ImmuNet.core.models;
 
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
 
 public class Tile {
     private final TileMetadata metadata;

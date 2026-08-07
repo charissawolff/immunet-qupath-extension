@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.computational_immunology.ext.ImmuNet.core.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.Polygon;
-import org.computational_immunology.ext.ImmuNet.core.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
+import org.computational_immunology.ext.ImmuNet.core.models.Dimensions;
+import org.computational_immunology.ext.ImmuNet.core.models.Polygon;
+import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SelectPathObjectCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.LoadPolygonCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.MergePolygonsCommand;

@@ -1,6 +1,11 @@
-package org.computational_immunology.ext.ImmuNet.core;
+package org.computational_immunology.ext.ImmuNet.core.store;
 
 import java.util.List;
+
+import org.computational_immunology.ext.ImmuNet.core.SelectedSlide;
+import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
+import org.computational_immunology.ext.ImmuNet.core.models.Polygon;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;

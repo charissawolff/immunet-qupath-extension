@@ -2,10 +2,10 @@ import java.io.InputStream;
 import java.net.http.HttpResponse;
 import java.util.List;
 
-import org.computational_immunology.ext.ImmuNet.core.TileMetadata;
-import org.computational_immunology.ext.ImmuNet.core.TileMetadata.ImageType;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.PageFetcher;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
