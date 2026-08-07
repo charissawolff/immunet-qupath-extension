@@ -1,0 +1,76 @@
+package org.computational_immunology.ext.ImmuNet.core.imageServers;
+
+import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.models.Tile;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
+
+import qupath.lib.images.servers.ImageServerMetadata;
+import qupath.lib.images.servers.ImageChannel;
+import qupath.lib.images.servers.PixelType;
+import qupath.lib.images.servers.TileRequest;
+
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+
+public class JpgTileImageServer extends TileImageServer {
+    private final double downsampleValue;
+    private final ImageRequestHandler imageRequestHandler;
+    private final ImageServerMetadata metadata;
+
+    public JpgTileImageServer(TileMetadata tileMetadata, String datasetName, String slideName, double downsampleValue, ImageRequestHandler imageRequestHandler) {
+        super(tileMetadata, datasetName, slideName);
+        this.downsampleValue = downsampleValue;
+        this.imageRequestHandler = imageRequestHandler;
+
+        int fullWidth  = (int) Math.round(tileMetadata.getWidth());
+        int fullHeight = (int) Math.round(tileMetadata.getHeight());
+        int levelWidth  = Math.max(1, (int) Math.round(fullWidth  / downsampleValue));
+        int levelHeight = Math.max(1, (int) Math.round(fullHeight / downsampleValue));
+        double declaredDownsample = fullWidth / (double) levelWidth;
+
+        this.metadata = new ImageServerMetadata.Builder()
+                .width(fullWidth).height(fullHeight)
+                .name(datasetName + "/" + slideName + "/" + tileMetadata.getCode() + " (" + tileMetadata.getType() + ")")
+                .rgb(true).pixelType(PixelType.UINT8)
+                .channels(ImageChannel.getDefaultRGBChannels())
+                .sizeZ(1).sizeT(1)
+                .levels(new ImageServerMetadata.ImageResolutionLevel.Builder(fullWidth, fullHeight)
+                        .addLevel(declaredDownsample, levelWidth, levelHeight)
+                        .build())
+                .preferredTileSize(levelWidth, levelHeight)
+                .build();
+    }
+
+    @Override
+    public BufferedImage readTile(TileRequest tileRequest) throws IOException {
+        int requestedWidth = tileRequest.getTileWidth();
+        int requestedHeight = tileRequest.getTileHeight();
+        try {
+            Tile fetchedTile = imageRequestHandler.fetchTileImage(tileMetadata, datasetName, slideName);
+            ImmuNetLog.log("Fetching tile of type {}", tileMetadata.getType());
+            return fetchedTile.resizeJpgImage(requestedWidth, requestedHeight, false, 1);
+        } catch (InterruptedException e) {
+            ImmuNetLog.log("Error in reading Tile in Tile image server");
+            throw new IOException("Interrupted fetching tile " + tileMetadata.getCode(), e);
+        } catch (IOException e) {
+            ImmuNetLog.log("Could not fetch tile image for tile code: " + tileMetadata.getCode() + " at dataset: " + datasetName + ", slide: " + slideName, e);
+            return blankTile(requestedWidth, requestedHeight);
+        }
+    }
+
+    @Override
+    protected String createID() {
+        return datasetName + "/" + slideName + "/" + tileMetadata.getCode() + "-" + tileMetadata.getType();
+    }
+
+    @Override
+    public String getServerType() {
+        return "JpgTileImageServer";
+    }
+
+    @Override
+    public ImageServerMetadata getOriginalMetadata() {
+        return metadata;
+    }
+}

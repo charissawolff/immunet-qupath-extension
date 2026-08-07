@@ -94,7 +94,7 @@ public class SlideImageServer {
                 );
 
                 TileMetadata thumbTile = tileMetadata.withType(TileMetadata.ImageType.THUMB);
-                TileImageServer thumbServer = new TileImageServer(thumbTile, datasetName, slideName, downsampleThumb, imageRequestHandler);
+                JpgTileImageServer thumbServer = new JpgTileImageServer(thumbTile, datasetName, slideName, downsampleThumb, imageRequestHandler);
                 builder.serverRegion(tileRegion, registeredDownsampleThumb, thumbServer);
                 
                 // register this overview level to not crash upon opening the image
@@ -103,7 +103,7 @@ public class SlideImageServer {
                 }
 
                 TileMetadata compositeTile = tileMetadata.withType(TileMetadata.ImageType.COMPOSITE);
-                TileImageServer compositeServer = new TileImageServer(compositeTile, datasetName, slideName, downsampleComposite, imageRequestHandler);
+                JpgTileImageServer compositeServer = new JpgTileImageServer(compositeTile, datasetName, slideName, downsampleComposite, imageRequestHandler);
                 builder.serverRegion(tileRegion, downsampleComposite, compositeServer);
             }
             return builder.build();
@@ -114,13 +114,13 @@ public class SlideImageServer {
     }
 
 
-    public static List<TileImageServer> getThumbServers(SparseImageServer sparseServer) throws IOException {
+    public static List<JpgTileImageServer> getThumbServers(SparseImageServer sparseServer) throws IOException {
         double thumbDownsample = sparseServer.getPreferredDownsamples()[1];
-        List<TileImageServer> thumbServers = new ArrayList<>();
+        List<JpgTileImageServer> thumbServers = new ArrayList<>();
         for (ImageRegion region : sparseServer.getManager().getRegions()) {
             try {
                 ImageServer<BufferedImage> server = sparseServer.getManager().getServer(region, thumbDownsample);
-                if (server instanceof TileImageServer tileImageServer) {
+                if (server instanceof JpgTileImageServer tileImageServer) {
                     thumbServers.add(tileImageServer);
                 } else {
                     ImmuNetLog.error("No thumb server registered for region {}, skipping its prefetch", region);

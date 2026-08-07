@@ -10,6 +10,11 @@ import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Semaphore;
 
 import ij.ImagePlus;
@@ -37,7 +42,6 @@ import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
  */
 public class TiffImageRequestHandler extends ImageRequestHandler {
     private static final String TIFF_COMPONENTS_TILE_PATH_FORMAT = "v/datasets/%s/%s/%s/components.tiff"; //dataset, slide and tile
-    private static final int NUM_CHANNELS = 7;
     private static final int MAX_CONCURRENT_COMPONENT_DECODES = 4;
     private final Semaphore componentsSemaphore = new Semaphore(MAX_CONCURRENT_COMPONENT_DECODES);
 
@@ -45,7 +49,7 @@ public class TiffImageRequestHandler extends ImageRequestHandler {
         super(pageFetcher);
     }
 
-    public Tile fetchComponentsTiff(TileMetadata tileMetadata, String datasetName, String slideName)
+    public Tile fetchComponentsTiffImage(TileMetadata tileMetadata, String datasetName, String slideName)
             throws IOException, InterruptedException {
         String path = String.format(TIFF_COMPONENTS_TILE_PATH_FORMAT, datasetName, slideName, tileMetadata.getCode());
         byte[] bytes = fetchBytes(path);
@@ -68,22 +72,35 @@ public class TiffImageRequestHandler extends ImageRequestHandler {
             throw new IOException("Could not decode components.tiff with ImageJ");
         }
         ImageStack stack = imp.getStack();
-        int width = stack.getWidth();
-        int height = stack.getHeight();
 
-        ImageProcessor firstProcessor = stack.getProcessor(1); // ImageJ stack slices are 1-indexed
+        // Instead of assuming how many channels there are, group slices by their actual (width, height) and
+        // take the largest group as the channels because components.tiff also contains a smaller THUMB image,
+        // which won't match that size and is excluded this way rather than by a hardcoded slice count.
+        Map<List<Integer>, List<ImageProcessor>> slicesBySize = new LinkedHashMap<>();
+        for (int i = 1; i <= stack.getSize(); i++) {
+            ImageProcessor ip = stack.getProcessor(i);
+            List<Integer> size = List.of(ip.getWidth(), ip.getHeight());
+            slicesBySize.computeIfAbsent(size, k -> new ArrayList<>()).add(ip);
+        }
+        List<ImageProcessor> channelProcessors = slicesBySize.values().stream()
+                .max(Comparator.comparingInt(List::size))
+                .orElseThrow(() -> new IOException("components.tiff has no slices"));
+
+        int numChannels = channelProcessors.size();
+        ImageProcessor firstProcessor = channelProcessors.get(0);
+        int width = firstProcessor.getWidth();
+        int height = firstProcessor.getHeight();
+
         int dataType = dataBufferTypeOf(firstProcessor);
-        WritableRaster raster = createBandedRaster(dataType, width, height, NUM_CHANNELS);
-        copyBand(firstProcessor, raster, 0);
-
-        for (int band = 1; band < NUM_CHANNELS; band++) {
-            copyBand(stack.getProcessor(band + 1), raster, band);
+        WritableRaster raster = createBandedRaster(dataType, width, height, numChannels);
+        for (int band = 0; band < numChannels; band++) {
+            copyBand(channelProcessors.get(band), raster, band);
         }
 
         // Dummy color model: QuPath's own multi-channel display reads raw sample values directly per
         // channel, never through a tile's own ColorModel - this is just to satisfy BufferedImage's API.
         int bitsPerSample = bitsPerSample(dataType);
-        var dummyColorModel = qupath.lib.color.ColorModelFactory.getDummyColorModel(bitsPerSample * NUM_CHANNELS);
+        var dummyColorModel = qupath.lib.color.ColorModelFactory.getDummyColorModel(bitsPerSample * numChannels);
         return new BufferedImage(dummyColorModel, raster, false, null);
     }
 

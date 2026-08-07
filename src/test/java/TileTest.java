@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tile is now a TileMetadata plus the image it describes, so what is left to cover here is the
- * pairing itself: the null guards, the getters that delegate to the metadata, and resizeImage.
+ * pairing itself: the null guards, the getters that delegate to the metadata, and resizeJpgImage.
  * The metadata validation is covered by TileMetadataTest.
  */
 class TileTest {
@@ -52,37 +52,37 @@ class TileTest {
     }
 
     @Test
-    void resizeImageProducesRequestedSize(){
+    void resizeJpgImageProducesRequestedSize(){
         Tile tile = new Tile(METADATA, image(8, 8));
 
-        BufferedImage resized = tile.resizeImage(4, 6, false);
+        BufferedImage resized = tile.resizeJpgImage(4, 6, false);
         Assertions.assertEquals(4, resized.getWidth());
         Assertions.assertEquals(6, resized.getHeight());
 
         // Quality path is a different set of rendering hints, same resulting dimensions
-        BufferedImage quality = tile.resizeImage(16, 16, true);
+        BufferedImage quality = tile.resizeJpgImage(16, 16, true);
         Assertions.assertEquals(16, quality.getWidth());
         Assertions.assertEquals(16, quality.getHeight());
     }
 
     @Test
-    void resizeImageKeepsSourceTypeUnlessOverridden(){
+    void resizeJpgImageKeepsSourceTypeUnlessOverridden(){
         Tile tile = new Tile(METADATA, image(8, 8));
 
         // No override, so the source image type carries over
-        Assertions.assertEquals(BufferedImage.TYPE_INT_RGB, tile.resizeImage(4, 4, false).getType());
+        Assertions.assertEquals(BufferedImage.TYPE_INT_RGB, tile.resizeJpgImage(4, 4, false).getType());
 
         // QuPath's viewer needs a specific type, hence the override
-        BufferedImage overridden = tile.resizeImage(4, 4, false, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage overridden = tile.resizeJpgImage(4, 4, false, BufferedImage.TYPE_INT_ARGB);
         Assertions.assertEquals(BufferedImage.TYPE_INT_ARGB, overridden.getType());
     }
 
     @Test
-    void resizeImageLeavesOriginalAlone(){
+    void resizeJpgImageLeavesOriginalAlone(){
         BufferedImage img = image(8, 8);
         Tile tile = new Tile(METADATA, img);
 
-        tile.resizeImage(4, 4, false);
+        tile.resizeJpgImage(4, 4, false);
 
         Assertions.assertEquals(8, img.getWidth());
         Assertions.assertEquals(8, img.getHeight());
