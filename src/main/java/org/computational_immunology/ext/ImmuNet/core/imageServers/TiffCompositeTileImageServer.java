@@ -11,7 +11,7 @@ import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.Tile;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 
-import qupath.lib.color.ColorTools;
+import qupath.lib.common.ColorTools;
 import qupath.lib.images.servers.ImageChannel;
 import qupath.lib.images.servers.ImageServerMetadata;
 import qupath.lib.images.servers.PixelType;

@@ -42,8 +42,8 @@ import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
  */
 public class TiffImageRequestHandler extends ImageRequestHandler {
     private static final String TIFF_COMPONENTS_TILE_PATH_FORMAT = "v/datasets/%s/%s/%s/components.tiff"; //dataset, slide and tile
-    private static final int MAX_CONCURRENT_COMPONENT_DECODES = 4;
-    private final Semaphore componentsSemaphore = new Semaphore(MAX_CONCURRENT_COMPONENT_DECODES);
+    private static final int MAX_CONCURRENT_COMPONENT_FETCHES = 10;
+    private final Semaphore componentsSemaphore = new Semaphore(MAX_CONCURRENT_COMPONENT_FETCHES);
 
     public TiffImageRequestHandler(PageFetcher pageFetcher) {
         super(pageFetcher);
@@ -52,10 +52,9 @@ public class TiffImageRequestHandler extends ImageRequestHandler {
     public Tile fetchComponentsTiffImage(TileMetadata tileMetadata, String datasetName, String slideName)
             throws IOException, InterruptedException {
         String path = String.format(TIFF_COMPONENTS_TILE_PATH_FORMAT, datasetName, slideName, tileMetadata.getCode());
-        byte[] bytes = fetchBytes(path);
-
         componentsSemaphore.acquire();
         try {
+            byte[] bytes = fetchBytes(path);
             BufferedImage image = decodeChannels(bytes);
             return new Tile(tileMetadata, image);
         } catch (IOException e) {
@@ -114,7 +113,7 @@ public class TiffImageRequestHandler extends ImageRequestHandler {
         return DataBuffer.TYPE_BYTE;
     }
 
-    private static WritableRaster createBandedRaster(int dataType, int width, int height, int numBands) {
+    public static WritableRaster createBandedRaster(int dataType, int width, int height, int numBands) {
         if (dataType == DataBuffer.TYPE_FLOAT) {
             SampleModel sampleModel = new BandedSampleModel(DataBuffer.TYPE_FLOAT, width, height, numBands);
             DataBuffer dataBuffer = new DataBufferFloat(width * height, numBands);
@@ -140,5 +139,12 @@ public class TiffImageRequestHandler extends ImageRequestHandler {
             case DataBuffer.TYPE_INT, DataBuffer.TYPE_FLOAT -> 32;
             default -> 8;
         };
+    }
+
+    public BufferedImage fetchComponentsTiffImageResized(
+            TileMetadata tileMetadata, String datasetName, String slideName,
+            int targetWidth, int targetHeight) throws IOException, InterruptedException {
+        Tile tile = fetchComponentsTiffImage(tileMetadata, datasetName, slideName);
+        return tile.resizeTiffImage(targetWidth, targetHeight);
     }
 }

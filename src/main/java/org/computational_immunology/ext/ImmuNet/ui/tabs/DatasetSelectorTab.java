@@ -43,7 +43,8 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
     private final PauseTransition buttonPause = new PauseTransition((Duration.seconds(2)));
 
     public DatasetSelectorTab(ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler, 
-                                MiscDataRequestHandler miscDatarequestHandler, SelectedDataStore selectedDataStore, TileHoverController tileHoverController) {
+                                MiscDataRequestHandler miscDatarequestHandler, SelectedDataStore selectedDataStore, 
+                                TileHoverController tileHoverController) {
         super("Image selector");
         this.imageRequestHandler = imageRequestHandler;
         this.annotationRequestHandler = annotationRequestHandler;
@@ -155,7 +156,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                     currentWorkflow.cancel();
                     return;
                 }
-                SlideLoadWorkflow workflow = new SlideLoadWorkflow(dsName, tsName, compositeTransitionSlider.getValue(), imageRequestHandler, annotationRequestHandler, selectedDataStore);
+                SlideLoadWorkflow workflow = new SlideLoadWorkflow(dsName, tsName, compositeTransitionSlider.getValue(), imageRequestHandler, miscDatarequestHandler, annotationRequestHandler, selectedDataStore);
                 workflow.build();
 
                 workflow.setOnSlideReady(slide -> {

@@ -4,6 +4,7 @@ import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.MiscDataRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.imageServers.SlideImageServer;
+import org.computational_immunology.ext.ImmuNet.core.imageServers.TileImageServer;
 import org.computational_immunology.ext.ImmuNet.core.imageServers.JpgTileImageServer;
 import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
@@ -57,7 +58,7 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
         DatasetMetadata datasetMetadata = new DatasetMetadata(miscDataRequestHandler.getDatasetMetadata(datasetName));
         tilesMetadata = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
         SparseImageServer sparseServer = SlideImageServer.build(tilesMetadata, datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
-        List<JpgTileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
+        List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
 
         if (task.isCancelled()) {
             // check if the task was cancelled before starting the executor, to avoid that the user cancels 
@@ -71,7 +72,7 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
         return sparseServer;
     };
 
-    private void prefetchThumbnails(List<JpgTileImageServer> allThumbServers, Consumer<String> progressReporter) throws InterruptedException {
+    private void prefetchThumbnails(List<TileImageServer> allThumbServers, Consumer<String> progressReporter) throws InterruptedException {
         int amountTiles = allThumbServers.size();
         AtomicInteger completedCount = new AtomicInteger(0);
 
@@ -79,7 +80,7 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
         CountDownLatch latch = new CountDownLatch(amountTiles);
 
         prefetchExecutor = Executors.newFixedThreadPool(64);
-        for (JpgTileImageServer thumbServer : allThumbServers) {
+        for (TileImageServer thumbServer : allThumbServers) {
             prefetchExecutor.submit(() -> {
                 try {
                     thumbServer.getDefaultThumbnail(0, 0);

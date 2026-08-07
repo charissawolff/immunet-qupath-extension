@@ -3,6 +3,7 @@ package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 import org.computational_immunology.ext.ImmuNet.core.SelectedSlide;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.MiscDataRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.imageServers.SlideImageServer;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
@@ -37,11 +38,11 @@ public class SlideLoadWorkflow {
     private Consumer<SelectedSlide> onSlideReady;
 
     public SlideLoadWorkflow(String datasetName, String slideName, double compositeSwitchDownsample,
-                              ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler,
+                              ImageRequestHandler imageRequestHandler, MiscDataRequestHandler miscDataRequestHandler, AnnotationRequestHandler annotationRequestHandler,
                               SelectedDataStore selectedDataStore) {
         this.datasetName = datasetName;
         this.slideName = slideName;
-        this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
+        this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, compositeSwitchDownsample, imageRequestHandler, miscDataRequestHandler);
         this.presentAnnotationsCommand = new LoadSlideAnnotationCommand(selectedDataStore, annotationRequestHandler);
         this.selectedDataStore = selectedDataStore;
     }

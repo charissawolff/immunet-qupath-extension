@@ -2,6 +2,7 @@ package org.computational_immunology.ext.ImmuNet.core.imageServers;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.TiffImageRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
@@ -42,46 +43,15 @@ public class SlideImageServer {
             double compositeSwitchDownsample,
             ImageRequestHandler imageRequestHandler) {
         try {
-            //register information aout the slide: how many pixels large it is
-            double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
-            double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
-            for (var tileMetadata : tileMetadataList) {
-                minX = Math.min(minX, tileMetadata.getX());
-                minY = Math.min(minY, tileMetadata.getY());
-                maxX = Math.max(maxX, tileMetadata.getX() + tileMetadata.getWidth());
-                maxY = Math.max(maxY, tileMetadata.getY() + tileMetadata.getHeight());
-            }
-            double totalWidth = maxX - minX;
-            double totalHeight = maxY - minY;
-
             double[] downsamples = deriveDownsamples(tileMetadataList, datasetName, slideName, imageRequestHandler);
-            double downsampleThumb = downsamples[0];
             downsampleComposite = downsamples[1];
 
-            double registeredDownsampleThumb = compositeSwitchDownsample;
-            //this is for the overview upon image opening; else for very large tiles it doesn't open due to memory issues making this
-            //extension useless
-            double overviewDownsample = Math.max(totalWidth, totalHeight) / OVERVIEW_TARGET_MAX_DIMENSION;
+            DownsampleLevels downsampleLevels = getDownsampleLevels(tileMetadataList, compositeSwitchDownsample, downsamples[0], downsampleComposite);
 
-            if (registeredDownsampleThumb <= downsampleComposite) {
-                ImmuNetLog.error("compositeSwitchDownsample (" + compositeSwitchDownsample
-                        + ") is at or below this slide's downsampleComposite (" + downsampleComposite
-                        + "), using the midpoint instead.");
-                registeredDownsampleThumb = (downsampleThumb + downsampleComposite) / 2;
-            }
-
-            // cap so thumb stays selectable at the most-zoomed-out view, otherwise the initial slide-open
-            // (QuPath's histogram scan reads the whole slide in one call) would need composite tiles across
-            // the entire slide, which is the exact OOM/crash risk the overview level exists to prevent.
-            if (registeredDownsampleThumb >= overviewDownsample) {
-                ImmuNetLog.error("compositeSwitchDownsample (" + compositeSwitchDownsample
-                        + ") is at or above this slide's overviewDownsample (" + overviewDownsample
-                        + "), capping it just below instead.");
-                registeredDownsampleThumb = overviewDownsample * 0.99;
-            }
-
-            // use it is it's larger than the default thumb one
-            boolean registerOverviewLevel = overviewDownsample > registeredDownsampleThumb;
+            double downsampleThumb = downsampleLevels.downsampleThumb();
+            double registeredDownsampleThumb = downsampleLevels.registeredDownsampleThumb();
+            double overviewDownsample = downsampleLevels.overviewDownsample();
+            boolean registerOverviewLevel = downsampleLevels.registerOverviewLevel();
 
             // we are making image regions being the same size as the tiles we get from backend
             SparseImageServer.Builder builder = new SparseImageServer.Builder();
@@ -97,7 +67,7 @@ public class SlideImageServer {
                 TileMetadata thumbTile = tileMetadata.withType(TileMetadata.ImageType.THUMB);
                 JpgTileImageServer thumbServer = new JpgTileImageServer(thumbTile, datasetName, slideName, downsampleThumb, imageRequestHandler);
                 builder.serverRegion(tileRegion, registeredDownsampleThumb, thumbServer);
-                
+
                 // register this overview level to not crash upon opening the image
                 if (registerOverviewLevel) {
                     builder.serverRegion(tileRegion, overviewDownsample, thumbServer);
@@ -109,29 +79,109 @@ public class SlideImageServer {
             }
             return builder.build();
         } catch (IOException | InterruptedException e) {
-            ImmuNetLog.error("Error building SparseImageServer", e);
+            ImmuNetLog.error("Error building SparseImageServer for slide " + slideName + " in dataset " + datasetName, e);
             throw new RuntimeException(e);
         }
     }
 
-    public static SparseImageServer buildWithTiffComponent(
+    public static SparseImageServer buildTiff(
             DatasetMetadata datasetMetadata,
             List<TileMetadata> tileMetadataList,
             String datasetName,
             String slideName,
             double compositeSwitchDownsample,
             TiffImageRequestHandler imageRequestHandler) {
-                return SparseImageServer.Builder()
+        try {
+            // components.tiff is always fetched at full native resolution and resized locally
+            //unlike the JPG path's thumb.jpg/composite.jpg, which are pre-downsampled
+            // server-side and need deriveDownsamples to discover by how much.
+            downsampleComposite = 1.0;
+            DownsampleLevels downsampleLevels = getDownsampleLevels(tileMetadataList, compositeSwitchDownsample, 1.0, downsampleComposite);
 
+            double registeredDownsampleThumb = downsampleLevels.registeredDownsampleThumb();
+            double overviewDownsample = downsampleLevels.overviewDownsample();
+            boolean registerOverviewLevel = downsampleLevels.registerOverviewLevel();
+
+            SparseImageServer.Builder builder = new SparseImageServer.Builder();
+            for (var tileMetadata : tileMetadataList) {
+                ImageRegion tileRegion = ImageRegion.createInstance(
+                        (int) tileMetadata.getX(),
+                        (int) tileMetadata.getY(),
+                        (int) tileMetadata.getWidth(),
+                        (int) tileMetadata.getHeight(),
+                        0, 0
+                );
+
+                TiffCompositeTileImageServer thumbServer = new TiffCompositeTileImageServer(
+                        datasetMetadata, tileMetadata, datasetName, slideName, registeredDownsampleThumb, imageRequestHandler);
+                builder.serverRegion(tileRegion, registeredDownsampleThumb, thumbServer);
+
+                if (registerOverviewLevel) {
+                    TiffCompositeTileImageServer overviewServer = new TiffCompositeTileImageServer(
+                            datasetMetadata, tileMetadata, datasetName, slideName, overviewDownsample, imageRequestHandler);
+                    builder.serverRegion(tileRegion, overviewDownsample, overviewServer);
+                }
+
+                TiffCompositeTileImageServer compositeServer = new TiffCompositeTileImageServer(
+                        datasetMetadata, tileMetadata, datasetName, slideName, downsampleComposite, imageRequestHandler);
+                builder.serverRegion(tileRegion, downsampleComposite, compositeServer);
+            }
+            return builder.build();
+        } catch (IOException e) {
+            ImmuNetLog.error("Error building TIFF SparseImageServer for slide " + slideName + " in dataset " + datasetName, e);
+            throw new RuntimeException(e);
+        }
     }
 
-    public static List<JpgTileImageServer> getThumbServers(SparseImageServer sparseServer) throws IOException {
+    // how pre-downsampled is the raw fetched source file?
+    private static DownsampleLevels getDownsampleLevels(
+        List<TileMetadata> tileMetadataList, double compositeSwitchDownsample,
+        double downsampleThumb, double downsampleComposite) {
+        //register information aout the slide: how many pixels large it is
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+        for (var tileMetadata : tileMetadataList) {
+            minX = Math.min(minX, tileMetadata.getX());
+            minY = Math.min(minY, tileMetadata.getY());
+            maxX = Math.max(maxX, tileMetadata.getX() + tileMetadata.getWidth());
+            maxY = Math.max(maxY, tileMetadata.getY() + tileMetadata.getHeight());
+        }
+        double totalWidth = maxX - minX;
+        double totalHeight = maxY - minY;
+
+        double registeredDownsampleThumb = compositeSwitchDownsample;
+        //this is for the overview upon image opening; else for very large tiles it doesn't open due to memory issues making this
+        //extension useless
+        double overviewDownsample = Math.max(totalWidth, totalHeight) / OVERVIEW_TARGET_MAX_DIMENSION;
+
+        if (registeredDownsampleThumb <= downsampleComposite) {
+            ImmuNetLog.error("compositeSwitchDownsample (" + compositeSwitchDownsample
+                    + ") is at or below this slide's downsampleComposite (" + downsampleComposite
+                    + "), using the midpoint instead.");
+            registeredDownsampleThumb = (downsampleThumb + downsampleComposite) / 2;
+        }
+
+        // cap so thumb stays selectable at the most-zoomed-out view, otherwise the initial slide-open
+        // (QuPath's histogram scan reads the whole slide in one call) would need composite tiles across
+        // the entire slide, which is the exact OOM/crash risk the overview level exists to prevent.
+        if (registeredDownsampleThumb >= overviewDownsample) {
+            ImmuNetLog.error("compositeSwitchDownsample (" + compositeSwitchDownsample
+                    + ") is at or above this slide's overviewDownsample (" + overviewDownsample
+                    + "), capping it just below instead.");
+            registeredDownsampleThumb = overviewDownsample * 0.99;
+        }
+        boolean registerOverviewLevel = overviewDownsample > registeredDownsampleThumb;
+        return new DownsampleLevels(downsampleThumb, registeredDownsampleThumb, overviewDownsample, registerOverviewLevel);
+    }
+
+
+    public static List<TileImageServer> getThumbServers(SparseImageServer sparseServer) throws IOException {
         double thumbDownsample = sparseServer.getPreferredDownsamples()[1];
-        List<JpgTileImageServer> thumbServers = new ArrayList<>();
+        List<TileImageServer> thumbServers = new ArrayList<>();
         for (ImageRegion region : sparseServer.getManager().getRegions()) {
             try {
                 ImageServer<BufferedImage> server = sparseServer.getManager().getServer(region, thumbDownsample);
-                if (server instanceof JpgTileImageServer tileImageServer) {
+                if (server instanceof TileImageServer tileImageServer) {
                     thumbServers.add(tileImageServer);
                 } else {
                     ImmuNetLog.error("No thumb server registered for region {}, skipping its prefetch", region);
@@ -189,7 +239,13 @@ public class SlideImageServer {
 
         ImmuNetLog.log("Derived downsamples from sample tile {}: downsampleThumb={}, downsampleComposite={}",
                 sampleMetadata.getCode(), downsampleThumb, downsampleComposite);
-
         return new double[]{downsampleThumb, downsampleComposite};
     }
+
+    private record DownsampleLevels(
+        double downsampleThumb,
+        double registeredDownsampleThumb,
+        double overviewDownsample,
+        boolean registerOverviewLevel
+    ) {}
 }
