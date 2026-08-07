@@ -1,22 +1,40 @@
 package org.computational_immunology.ext.ImmuNet.core.handlers;
 
+import java.awt.Point;
+import java.awt.image.BandedSampleModel;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferFloat;
 import java.awt.image.Raster;
+import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.concurrent.Semaphore;
 
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.io.Opener;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.models.Tile;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 
+/*
+ * Why this doesn't just call QuPath's own TIFF reader (like the
+ * Vectra3_noBatch_stitch.gy / Polaris_noBatch_stitch.gy scripts do via
+ * ImageServerProvider.getPreferredUriImageSupport(...)):
+ *
+ * Those scripts hand a real File/URI to QuPath's own TIFF/BioFormats reader but components.tiff
+ * isn't a file on disk. We don't have that so it's off limits.
+ * 
+ * We DO reuse: ij.io.Opener.openTiff(InputStream, String).
+ *  It handles the actual TIFF/bit-depth/byte-order parsing, so all that's left for us to
+ * write is copying each already-decoded slice into our raster's bands.
+ */
 public class TiffImageRequestHandler extends ImageRequestHandler {
     private static final String TIFF_COMPONENTS_TILE_PATH_FORMAT = "v/datasets/%s/%s/%s/components.tiff"; //dataset, slide and tile
     private static final int NUM_CHANNELS = 7;
@@ -30,7 +48,7 @@ public class TiffImageRequestHandler extends ImageRequestHandler {
     public Tile fetchComponentsTiff(TileMetadata tileMetadata, String datasetName, String slideName)
             throws IOException, InterruptedException {
         String path = String.format(TIFF_COMPONENTS_TILE_PATH_FORMAT, datasetName, slideName, tileMetadata.getCode());
-        byte[] bytes = fetchBytes(path); 
+        byte[] bytes = fetchBytes(path);
 
         componentsSemaphore.acquire();
         try {
@@ -45,29 +63,65 @@ public class TiffImageRequestHandler extends ImageRequestHandler {
     }
 
     private BufferedImage decodeChannels(byte[] bytes) throws IOException {
-        Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName("TIFF");
-        if (!readers.hasNext()) {
-            throw new IOException("No TIFF reader available");
+        ImagePlus imp = new Opener().openTiff(new ByteArrayInputStream(bytes), "components");
+        if (imp == null) {
+            throw new IOException("Could not decode components.tiff with ImageJ");
         }
-        ImageReader reader = readers.next();
-        try (ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
-            reader.setInput(iis);
+        ImageStack stack = imp.getStack();
+        int width = stack.getWidth();
+        int height = stack.getHeight();
 
-            int width = reader.getWidth(0);
-            int height = reader.getHeight(0);
-            WritableRaster raster = Raster.createBandedRaster(DataBuffer.TYPE_BYTE, width, height, NUM_CHANNELS, null);
+        ImageProcessor firstProcessor = stack.getProcessor(1); // ImageJ stack slices are 1-indexed
+        int dataType = dataBufferTypeOf(firstProcessor);
+        WritableRaster raster = createBandedRaster(dataType, width, height, NUM_CHANNELS);
+        copyBand(firstProcessor, raster, 0);
 
-            for (int band = 0; band < NUM_CHANNELS; band++) {
-                BufferedImage page = reader.read(band);
-                int[] samples = page.getRaster().getSamples(0, 0, width, height, 0, (int[]) null);
-                raster.setSamples(0, 0, width, height, band, samples);
+        for (int band = 1; band < NUM_CHANNELS; band++) {
+            copyBand(stack.getProcessor(band + 1), raster, band);
+        }
+
+        // Dummy color model: QuPath's own multi-channel display reads raw sample values directly per
+        // channel, never through a tile's own ColorModel - this is just to satisfy BufferedImage's API.
+        int bitsPerSample = bitsPerSample(dataType);
+        var dummyColorModel = qupath.lib.color.ColorModelFactory.getDummyColorModel(bitsPerSample * NUM_CHANNELS);
+        return new BufferedImage(dummyColorModel, raster, false, null);
+    }
+
+    private static int dataBufferTypeOf(ImageProcessor ip) {
+        if (ip instanceof FloatProcessor) {
+            return DataBuffer.TYPE_FLOAT;
+        }
+        if (ip instanceof ShortProcessor) {
+            return DataBuffer.TYPE_USHORT;
+        }
+        return DataBuffer.TYPE_BYTE;
+    }
+
+    private static WritableRaster createBandedRaster(int dataType, int width, int height, int numBands) {
+        if (dataType == DataBuffer.TYPE_FLOAT) {
+            SampleModel sampleModel = new BandedSampleModel(DataBuffer.TYPE_FLOAT, width, height, numBands);
+            DataBuffer dataBuffer = new DataBufferFloat(width * height, numBands);
+            return Raster.createWritableRaster(sampleModel, dataBuffer, new Point(0, 0));
+        }
+        return Raster.createBandedRaster(dataType, width, height, numBands, null);
+    }
+
+    private static void copyBand(ImageProcessor ip, WritableRaster dst, int band) {
+        int width = ip.getWidth();
+        int height = ip.getHeight();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                dst.setSample(x, y, band, ip.getf(x, y));
             }
-
-            // dummy color model here just to satisfy Tile's BufferedImage field.
-            var dummyColorModel = qupath.lib.color.ColorModelFactory.getDummyColorModel(8 * NUM_CHANNELS);
-            return new BufferedImage(dummyColorModel, raster, false, null);
-        } finally {
-            reader.dispose();
         }
+    }
+
+    private static int bitsPerSample(int dataBufferType) {
+        return switch (dataBufferType) {
+            case DataBuffer.TYPE_BYTE -> 8;
+            case DataBuffer.TYPE_USHORT, DataBuffer.TYPE_SHORT -> 16;
+            case DataBuffer.TYPE_INT, DataBuffer.TYPE_FLOAT -> 32;
+            default -> 8;
+        };
     }
 }
