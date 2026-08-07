@@ -5,6 +5,7 @@ import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandle
 import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.MiscDataRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.TiffImageRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverOverlay;
@@ -37,6 +38,7 @@ public class ImmuNetExtension implements QuPathExtension {
         AnnotationRequestHandler annotationRequestHandler = new AnnotationRequestHandler(ServerConnectionHandler.getInstance());
         MiscDataRequestHandler miscDataRequestHandler = new MiscDataRequestHandler(ServerConnectionHandler.getInstance());
         JsonDataUploadHandler jsonDataUploadHandler = new JsonDataUploadHandler(ServerConnectionHandler.getInstance());
+        TiffImageRequestHandler tiffImageRequestHandler = new TiffImageRequestHandler(ServerConnectionHandler.getInstance());
 
         // Built once and injected down. THis tracks the currently loaded slide and the currently
         // selected tile, and wires mouse hover/click on the viewer to the tile highlight overlay.
@@ -48,7 +50,7 @@ public class ImmuNetExtension implements QuPathExtension {
         ServerConnectionTab serverConnectionTab = new ServerConnectionTab();
         serverConnectionTab.addCustomTab(qupath.getAnalysisTabPane());
 
-        DatasetSelectorTab datasetTab = new DatasetSelectorTab(imageRequestHandler, annotationRequestHandler, miscDataRequestHandler, selectedDataStore, tileHoverController);
+        DatasetSelectorTab datasetTab = new DatasetSelectorTab(imageRequestHandler, annotationRequestHandler, miscDataRequestHandler, tiffImageRequestHandler, selectedDataStore, tileHoverController);
         datasetTab.addCustomTab(qupath.getAnalysisTabPane());
 
 

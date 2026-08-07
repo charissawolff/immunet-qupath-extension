@@ -3,6 +3,7 @@ package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.MiscDataRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.TiffImageRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.imageServers.SlideImageServer;
 import org.computational_immunology.ext.ImmuNet.core.imageServers.TileImageServer;
 import org.computational_immunology.ext.ImmuNet.core.imageServers.JpgTileImageServer;
@@ -39,38 +40,47 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
     private final String slideName;
     private final ImageRequestHandler imageRequestHandler;
     private final MiscDataRequestHandler miscDataRequestHandler;
+    private final TiffImageRequestHandler tiffImageRequestHandler;
+    private final Boolean useTiffComposite;
     private final double compositeSwitchDownsample;
     private volatile ExecutorService prefetchExecutor;
     private List<TileMetadata> tilesMetadata;
 
     public SelectSlideCommand(String datasetName, String slideName, double compositeSwitchDownsample, 
-        ImageRequestHandler imageRequestHandler, MiscDataRequestHandler miscDataRequestHandler) {
+        ImageRequestHandler imageRequestHandler, MiscDataRequestHandler miscDataRequestHandler, TiffImageRequestHandler tiffImageRequestHandler, Boolean useTiffComposite) {
         this.datasetName = datasetName;
         this.slideName = slideName;
         this.compositeSwitchDownsample = compositeSwitchDownsample;
         this.imageRequestHandler = imageRequestHandler;
         this.miscDataRequestHandler = miscDataRequestHandler;
+        this.tiffImageRequestHandler = tiffImageRequestHandler;
+        this.useTiffComposite = useTiffComposite;
     }
 
     @Override
     protected SparseImageServer execute(Consumer<String> progressReporter) throws Exception {
         progressReporter.accept("Fetching slide metadata...");
-        DatasetMetadata datasetMetadata = new DatasetMetadata(miscDataRequestHandler.getDatasetMetadata(datasetName));
         tilesMetadata = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
-        SparseImageServer sparseServer = SlideImageServer.build(tilesMetadata, datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
+        progressReporter.accept("Getting ready to process tiles...");
+        SparseImageServer sparseServer;
+        if (!useTiffComposite) {
+            sparseServer = SlideImageServer.build(tilesMetadata, datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
+        } else {
+            DatasetMetadata datasetMetadata = new DatasetMetadata(miscDataRequestHandler.getDatasetMetadata(datasetName));
+            sparseServer = SlideImageServer.buildTiff(datasetMetadata, tilesMetadata, datasetName, slideName, compositeSwitchDownsample, tiffImageRequestHandler);
+        }
         List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
-
+        progressReporter.accept("Fetching" + tilesMetadata.size() +"files...");
         if (task.isCancelled()) {
-            // check if the task was cancelled before starting the executor, to avoid that the user cancels 
-            // the task and the executor still runs in the background
             return null;
         }
         prefetchThumbnails(allThumbServers, progressReporter);
+        
         progressReporter.accept("Drawing slide...");
 
         attachToViewer(sparseServer);
         return sparseServer;
-    };
+    }
 
     private void prefetchThumbnails(List<TileImageServer> allThumbServers, Consumer<String> progressReporter) throws InterruptedException {
         int amountTiles = allThumbServers.size();

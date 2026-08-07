@@ -1,6 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.core.imageServers;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
@@ -68,6 +69,14 @@ public class TiffCompositeTileImageServer extends TileImageServer {
             ImmuNetLog.log("Could not fetch TIFF tile image for tile code: " + tileMetadata.getCode() + " at dataset: " + datasetName + ", slide: " + slideName, e);
             return blankTile(requestedWidth, requestedHeight);
         }
+    }
+
+    @Override
+    protected BufferedImage blankTile(int width, int height) {
+        int numChannels = metadata.getChannels().size();
+        WritableRaster raster = TiffImageRequestHandler.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, numChannels);
+        var dummyColorModel = qupath.lib.color.ColorModelFactory.getDummyColorModel(32 * numChannels);
+        return new BufferedImage(dummyColorModel, raster, false, null);
     }
 
     @Override

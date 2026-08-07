@@ -10,6 +10,8 @@ import qupath.lib.images.servers.ImageChannel;
 import qupath.lib.images.servers.PixelType;
 import qupath.lib.images.servers.TileRequest;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
@@ -57,6 +59,16 @@ public class JpgTileImageServer extends TileImageServer {
             ImmuNetLog.log("Could not fetch tile image for tile code: " + tileMetadata.getCode() + " at dataset: " + datasetName + ", slide: " + slideName, e);
             return blankTile(requestedWidth, requestedHeight);
         }
+    }
+
+    @Override
+    protected BufferedImage blankTile(int width, int height) {
+        BufferedImage blankImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = blankImage.createGraphics();
+        g2d.setColor(Color.DARK_GRAY);
+        g2d.fillRect(0, 0, width, height);
+        g2d.dispose();
+        return blankImage;
     }
 
     @Override

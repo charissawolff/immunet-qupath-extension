@@ -5,6 +5,7 @@ import java.util.List;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.MiscDataRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.TiffImageRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.models.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
@@ -20,6 +21,7 @@ import qupath.lib.gui.viewer.QuPathViewer;
 
 import javafx.animation.PauseTransition;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
@@ -29,7 +31,9 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 
 public class DatasetSelectorTab extends CustomSidePanelTab {
@@ -37,18 +41,21 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
     private final ImageRequestHandler imageRequestHandler;
     private final AnnotationRequestHandler annotationRequestHandler;
     private final MiscDataRequestHandler miscDatarequestHandler;
+    private final TiffImageRequestHandler tiffImageRequestHandler;
     private final TileHoverController tileHoverController;
     private final SelectedDataStore selectedDataStore;
     private SlideLoadWorkflow currentWorkflow;
     private final PauseTransition buttonPause = new PauseTransition((Duration.seconds(2)));
 
     public DatasetSelectorTab(ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler, 
-                                MiscDataRequestHandler miscDatarequestHandler, SelectedDataStore selectedDataStore, 
+                                MiscDataRequestHandler miscDatarequestHandler, 
+                                TiffImageRequestHandler tiffImageRequestHandler, SelectedDataStore selectedDataStore, 
                                 TileHoverController tileHoverController) {
         super("Image selector");
         this.imageRequestHandler = imageRequestHandler;
         this.annotationRequestHandler = annotationRequestHandler;
         this.miscDatarequestHandler = miscDatarequestHandler;
+        this.tiffImageRequestHandler = tiffImageRequestHandler;
         this.selectedDataStore = selectedDataStore;
         this.tileHoverController = tileHoverController;
 
@@ -137,6 +144,22 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
             //statusLabel.setManaged(false);
         });
 
+        //a toggle radio button for jpg or .tiff composite
+        ToggleGroup RadioButtongroup = new ToggleGroup();
+        RadioButton buttonJpg = new RadioButton(".jpg");
+        RadioButton buttonTiff = new RadioButton(".tiff");
+        buttonJpg.setSelected(true); // default to jpg
+        buttonJpg.setToggleGroup(RadioButtongroup);
+        buttonTiff.setToggleGroup(RadioButtongroup);
+
+        SimpleBooleanProperty useTiffComposite = new SimpleBooleanProperty(false);
+        RadioButtongroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+            useTiffComposite.set(newToggle == buttonTiff);
+        });
+
+        HBox formatRow = new HBox(5, new Label("Composite format:"), buttonJpg, buttonTiff);
+
+
         //WE HAVE to make that if this button is clicked while the workflow is running, 
         // it will ONLY cancel the workflow and clear the viewer. 
         // Otherwise, if the user clicks this button again, it will start a new workflow while the old one is still running,
@@ -156,7 +179,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                     currentWorkflow.cancel();
                     return;
                 }
-                SlideLoadWorkflow workflow = new SlideLoadWorkflow(dsName, tsName, compositeTransitionSlider.getValue(), imageRequestHandler, miscDatarequestHandler, annotationRequestHandler, selectedDataStore);
+                SlideLoadWorkflow workflow = new SlideLoadWorkflow(dsName, tsName, compositeTransitionSlider.getValue(), imageRequestHandler, miscDatarequestHandler, annotationRequestHandler, tiffImageRequestHandler, useTiffComposite.get(),selectedDataStore);
                 workflow.build();
 
                 workflow.setOnSlideReady(slide -> {
@@ -204,7 +227,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
 
         updateSlideByDataset(dsBox, tsBox);
 
-        sidePanelTab.getChildren().addAll(buttonRow, dsBox.getBox(), tsBox.getBox(), openImgBtn, statusLabel, sliderRow, tileOverlayCheckbox);
+        sidePanelTab.getChildren().addAll(buttonRow, formatRow, dsBox.getBox(), tsBox.getBox(), openImgBtn, statusLabel, sliderRow, tileOverlayCheckbox);
 
         return sidePanelTab;
     }

@@ -44,6 +44,8 @@ public abstract class TileImageServer extends AbstractTileableImageServer {
     @Override
     public abstract ImageServerMetadata getOriginalMetadata();
 
+    protected abstract BufferedImage blankTile(int width, int height);
+
     @Override
     public Collection<URI> getURIs() {
         try {
@@ -51,14 +53,5 @@ public abstract class TileImageServer extends AbstractTileableImageServer {
         } catch (URISyntaxException e) {
             throw new IllegalStateException("bad URI for tile " + tileMetadata.getCode(), e);
         }
-    }
-
-    protected static BufferedImage blankTile(int width, int height) {
-        BufferedImage blankImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g2d = blankImage.createGraphics();
-        g2d.setColor(Color.DARK_GRAY);
-        g2d.fillRect(0, 0, width, height);
-        g2d.dispose();
-        return blankImage;
     }
 }
