@@ -35,8 +35,8 @@ public class TiffCompositeTileImageServer extends TileImageServer {
         this.downsampleValue = downsampleValue;
         this.imageRequestHandler = imageRequestHandler;
 
-        int fullWidth  = (int) Math.round(tileMetadata.getWidth());
-        int fullHeight = (int) Math.round(tileMetadata.getHeight());
+        int fullWidth  = tileMetadata.getPixelWidth();
+        int fullHeight = tileMetadata.getPixelHeight();
         int levelWidth  = Math.max(1, (int) Math.round(fullWidth  / downsampleValue));
         int levelHeight = Math.max(1, (int) Math.round(fullHeight / downsampleValue));
         double declaredDownsample = fullWidth / (double) levelWidth;

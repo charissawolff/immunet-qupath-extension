@@ -42,7 +42,7 @@ import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
  */
 public class TiffImageRequestHandler extends ImageRequestHandler {
     private static final String TIFF_COMPONENTS_TILE_PATH_FORMAT = "v/datasets/%s/%s/%s/components.tiff"; //dataset, slide and tile
-    private static final int MAX_CONCURRENT_COMPONENT_FETCHES = 15;
+    private static final int MAX_CONCURRENT_COMPONENT_FETCHES = 10;
     private final Semaphore componentsSemaphore = new Semaphore(MAX_CONCURRENT_COMPONENT_FETCHES);
 
     public TiffImageRequestHandler(PageFetcher pageFetcher) {

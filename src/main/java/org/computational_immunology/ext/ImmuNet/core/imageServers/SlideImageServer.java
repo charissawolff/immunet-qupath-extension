@@ -57,10 +57,10 @@ public class SlideImageServer {
             SparseImageServer.Builder builder = new SparseImageServer.Builder();
             for (var tileMetadata : tileMetadataList) {
                 ImageRegion tileRegion = ImageRegion.createInstance(
-                        (int) tileMetadata.getX(),
-                        (int) tileMetadata.getY(),
-                        (int) tileMetadata.getWidth(),
-                        (int) tileMetadata.getHeight(),
+                        tileMetadata.getPixelX(),
+                        tileMetadata.getPixelY(),
+                        tileMetadata.getPixelWidth(),
+                        tileMetadata.getPixelHeight(),
                         0, 0
                 );
 
@@ -105,10 +105,10 @@ public class SlideImageServer {
             SparseImageServer.Builder builder = new SparseImageServer.Builder();
             for (var tileMetadata : tileMetadataList) {
                 ImageRegion tileRegion = ImageRegion.createInstance(
-                        (int) tileMetadata.getX(),
-                        (int) tileMetadata.getY(),
-                        (int) tileMetadata.getWidth(),
-                        (int) tileMetadata.getHeight(),
+                        tileMetadata.getPixelX(),
+                        tileMetadata.getPixelY(),
+                        tileMetadata.getPixelWidth(),
+                        tileMetadata.getPixelHeight(),
                         0, 0
                 );
 
