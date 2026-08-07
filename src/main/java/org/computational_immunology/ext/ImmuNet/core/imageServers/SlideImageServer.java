@@ -30,6 +30,11 @@ decides which registered tile/resolution to actually fetch as the user zooms and
 */
 public class SlideImageServer {
     private static final double OVERVIEW_TARGET_MAX_DIMENSION = 2048;
+    //IMPORTANT: this variable also determines where the annotations are going to be. It must ALWAYS hold the  jpg-composite derived ration
+    // (declared tile width /actually fetched composite.jpg width) for the slide,
+    // BECAUSE the annotations are stored in the backend in the coordinate system of the composite.jpg, not the original tile. since
+    // annotations are gathered in the webapplication. IN the future there should be 2 variables if people were ever going
+    // going to use the qupath viewer to annotate cells in slides, but for now this is the only one we need.
     private static double downsampleComposite;
 
     public static double getDownsampleComposite() {
@@ -43,7 +48,7 @@ public class SlideImageServer {
             double compositeSwitchDownsample,
             ImageRequestHandler imageRequestHandler) {
         try {
-            double[] downsamples = deriveDownsamples(tileMetadataList, datasetName, slideName, imageRequestHandler);
+            double[] downsamples = deriveJpgDownsamples(tileMetadataList, datasetName, slideName, imageRequestHandler);
             downsampleComposite = downsamples[1];
 
             DownsampleLevels downsampleLevels = getDownsampleLevels(tileMetadataList, compositeSwitchDownsample, downsamples[0], downsampleComposite);
@@ -90,13 +95,23 @@ public class SlideImageServer {
             String datasetName,
             String slideName,
             double compositeSwitchDownsample,
-            TiffImageRequestHandler imageRequestHandler) {
+            ImageRequestHandler imageRequestHandler,
+            TiffImageRequestHandler tiffImageRequestHandler) {
         try {
             // components.tiff is always fetched at full native resolution and resized locally
             //unlike the JPG path's thumb.jpg/composite.jpg, which are pre-downsampled
-            // server-side and need deriveDownsamples to discover by how much.
-            downsampleComposite = 1.0;
-            DownsampleLevels downsampleLevels = getDownsampleLevels(tileMetadataList, compositeSwitchDownsample, 1.0, downsampleComposite);
+            // server-side and need deriveJpgDownsamples to discover by how much.
+            double tiffDisplayDownsample = 1.0;
+            DownsampleLevels downsampleLevels = getDownsampleLevels(tileMetadataList, compositeSwitchDownsample, 1.0, tiffDisplayDownsample);
+
+            // however we do need the jpg downsamples because of the COORDINATES for the ANNOTATION POINTS that were done in the vectra webapp!!
+            try{ 
+                double[] jpgDownsamples = deriveJpgDownsamples(tileMetadataList, datasetName, slideName, imageRequestHandler);
+                downsampleComposite = jpgDownsamples[1]; //save it for the annotation coordinate system, which is in the composite.jpg coordinate system
+            } catch (IOException | InterruptedException e) {
+                ImmuNetLog.error("Error deriving JPG downsamples for slide " + slideName + " in dataset " + datasetName, e);
+                throw new RuntimeException(e);
+            }
 
             double registeredDownsampleThumb = downsampleLevels.registeredDownsampleThumb();
             double overviewDownsample = downsampleLevels.overviewDownsample();
@@ -113,18 +128,18 @@ public class SlideImageServer {
                 );
 
                 TiffCompositeTileImageServer thumbServer = new TiffCompositeTileImageServer(
-                        datasetMetadata, tileMetadata, datasetName, slideName, registeredDownsampleThumb, imageRequestHandler);
+                        datasetMetadata, tileMetadata, datasetName, slideName, registeredDownsampleThumb, tiffImageRequestHandler);
                 builder.serverRegion(tileRegion, registeredDownsampleThumb, thumbServer);
 
                 if (registerOverviewLevel) {
                     TiffCompositeTileImageServer overviewServer = new TiffCompositeTileImageServer(
-                            datasetMetadata, tileMetadata, datasetName, slideName, overviewDownsample, imageRequestHandler);
+                            datasetMetadata, tileMetadata, datasetName, slideName, overviewDownsample, tiffImageRequestHandler);
                     builder.serverRegion(tileRegion, overviewDownsample, overviewServer);
                 }
 
                 TiffCompositeTileImageServer compositeServer = new TiffCompositeTileImageServer(
-                        datasetMetadata, tileMetadata, datasetName, slideName, downsampleComposite, imageRequestHandler);
-                builder.serverRegion(tileRegion, downsampleComposite, compositeServer);
+                        datasetMetadata, tileMetadata, datasetName, slideName, tiffDisplayDownsample, tiffImageRequestHandler);
+                builder.serverRegion(tileRegion, tiffDisplayDownsample, compositeServer);
             }
             return builder.build();
         } catch (IOException e) {
@@ -199,7 +214,7 @@ public class SlideImageServer {
      * a particular tile fails to fetch (edge tile, transient error, not found on server althoug it should be there), rather than failing
      * on the first one.
      */
-    private static double[] deriveDownsamples(
+    private static double[] deriveJpgDownsamples(
             List<TileMetadata> tileMetadataList,
             String datasetName,
             String slideName,

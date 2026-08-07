@@ -67,7 +67,7 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
             sparseServer = SlideImageServer.build(tilesMetadata, datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
         } else {
             DatasetMetadata datasetMetadata = new DatasetMetadata(miscDataRequestHandler.getDatasetMetadata(datasetName));
-            sparseServer = SlideImageServer.buildTiff(datasetMetadata, tilesMetadata, datasetName, slideName, compositeSwitchDownsample, tiffImageRequestHandler);
+            sparseServer = SlideImageServer.buildTiff(datasetMetadata, tilesMetadata, datasetName, slideName, compositeSwitchDownsample, imageRequestHandler, tiffImageRequestHandler);
         }
         List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
         progressReporter.accept("Fetching" + tilesMetadata.size() +"files...");
