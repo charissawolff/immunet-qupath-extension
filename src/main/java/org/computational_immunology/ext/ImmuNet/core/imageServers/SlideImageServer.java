@@ -2,6 +2,7 @@ package org.computational_immunology.ext.ImmuNet.core.imageServers;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
 
@@ -113,6 +114,16 @@ public class SlideImageServer {
         }
     }
 
+    public static SparseImageServer buildWithTiffComponent(
+            DatasetMetadata datasetMetadata,
+            List<TileMetadata> tileMetadataList,
+            String datasetName,
+            String slideName,
+            double compositeSwitchDownsample,
+            TiffImageRequestHandler imageRequestHandler) {
+                return SparseImageServer.Builder()
+
+    }
 
     public static List<JpgTileImageServer> getThumbServers(SparseImageServer sparseServer) throws IOException {
         double thumbDownsample = sparseServer.getPreferredDownsamples()[1];

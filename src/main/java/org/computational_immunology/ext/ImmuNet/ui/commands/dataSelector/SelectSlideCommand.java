@@ -2,8 +2,10 @@ package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.MiscDataRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.imageServers.SlideImageServer;
 import org.computational_immunology.ext.ImmuNet.core.imageServers.JpgTileImageServer;
+import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
 
@@ -35,20 +37,24 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
     private final String datasetName;
     private final String slideName;
     private final ImageRequestHandler imageRequestHandler;
+    private final MiscDataRequestHandler miscDataRequestHandler;
     private final double compositeSwitchDownsample;
     private volatile ExecutorService prefetchExecutor;
     private List<TileMetadata> tilesMetadata;
 
-    public SelectSlideCommand(String datasetName, String slideName, double compositeSwitchDownsample, ImageRequestHandler imageRequestHandler) {
+    public SelectSlideCommand(String datasetName, String slideName, double compositeSwitchDownsample, 
+        ImageRequestHandler imageRequestHandler, MiscDataRequestHandler miscDataRequestHandler) {
         this.datasetName = datasetName;
         this.slideName = slideName;
         this.compositeSwitchDownsample = compositeSwitchDownsample;
         this.imageRequestHandler = imageRequestHandler;
+        this.miscDataRequestHandler = miscDataRequestHandler;
     }
 
     @Override
     protected SparseImageServer execute(Consumer<String> progressReporter) throws Exception {
         progressReporter.accept("Fetching slide metadata...");
+        DatasetMetadata datasetMetadata = new DatasetMetadata(miscDataRequestHandler.getDatasetMetadata(datasetName));
         tilesMetadata = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
         SparseImageServer sparseServer = SlideImageServer.build(tilesMetadata, datasetName, slideName, compositeSwitchDownsample, imageRequestHandler);
         List<JpgTileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);

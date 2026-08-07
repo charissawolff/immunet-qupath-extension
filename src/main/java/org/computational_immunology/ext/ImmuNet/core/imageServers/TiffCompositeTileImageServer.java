@@ -7,21 +7,29 @@ import java.io.IOException;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.TiffImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.Tile;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 
+import qupath.lib.color.ColorTools;
 import qupath.lib.images.servers.ImageChannel;
 import qupath.lib.images.servers.ImageServerMetadata;
 import qupath.lib.images.servers.PixelType;
 import qupath.lib.images.servers.TileRequest;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class TiffCompositeTileImageServer extends TileImageServer {
     private final double downsampleValue;
     private final TiffImageRequestHandler imageRequestHandler;
     private final ImageServerMetadata metadata;
 
-    public TiffCompositeTileImageServer(TileMetadata tileMetadata, String datasetName,
-            String slideName, double downsampleValue, TiffImageRequestHandler imageRequestHandler) {
+    public TiffCompositeTileImageServer(DatasetMetadata datasetMetadata, 
+        TileMetadata tileMetadata, String datasetName,
+            String slideName, double downsampleValue, 
+            TiffImageRequestHandler imageRequestHandler) {
         super(tileMetadata, datasetName, slideName);
         this.downsampleValue = downsampleValue;
         this.imageRequestHandler = imageRequestHandler;
@@ -36,7 +44,7 @@ public class TiffCompositeTileImageServer extends TileImageServer {
                 .width(fullWidth).height(fullHeight)
                 .name(datasetName + "/" + slideName + "/" + tileMetadata.getCode() + " (" + tileMetadata.getType() + ")")
                 .rgb(false).pixelType(PixelType.FLOAT32)
-                .channels(ImageChannel.getDefaultChannelList(7))
+                .channels(toImageChannels(datasetMetadata.getAntibodyPanel()))
                 .sizeZ(1).sizeT(1)
                 .levels(new ImageServerMetadata.ImageResolutionLevel.Builder(fullWidth, fullHeight)
                         .addLevel(declaredDownsample, levelWidth, levelHeight)
@@ -75,5 +83,19 @@ public class TiffCompositeTileImageServer extends TileImageServer {
     @Override
     public ImageServerMetadata getOriginalMetadata() {
         return metadata;
+    }
+
+    private static List<ImageChannel> toImageChannels(DatasetMetadata.AntibodyPanel antibodyPanel) {
+        List<ImageChannel> channels = new ArrayList<>();
+        Map<String, int[]> defaultColors = antibodyPanel.getDefaultColors();
+        for (String name : antibodyPanel.getChannels()) {
+            int[] rgb = defaultColors.get(name);
+            if (rgb != null) {
+                channels.add(ImageChannel.getInstance(name, ColorTools.packRGB(rgb[0], rgb[1], rgb[2])));
+            } else {
+                channels.add(ImageChannel.getInstance(name, ImageChannel.getDefaultChannelColor(channels.size())));
+            }
+        }
+        return channels;
     }
 }
