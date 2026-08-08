@@ -17,9 +17,11 @@ import org.computational_immunology.ext.ImmuNet.ui.tabs.EnableExtensionCheckbox;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.PolygonViewerTab;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.ServerConnectionTab;
 
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.scene.Scene;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.Tab;
 import javafx.stage.Stage;
 import qupath.ext.template.ui.InterfaceController;
 import qupath.fx.dialogs.Dialogs;
@@ -53,23 +55,28 @@ public class ImmuNetExtension implements QuPathExtension {
         // selected tile, and wires mouse hover/click on the viewer to the tile highlight overlay.
         SelectedDataStore selectedDataStore = new SelectedDataStore();
         TileHoverOverlay tileHoverOverlay = new TileHoverOverlay(qupath.getOverlayOptions(), selectedDataStore);
-        TileHoverController tileHoverController = new TileHoverController(selectedDataStore, tileHoverOverlay);
+        TileHoverController tileHoverController = new TileHoverController(selectedDataStore, tileHoverOverlay, enableExtensionProperty);
 
         // Side bar
         ServerConnectionTab serverConnectionTab = new ServerConnectionTab();
-        serverConnectionTab.addCustomTab(qupath.getAnalysisTabPane());
+        gateTab(serverConnectionTab.addCustomTab(qupath.getAnalysisTabPane()));
 
         DatasetSelectorTab datasetTab = new DatasetSelectorTab(serverGateway, selectedDataStore, tileHoverController);
-        datasetTab.addCustomTab(qupath.getAnalysisTabPane());
+        gateTab(datasetTab.addCustomTab(qupath.getAnalysisTabPane()));
 
 
             //polygon tracker listener
-        PolygonTracker polygonTracker = new PolygonTracker();
+        PolygonTracker polygonTracker = new PolygonTracker(enableExtensionProperty);
         // polygon metadata added
         PolygonMetadataAdder polygonMetadataAdder = new PolygonMetadataAdder(polygonTracker, selectedDataStore);
         //polygon viewer tab
         PolygonViewerTab polygonViewerTab = new PolygonViewerTab(serverGateway, jsonDataUploadHandler, selectedDataStore, polygonTracker);
-        polygonViewerTab.addCustomTab(qupath.getAnalysisTabPane());
+        gateTab(polygonViewerTab.addCustomTab(qupath.getAnalysisTabPane()));
+    }
+
+    private void gateTab(Tab tab) {
+        // gate tab in that we make sure it's only clickable when the extension is enabled
+        tab.disableProperty().bind(enableExtensionProperty.not());
     }
 
     private void addPreferenceToPane(QuPathGUI qupath) {
