@@ -7,7 +7,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 
-public class JsonDataUploadHandler {
+public class ServerUploadGateway {
     private final PagePoster<JSONArray> pagePoster;
     private static final String CELL_ANNOTATION_UPLOAD = "/v/annotationstore/cells";
     private static final String POLYGON_ANNOTATION_UPLOAD = "/v/annotationstore/polygons";
@@ -15,7 +15,7 @@ public class JsonDataUploadHandler {
     // response is {"deleted": 0, "inserted": 1, "updated": 0}
     // request is [{"slide":"T02-16400-D_Scan1","dataset":"2020-01-31-phenotyping-paper-melanoma","tile":"55762,14303","x":664,"y":468,"t":"T cell","annotator":"chawolff","purpose":"training","created":"1785663209279"}]
 
-    public JsonDataUploadHandler(PagePoster<JSONArray> pagePoster) {
+    public ServerUploadGateway(PagePoster<JSONArray> pagePoster) {
         this.pagePoster = pagePoster;
     }
 

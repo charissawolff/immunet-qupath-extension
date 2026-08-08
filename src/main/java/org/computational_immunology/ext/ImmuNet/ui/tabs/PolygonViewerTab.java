@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGateway;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
@@ -40,12 +40,12 @@ import java.util.Map;
 public class PolygonViewerTab extends CustomSidePanelTab {
 
     private final ServerGateway serverGateway;
-    private final JsonDataUploadHandler dataUploadHandler;
+    private final ServerUploadGateway dataUploadHandler;
     private final SelectedDataStore selectedDataStore;
     private static PolygonTracker polygonTracker;
 
     public PolygonViewerTab(ServerGateway serverGateway,
-                            JsonDataUploadHandler dataUploadHandler,
+                            ServerUploadGateway dataUploadHandler,
                             SelectedDataStore selectedDataStore, PolygonTracker polygonTracker) {
         super("Polygon viewer");
         this.serverGateway = serverGateway;

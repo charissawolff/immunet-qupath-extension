@@ -1,6 +1,6 @@
 package org.computational_immunology.ext.ImmuNet;
 
-import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGateway;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
@@ -20,7 +20,7 @@ public class ImmuNetExtension implements QuPathExtension {
 
     // make the point radius larger 
     // This is a global QuPath preference, not per-object.
-    private static final int ANNOTATION_POINT_RADIUS = 8;
+    private static final int ANNOTATION_POINT_RADIUS = 4;
 
     @Override
     public void installExtension(QuPathGUI qupath) {
@@ -32,7 +32,7 @@ public class ImmuNetExtension implements QuPathExtension {
 
         // Built once here and injected down, this will be used to retrieve data and images from the server
         ServerGateway serverGateway = new ServerGateway(ServerConnectionHandler.getInstance());
-        JsonDataUploadHandler jsonDataUploadHandler = new JsonDataUploadHandler(ServerConnectionHandler.getInstance());
+        ServerUploadGateway jsonDataUploadHandler = new ServerUploadGateway(ServerConnectionHandler.getInstance());
 
         // Built once and injected down. THis tracks the currently loaded slide and the currently
         // selected tile, and wires mouse hover/click on the viewer to the tile highlight overlay.

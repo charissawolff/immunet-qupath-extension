@@ -6,14 +6,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGateway;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
 
 public class AddPolygonCommand extends AbstractAsyncCommand<JSONObject> {
     private final JSONObject polygonJson;
-    private final JsonDataUploadHandler dataUploadHandler;
+    private final ServerUploadGateway dataUploadHandler;
 
-    public AddPolygonCommand(JSONObject polygonJson, JsonDataUploadHandler dataUploadHandler) {
+    public AddPolygonCommand(JSONObject polygonJson, ServerUploadGateway dataUploadHandler) {
         this.polygonJson = polygonJson;
         this.dataUploadHandler = dataUploadHandler;
     }
