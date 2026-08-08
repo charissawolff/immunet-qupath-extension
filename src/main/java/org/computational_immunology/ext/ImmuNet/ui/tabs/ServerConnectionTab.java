@@ -40,7 +40,11 @@ public class ServerConnectionTab extends CustomSidePanelTab{
 
     public ServerConnectionTab() {
         super("Server Connection");
-        credentialsConfigPath = Path.of(PathPrefs.userPathProperty().get() + "/login.json");
+        String userPath = PathPrefs.userPathProperty().get();
+        if (userPath == null) {
+            userPath = System.getProperty("user.home");
+        }
+        credentialsConfigPath = Path.of(userPath, "login.json");
     }
 
     /**

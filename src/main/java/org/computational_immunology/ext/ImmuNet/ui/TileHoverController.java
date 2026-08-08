@@ -2,6 +2,7 @@ package org.computational_immunology.ext.ImmuNet.ui;
 
 import java.awt.geom.Point2D;
 
+import javafx.beans.value.ObservableBooleanValue;
 import javafx.event.EventHandler;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -17,7 +18,7 @@ public class TileHoverController {
 
     private final SelectedDataStore selectedDataStore;
     private final TileHoverOverlay overlay;
-    private volatile Boolean paintCompletely;
+    private final ObservableBooleanValue enabled;
 
     private final EventHandler<MouseEvent> mouseMovedHandler = this::handleMouseMoved;
     private final EventHandler<MouseEvent> mouseExitedHandler = this::handleMouseExited;
@@ -25,10 +26,24 @@ public class TileHoverController {
 
     private QuPathViewer viewer;
 
-    public TileHoverController(SelectedDataStore selectedDataStore, TileHoverOverlay overlay) {
+    public TileHoverController(SelectedDataStore selectedDataStore, TileHoverOverlay overlay, ObservableBooleanValue enabled) {
         this.selectedDataStore = selectedDataStore;
         this.overlay = overlay;
-        this.paintCompletely = true;
+        this.enabled = enabled;
+        applyEnabled(enabled.get());
+        this.enabled.addListener((obs, wasEnabled, isEnabled) -> applyEnabled(isEnabled));
+    }
+
+    private void applyEnabled(boolean isEnabled) {
+        if (isEnabled) {
+            setShow();
+        } else {
+            setDontShow();
+            overlay.setHoveredTileMetadata(null);
+            if (viewer != null) {
+                viewer.repaint();
+            }
+        }
     }
 
     /**
@@ -37,6 +52,7 @@ public class TileHoverController {
      * slide, and replaces the selected slide (which itself clears the stale tile selection).
      */
     public void setSlide(SelectedSlide slide, QuPathViewer viewer) {
+        //todo: why is it updating the datastore with a slide? remove this
         attachTo(viewer);
         overlay.setHoveredTileMetadata(null);
         selectedDataStore.setSelectedSlide(slide);
