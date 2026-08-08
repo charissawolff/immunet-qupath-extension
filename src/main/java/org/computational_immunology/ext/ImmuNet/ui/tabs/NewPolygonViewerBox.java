@@ -109,10 +109,10 @@ public class NewPolygonViewerBox extends TableView<PathObject> {
         JSONObject polygonJson = PolygonConverter.toJSONObject(polygonData);
         ImmuNetLog.log("Polygon JSON is " + polygonJson);
         AddPolygonCommand command = new AddPolygonCommand(polygonJson, dataUploadHandler);
-        //command.build();
+        command.build();
         //visible on screen and not editable anymore
-        //command.setOnDone(() -> { polygon.setLocked(true); refresh(); });
-        //command.setOnFailed(this::refresh);
-        //command.start();
+        command.setOnDone(() -> { polygon.setLocked(true); refresh(); });
+        command.setOnFailed(this::refresh);
+        command.start();
     }
 }

@@ -129,18 +129,24 @@ public class PolygonConverter {
         jsonObject.put("created", polygon.getCreated());
 
         JSONArray verticesArray = new JSONArray();
-        // The shape has to be [[outerRing], [hole1], [hole2], ...]
         JSONArray outerRingArray = new JSONArray();
         for (Vertex vertex : polygon.getOuterRing()) {
             outerRingArray.put(new JSONArray().put(vertex.getX()).put(vertex.getY()));
         }
-        verticesArray.put(outerRingArray);
-        for (List<Vertex> hole : polygon.getHoles()) {
-            JSONArray holeArray = new JSONArray();
-            for (Vertex vertex : hole) {
-                holeArray.put(new JSONArray().put(vertex.getX()).put(vertex.getY()));
+        if (polygon.getHoles().isEmpty()) {
+            // No holes: keep the flat shape [[x,y], [x,y], ...] for backward compatibility
+            // with the Vue frontend, which can not paint nested vertices.
+            verticesArray = outerRingArray;
+        } else {
+            // Holes present: shape is [[outerRing], [hole1], [hole2], ...]. Will not show on the vue frontend.
+            verticesArray.put(outerRingArray);
+            for (List<Vertex> hole : polygon.getHoles()) {
+                JSONArray holeArray = new JSONArray();
+                for (Vertex vertex : hole) {
+                    holeArray.put(new JSONArray().put(vertex.getX()).put(vertex.getY()));
+                }
+                verticesArray.put(holeArray);
             }
-            verticesArray.put(holeArray);
         }
         jsonObject.put("vertices", verticesArray);
 
