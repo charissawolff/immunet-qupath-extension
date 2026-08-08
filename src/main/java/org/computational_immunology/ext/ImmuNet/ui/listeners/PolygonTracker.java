@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.value.ObservableBooleanValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import qupath.lib.gui.QuPathGUI;
@@ -26,8 +27,10 @@ check if the polygon is already in the newAnnotations list before adding it, to 
 public class PolygonTracker implements PathObjectHierarchyListener  {
     PathObjectHierarchy hierarchy;
     private final ObservableList<PathObject> newAnnotations = FXCollections.observableArrayList();
+    private final ObservableBooleanValue enabled;
 
-    public PolygonTracker() {
+    public PolygonTracker(ObservableBooleanValue enabled) {
+        this.enabled = enabled;
         QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
         if (viewer == null) {
             return;
@@ -54,6 +57,9 @@ public class PolygonTracker implements PathObjectHierarchyListener  {
 
     @Override
     public void hierarchyChanged(PathObjectHierarchyEvent event) {
+        if (!enabled.get()) {
+            return;
+        }
         //change the newAnnotations list to only contain annotations that are still in the hierarchy, in case the user deleted some of them
         //but that it wasn't registered (such as deleting from hierarchy tab)
         newAnnotations.removeIf(obj -> obj.getParent() == null);
