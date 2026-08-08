@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import org.locationtech.jts.geom.Geometry;
 
-public class Polygon {
+public class AnnotationPolygon {
 
     private final String id;
     private final List<Vertex> outerRing;
@@ -14,7 +14,7 @@ public class Polygon {
     private final String slide;
     private final String created;
 
-    public Polygon(String id, List<Vertex> outerRing, List<List<Vertex>> holes, String name,
+    public AnnotationPolygon(String id, List<Vertex> outerRing, List<List<Vertex>> holes, String name,
                     String dataset, String slide, String created) {
         this.id = id;
         this.outerRing = outerRing;

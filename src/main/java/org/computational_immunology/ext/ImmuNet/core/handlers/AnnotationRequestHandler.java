@@ -15,7 +15,7 @@ import java.awt.image.BufferedImage;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
-import org.computational_immunology.ext.ImmuNet.core.models.Polygon;
+import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.models.Tile;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
@@ -89,9 +89,9 @@ public class AnnotationRequestHandler {
         return annotations;
     }
 
-    public List<Polygon> fetchPolygons(String dataset, String slide) throws IOException, JSONException, InterruptedException {
+    public List<AnnotationPolygon> fetchPolygons(String dataset, String slide) throws IOException, JSONException, InterruptedException {
         String path = String.format(SLIDE_POLYGONS, dataset, slide);
-        List<Polygon> polygons = new ArrayList<>();
+        List<AnnotationPolygon> polygons = new ArrayList<>();
 
         HttpResponse<String> response = pageFetcher.fetchStringPage(path);
 
@@ -121,8 +121,8 @@ public class AnnotationRequestHandler {
             String shape = outerShape(jsonVertices);
             switch (shape) {
                 case "flat":
-                   List<Polygon.Vertex> vertices = parseVertices(jsonVertices);
-                    Polygon polygon = new Polygon(
+                   List<AnnotationPolygon.Vertex> vertices = parseVertices(jsonVertices);
+                    AnnotationPolygon polygon = new AnnotationPolygon(
                             jsonPolygon.optString("_id", null),
                             vertices,
                             null,
@@ -134,9 +134,9 @@ public class AnnotationRequestHandler {
                     polygons.add(polygon);
                     continue;
                 case "nested": 
-                    List<Polygon.Vertex> outerRing = parseVertices(jsonVertices.getJSONArray(0));
-                    List<List<Polygon.Vertex>> holes = parseHoles(jsonVertices, 1);
-                    Polygon polygon2 = new Polygon(
+                    List<AnnotationPolygon.Vertex> outerRing = parseVertices(jsonVertices.getJSONArray(0));
+                    List<List<AnnotationPolygon.Vertex>> holes = parseHoles(jsonVertices, 1);
+                    AnnotationPolygon polygon2 = new AnnotationPolygon(
                         jsonPolygon.optString("_id", null),
                         outerRing,
                         holes,
@@ -152,19 +152,19 @@ public class AnnotationRequestHandler {
         return polygons;
     }
 
-    private static List<Polygon.Vertex> parseVertices(JSONArray jsonArray){
-        List<Polygon.Vertex> vertices = new ArrayList<>(jsonArray.length());
+    private static List<AnnotationPolygon.Vertex> parseVertices(JSONArray jsonArray){
+        List<AnnotationPolygon.Vertex> vertices = new ArrayList<>(jsonArray.length());
             for (int j = 0; j < jsonArray.length(); j++) {
                 JSONArray point = jsonArray.getJSONArray(j); // e.g. [11255.70, 3696.45]
                 double x = point.getDouble(0);
                 double y = point.getDouble(1);
-                vertices.add(new Polygon.Vertex(x, y));
+                vertices.add(new AnnotationPolygon.Vertex(x, y));
             }
         return vertices;
     }
 
-    private static List<List<Polygon.Vertex>> parseHoles(JSONArray jsonArray, int startIndex) {
-        List<List<Polygon.Vertex>> holes = new ArrayList<>(jsonArray.length() - startIndex);
+    private static List<List<AnnotationPolygon.Vertex>> parseHoles(JSONArray jsonArray, int startIndex) {
+        List<List<AnnotationPolygon.Vertex>> holes = new ArrayList<>(jsonArray.length() - startIndex);
         for (int j = startIndex; j < jsonArray.length(); j++) {
             holes.add(parseVertices(jsonArray.getJSONArray(j)));
         }

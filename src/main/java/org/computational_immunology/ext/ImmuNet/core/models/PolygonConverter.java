@@ -10,7 +10,7 @@ import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 
 import org.checkerframework.checker.units.qual.h;
-import org.computational_immunology.ext.ImmuNet.core.models.Polygon.Vertex;
+import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon.Vertex;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -34,12 +34,12 @@ import qupath.lib.roi.interfaces.ROI;
 
 public class PolygonConverter {
 
-    public static PathObject toPathObject(Polygon p) {
+    public static PathObject toPathObject(AnnotationPolygon p) {
         //instead of being the polygon class, we need it to use geometryToROI do it can hold holes
 
         
-        List<Polygon.Vertex> outerRing = p.getOuterRing();
-        List<List<Polygon.Vertex>> holes = p.getHoles();
+        List<AnnotationPolygon.Vertex> outerRing = p.getOuterRing();
+        List<List<AnnotationPolygon.Vertex>> holes = p.getHoles();
 
         GeometryFactory gf = new GeometryFactory();
         List<Coordinate> outerRingCoords = outerRing.stream()
@@ -55,7 +55,7 @@ public class PolygonConverter {
 
         List<LinearRing> holeLinearRings = new ArrayList<>();
 
-        for (List<Polygon.Vertex> hole : holes) {
+        for (List<AnnotationPolygon.Vertex> hole : holes) {
             List<Coordinate> holeCoords = hole.stream()
                 .map(v -> new Coordinate(v.getX(), v.getY()))
                 .collect(Collectors.toList());
@@ -90,7 +90,7 @@ public class PolygonConverter {
         /* This utility class should not be instantiated */
     }
 
-    public static Polygon fromPathObject(PathObject pathObject) {
+    public static AnnotationPolygon fromPathObject(PathObject pathObject) {
         String id = (String) pathObject.getMetadata().get("id");
         //read directly from pathObject metadata, since name can be changed by user
         String name = pathObject.getName();
@@ -112,7 +112,7 @@ public class PolygonConverter {
             holes.add(toVertices(jtsPolygon.getInteriorRingN(i)));
         }
 
-        return new Polygon(id, outerRing, holes, name, dataset, slide, created);
+        return new AnnotationPolygon(id, outerRing, holes, name, dataset, slide, created);
     }
 
     private static List<Vertex> toVertices(LineString ring) {
@@ -121,7 +121,7 @@ public class PolygonConverter {
             .toList();
     }
 
-    public static JSONObject toJSONObject(Polygon polygon) {
+    public static JSONObject toJSONObject(AnnotationPolygon polygon) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("id", polygon.getId());
         jsonObject.put("name", polygon.getName());
@@ -154,16 +154,16 @@ public class PolygonConverter {
         return jsonObject;
     }
 
-    public static JSONArray toJSONArray(Collection<Polygon> polygons) {
+    public static JSONArray toJSONArray(Collection<AnnotationPolygon> polygons) {
         JSONArray array = new JSONArray();
-        for (Polygon polygon : polygons) {
+        for (AnnotationPolygon polygon : polygons) {
             array.put(toJSONObject(polygon));
         }
         return array;
     }
 
-    public static List<Polygon> fromJsonaRRAY(JSONArray jsonArray, ImageType imageType) {
-        List<Polygon> polygons = new ArrayList<>();
+    public static List<AnnotationPolygon> fromJsonArray(JSONArray jsonArray) {
+        List<AnnotationPolygon> polygons = new ArrayList<>();
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject jsonPolygon = jsonArray.getJSONObject(i);
             JSONArray jsonVertices = jsonPolygon.getJSONArray("vertices");
@@ -173,8 +173,8 @@ public class PolygonConverter {
             String shape = outerShape(jsonVertices);
             switch (shape) {
                 case "flat":
-                   List<Polygon.Vertex> vertices = parseVertices(jsonVertices);
-                    Polygon polygon = new Polygon(
+                   List<AnnotationPolygon.Vertex> vertices = parseVertices(jsonVertices);
+                    AnnotationPolygon polygon = new AnnotationPolygon(
                             jsonPolygon.optString("_id", null),
                             vertices,
                             null,
@@ -186,9 +186,9 @@ public class PolygonConverter {
                     polygons.add(polygon);
                     continue;
                 case "nested": 
-                    List<Polygon.Vertex> outerRing = parseVertices(jsonVertices.getJSONArray(0));
-                    List<List<Polygon.Vertex>> holes = parseHoles(jsonVertices, 1);
-                    Polygon polygon2 = new Polygon(
+                    List<AnnotationPolygon.Vertex> outerRing = parseVertices(jsonVertices.getJSONArray(0));
+                    List<List<AnnotationPolygon.Vertex>> holes = parseHoles(jsonVertices, 1);
+                    AnnotationPolygon polygon2 = new AnnotationPolygon(
                         jsonPolygon.optString("_id", null),
                         outerRing,
                         holes,
@@ -204,19 +204,19 @@ public class PolygonConverter {
         return polygons;
     }
 
-    private static List<Polygon.Vertex> parseVertices(JSONArray jsonArray){
-        List<Polygon.Vertex> vertices = new ArrayList<>(jsonArray.length());
+    private static List<AnnotationPolygon.Vertex> parseVertices(JSONArray jsonArray){
+        List<AnnotationPolygon.Vertex> vertices = new ArrayList<>(jsonArray.length());
             for (int j = 0; j < jsonArray.length(); j++) {
                 JSONArray point = jsonArray.getJSONArray(j); // e.g. [11255.70, 3696.45]
                 double x = point.getDouble(0);
                 double y = point.getDouble(1);
-                vertices.add(new Polygon.Vertex(x, y));
+                vertices.add(new AnnotationPolygon.Vertex(x, y));
             }
         return vertices;
     }
 
-    private static List<List<Polygon.Vertex>> parseHoles(JSONArray jsonArray, int startIndex) {
-        List<List<Polygon.Vertex>> holes = new ArrayList<>(jsonArray.length() - startIndex);
+    private static List<List<AnnotationPolygon.Vertex>> parseHoles(JSONArray jsonArray, int startIndex) {
+        List<List<AnnotationPolygon.Vertex>> holes = new ArrayList<>(jsonArray.length() - startIndex);
         for (int j = startIndex; j < jsonArray.length(); j++) {
             holes.add(parseVertices(jsonArray.getJSONArray(j)));
         }

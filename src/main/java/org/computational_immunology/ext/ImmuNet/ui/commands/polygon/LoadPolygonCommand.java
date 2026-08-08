@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
-import org.computational_immunology.ext.ImmuNet.core.models.Polygon;
+import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.models.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
@@ -14,7 +14,7 @@ import org.computational_immunology.ext.ImmuNet.ui.commands.AttachPathObjectsToV
 
 import qupath.lib.objects.PathObject;
 
-public class LoadPolygonCommand extends AbstractAsyncCommand<List<Polygon>> {
+public class LoadPolygonCommand extends AbstractAsyncCommand<List<AnnotationPolygon>> {
     private final SelectedDataStore selectedDataStore;
     private final AnnotationRequestHandler annotationRequestHandler;
 
@@ -25,10 +25,10 @@ public class LoadPolygonCommand extends AbstractAsyncCommand<List<Polygon>> {
 
     @Override
     //on success, add the polygons to the selectedDataStore and also add them to the QuPath hierarchy, so they are visible in the viewer
-    protected void onSuccess(List<Polygon> polygons) {
+    protected void onSuccess(List<AnnotationPolygon> polygons) {
         selectedDataStore.setPolygons(polygons);
         List<PathObject> polygonPathObjects = new ArrayList<>();
-        for (Polygon p: polygons) {
+        for (AnnotationPolygon p: polygons) {
             polygonPathObjects.add(PolygonConverter.toPathObject(p));
             ImmuNetLog.log("Fetched polygon with ID: " + p.getId() + " for dataset: " + selectedDataStore.getSelectedSlide().getDatasetName() + ", slide: " + selectedDataStore.getSelectedSlide().getSlideName());
         }
@@ -38,8 +38,8 @@ public class LoadPolygonCommand extends AbstractAsyncCommand<List<Polygon>> {
     }
 
     @Override
-    protected List<Polygon> execute(Consumer<String> progressReporter) throws Exception {
-        List<Polygon> polygons = new ArrayList<>();
+    protected List<AnnotationPolygon> execute(Consumer<String> progressReporter) throws Exception {
+        List<AnnotationPolygon> polygons = new ArrayList<>();
         String datasetName = selectedDataStore.getSelectedSlide().getDatasetName();
         String slideName = selectedDataStore.getSelectedSlide().getSlideName();
         if (datasetName.length() < 1 || slideName.length() < 1) {
@@ -48,8 +48,8 @@ public class LoadPolygonCommand extends AbstractAsyncCommand<List<Polygon>> {
             return polygons; // No dataset or slide selected, exit the method
         }
         try{
-            List<Polygon> ps = annotationRequestHandler.fetchPolygons(datasetName, slideName);
-            for (Polygon p : ps) {
+            List<AnnotationPolygon> ps = annotationRequestHandler.fetchPolygons(datasetName, slideName);
+            for (AnnotationPolygon p : ps) {
                 ImmuNetLog.log("Fetched polygon with ID: " + p.getId() + " for dataset: " + datasetName + ", slide: " + slideName);
                 polygons.add(p);
             }

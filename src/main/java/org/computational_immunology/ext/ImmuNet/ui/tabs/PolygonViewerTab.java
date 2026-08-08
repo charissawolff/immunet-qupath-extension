@@ -8,7 +8,7 @@ import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
 import org.computational_immunology.ext.ImmuNet.core.models.Dimensions;
-import org.computational_immunology.ext.ImmuNet.core.models.Polygon;
+import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SelectPathObjectCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.LoadPolygonCommand;
@@ -65,13 +65,13 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         sidePanelTab.setPadding(new Insets(10, 10, 10, 10)); // Box margins
         sidePanelTab.setSpacing(5); // Space between buttons and boxes
         
-        ObservableList<Polygon> polygonNames = FXCollections.observableArrayList();
+        ObservableList<AnnotationPolygon> polygonNames = FXCollections.observableArrayList();
         Map<String, BooleanProperty> checkedMap = new HashMap<>();
 
 
         Label listViewTitle = new Label("Polygon list");
         listViewTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        ListView<Polygon> listView = new ListView<>(polygonNames);
+        ListView<AnnotationPolygon> listView = new ListView<>(polygonNames);
         listView.setPrefHeight(150);
         VBox.setMargin(listView, new Insets(1, 2, 5, 2)); // Space between list and buttons
 
@@ -82,14 +82,14 @@ public class PolygonViewerTab extends CustomSidePanelTab {
                     return visible;
                 }),
                 // need a string converter to display the polygon name in the list view
-                new StringConverter<Polygon>() {
+                new StringConverter<AnnotationPolygon>() {
                     @Override
-                    public String toString(Polygon p) {
+                    public String toString(AnnotationPolygon p) {
                         return p.getDisplayedName();
                     }
 
                     @Override
-                    public Polygon fromString(String s) {
+                    public AnnotationPolygon fromString(String s) {
                         return null; // list is display-only, never edited back from text
                     }
                 }
