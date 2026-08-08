@@ -3,7 +3,7 @@ package org.computational_immunology.ext.ImmuNet.core.handlers;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class MiscDataRequestHandler extends JsonDataRequestHandler {
+public class MiscDataRequestHandler extends DataRequestHandler {
     private final String DATASET_PATH = "v/datasets/";
     private final String SLIDE_PATH = "v/datasets/%s/";
     private final String DATASET_METADATA_PATH = "v/datasets/%s";

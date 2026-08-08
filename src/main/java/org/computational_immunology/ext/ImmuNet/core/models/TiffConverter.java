@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.core.handlers;
+package org.computational_immunology.ext.ImmuNet.core.models;
 
 import java.awt.Point;
 import java.awt.image.BandedSampleModel;
@@ -24,48 +24,16 @@ import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 
-import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.models.Tile;
-import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
-
 /*
- * Why this doesn't just call QuPath's own TIFF reader (like the
- * Vectra3_noBatch_stitch.gy / Polaris_noBatch_stitch.gy scripts do via
- * ImageServerProvider.getPreferredUriImageSupport(...)):
- *
- * Those scripts hand a real File/URI to QuPath's own TIFF/BioFormats reader but components.tiff
- * isn't a file on disk. We don't have that so it's off limits.
- * 
- * We DO reuse: ij.io.Opener.openTiff(InputStream, String).
- *  It handles the actual TIFF/bit-depth/byte-order parsing, so all that's left for us to
- * write is copying each already-decoded slice into our raster's bands.
- */
-public class TiffImageRequestHandler extends ImageRequestHandler {
-    private static final String TIFF_COMPONENTS_TILE_PATH_FORMAT = "v/datasets/%s/%s/%s/components.tiff"; //dataset, slide and tile
-    private static final int MAX_CONCURRENT_TIFF_COMPONENT_FETCHES = 10;
-    private final Semaphore componentsTiffSemaphore = new Semaphore(MAX_CONCURRENT_TIFF_COMPONENT_FETCHES);
+Used to convert bytes from an image from the server into the necessary layered images
+*/
+public class TiffConverter {
 
-    public TiffImageRequestHandler(PageFetcher pageFetcher) {
-        super(pageFetcher);
+    private TiffConverter() {
+        /* should not be initialized */
     }
 
-    public Tile fetchComponentsTiffImage(TileMetadata tileMetadata, String datasetName, String slideName)
-            throws IOException, InterruptedException {
-        String path = String.format(TIFF_COMPONENTS_TILE_PATH_FORMAT, datasetName, slideName, tileMetadata.getCode());
-        componentsSemaphore.acquire();
-        try {
-            byte[] bytes = fetchBytes(path);
-            BufferedImage image = decodeChannels(bytes);
-            return new Tile(tileMetadata, image);
-        } catch (IOException e) {
-            ImmuNetLog.error("Error decoding components.tiff for tile code: " + tileMetadata.getCode() + " at path: " + path, e);
-            throw e;
-        } finally {
-            componentsSemaphore.release();
-        }
-    }
-
-    private BufferedImage decodeChannels(byte[] bytes) throws IOException {
+    public static BufferedImage imageFromBytes(byte[] bytes) throws IOException {
         ImagePlus imp = new Opener().openTiff(new ByteArrayInputStream(bytes), "components");
         if (imp == null) {
             throw new IOException("Could not decode components.tiff with ImageJ");
@@ -139,12 +107,5 @@ public class TiffImageRequestHandler extends ImageRequestHandler {
             case DataBuffer.TYPE_INT, DataBuffer.TYPE_FLOAT -> 32;
             default -> 8;
         };
-    }
-
-    public BufferedImage fetchComponentsTiffImageResized(
-            TileMetadata tileMetadata, String datasetName, String slideName,
-            int targetWidth, int targetHeight) throws IOException, InterruptedException {
-        Tile tile = fetchComponentsTiffImage(tileMetadata, datasetName, slideName);
-        return tile.resizeTiffImage(targetWidth, targetHeight);
     }
 }
