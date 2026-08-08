@@ -13,11 +13,14 @@ import javax.imageio.ImageIO;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
-import org.computational_immunology.ext.ImmuNet.core.models.Polygon;
+import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.TiffConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.Tile;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadataConverter;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -47,43 +50,64 @@ public class ServerRequestHandler extends DataRequestHandler {
         this.pageFetcher = pageFetcher;
     }
 
-    public JSONArray getAllDatasets() {
-        return getWebpageAsJsonArray(DATASET_PATH);
+    public List<String> getAllDatasets() {
+        JSONArray datasetData = getWebpageAsJsonArray(DATASET_PATH);;
+        List<String> datasetList = new ArrayList<>();
+        //convert to string
+        for (int i = 0; i < datasetData.length(); i++) {
+            datasetList.add(datasetData.getString(i));
+        }
+        return datasetList;
     }
 
-    public JSONArray getAllSlides(String datasetName) {
+    public List<String> getAllSlides(String datasetName) {
         String path = String.format(SLIDE_PATH, datasetName);
-        return getWebpageAsJsonArray(path);
+        JSONArray slideData = getWebpageAsJsonArray(path);
+        List<String> slideList = new ArrayList<>();
+        //convert to string
+        for (int i = 0; i < slideData.length(); i++) {
+            slideList.add(slideData.getString(i));
+        }
+        return slideList;
+    }
     }
 
-    public JSONObject getDatasetMetadata(String datasetName) {
+    public DatasetMetadata getDatasetMetadata(String datasetName) {
         String path = String.format(DATASET_METADATA_PATH, datasetName);
-        return getWebpageAsJsonObject(path);
+        JSONObject response = getWebpageAsJsonObject(path);
+        return new DatasetMetadata(response);
     }
 
-    public JSONArray getTileMetadatas(String datasetName, String slideName) throws IOException, InterruptedException {
+    public List<TileMetadata> getTileMetadatas(String datasetName, String slideName) throws IOException, InterruptedException {
         String path = String.format(TILEMETADATAPATH_FORMAT, datasetName, slideName);
+        List<TileMetadata> tileMetadatas;
         String allTilesJson = pageFetcher.fetchStringPage(path).body();
+
+        //ImmuNetLog.log("Path at getTileMetadatas is " + path);
+        //ImmuNetLog.log(allTilesJson);
+
         JSONArray parsedOutput = new JSONArray(allTilesJson);
         ImmuNetLog.log("Fetched all tiles json");
-        return parsedOutput;
+        tileMetadatas = TileMetadataConverter.jsonToTileMetadatas(parsedOutput, ImageType.THUMB);
+        return tileMetadatas;
     }
 
-    public BufferedImage fetchTileImage(String datasetName, String slideName, String tileCode, TileMetadata.ImageType tileType) throws IOException, InterruptedException {
+    public Tile fetchTileImage(String datasetName, String slideName, TileMetadata tileMetadata) throws IOException, InterruptedException {
         // Fetch the image for a specific tile using its metadata and the dataset/slide names. 
         // Check for null image and throw IOException if the image cannot be decoded.
         // The application crashes when I try to load in too fast of the composite images, so I added a semaphore to limit how many images are read
         // at the same time
         
-        String path = String.format(TILE_IMAGE_PATH_FORMAT, datasetName, slideName, tileCode, tileType);
-        Semaphore semaphore = tileType == TileMetadata.ImageType.THUMB ? thumbSemaphore : compositeSemaphore;
+        String path = String.format(TILE_IMAGE_PATH_FORMAT, datasetName, slideName, tileMetadata.getCode(), tileMetadata.getType().toString());
+        Semaphore semaphore = tileMetadata.getType() == TileMetadata.ImageType.THUMB ? thumbSemaphore : compositeSemaphore;
         try {
-            return fetchImage(path, semaphore);
+            BufferedImage bImage = fetchImage(path, semaphore);
+            return new Tile(tileMetadata, bImage);
         } catch (IOException e) {
-            ImmuNetLog.error("Error fetching tile image for tile code: " + tileCode + " at path: " + path, e);
+            ImmuNetLog.error("Error fetching tile image for tile code: " + tileMetadata.getCode() + " at path: " + path, e);
             throw e; // Rethrow the exception to be handled by the caller
         } catch (InterruptedException e) {
-            ImmuNetLog.error("Thread interrupted while fetching tile image for tile code: " + tileCode + " at path: " + path, e);
+            ImmuNetLog.error("Thread interrupted while fetching tile image for tile code: " + tileMetadata.getCode() + " at path: " + path, e);
             throw e; // Rethrow the exception to be handled by the caller
         }
     }
@@ -127,9 +151,5 @@ public class ServerRequestHandler extends DataRequestHandler {
         JSONArray array = new JSONArray(body);
         return PolygonConverter.fromJsonArray(array);
     }
-
-    
-
-
 }
 

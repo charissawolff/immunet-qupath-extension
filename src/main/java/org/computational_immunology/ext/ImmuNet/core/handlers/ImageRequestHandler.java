@@ -122,26 +122,4 @@ public class ImageRequestHandler {
     public TileMetadata testJsonToTileMetadata(JSONObject json, ImageType type) throws JSONException, IOException {
         return jsonToTileMetadata(json, type);
     }
-
-    /**
-     * Fetch a list of format JSON from v/{webpageString} and converts to List of type String.
-     *
-     * @param localPath path to webpage
-     * @return list of type String obtained from JSON webpage OR empty list on exception
-     */
-    public List<String> getWebpageAsList(String localPath) {
-        List<String> datasetList = new ArrayList<>();
-        try {
-            String json = pageFetcher.fetchStringPage("v/" + localPath).body();
-            JSONArray parsedDatasetList = new JSONArray(json);
-
-            // Add each element of the JSONArray to the list to convert types
-            for (int i = 0; i < parsedDatasetList.length(); i++) {
-                datasetList.add(parsedDatasetList.getString(i));
-            }
-        } catch (Exception e) {
-            ImmuNetLog.error("Error in fetching webpage list of items. Localpath: " + localPath, e);
-        }
-        return datasetList;
-    }
 }

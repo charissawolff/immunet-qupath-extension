@@ -1,5 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.core.handlers;
 
+import java.io.IOException;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -12,16 +14,16 @@ public class MiscDataRequestHandler extends DataRequestHandler {
         super(pageFetcher);
     }
 
-    public JSONArray getAllDatasets() {
+    public JSONArray getAllDatasets() throws IOException, InterruptedException {
         return getWebpageAsJsonArray(DATASET_PATH);
     }
 
-    public JSONArray getAllSlides(String datasetName) {
+    public JSONArray getAllSlides(String datasetName) throws IOException, InterruptedException {
         String path = String.format(SLIDE_PATH, datasetName);
         return getWebpageAsJsonArray(path);
     }
 
-    public JSONObject getDatasetMetadata(String datasetName) {
+    public JSONObject getDatasetMetadata(String datasetName) throws IOException, InterruptedException {
         String path = String.format(DATASET_METADATA_PATH, datasetName);
         return getWebpageAsJsonObject(path);
     }
