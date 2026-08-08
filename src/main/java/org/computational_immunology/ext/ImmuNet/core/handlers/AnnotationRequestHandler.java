@@ -23,7 +23,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-
 public class AnnotationRequestHandler {
     private final PageFetcher pageFetcher;
     private static final String SLIDE_ANNOTATIONS = "/v/annotations/%s/%s/"; // datasetName, slideName
@@ -115,25 +114,77 @@ public class AnnotationRequestHandler {
             JSONObject jsonPolygon = array.getJSONObject(i);
 
             JSONArray jsonVertices = jsonPolygon.getJSONArray("vertices");
-            List<Polygon.Vertex> vertices = new ArrayList<>(jsonVertices.length());
-            for (int j = 0; j < jsonVertices.length(); j++) {
-                JSONArray point = jsonVertices.getJSONArray(j); // e.g. [11255.70, 3696.45]
+            // it is in the shape [[[outer ring], [hole1], [hole2]]]
+            // OR 
+            
+            //first check shape of json vertices
+            String shape = outerShape(jsonVertices);
+            switch (shape) {
+                case "flat":
+                   List<Polygon.Vertex> vertices = parseVertices(jsonVertices);
+                    Polygon polygon = new Polygon(
+                            jsonPolygon.optString("_id", null),
+                            vertices,
+                            null,
+                            jsonPolygon.optString("name", null),
+                            jsonPolygon.optString("dataset", null),
+                            jsonPolygon.optString("slide", null),
+                            jsonPolygon.optString("created", null)
+                    );
+                    polygons.add(polygon);
+                    continue;
+                case "nested": 
+                    List<Polygon.Vertex> outerRing = parseVertices(jsonVertices.getJSONArray(0));
+                    List<List<Polygon.Vertex>> holes = parseHoles(jsonVertices, 1);
+                    Polygon polygon2 = new Polygon(
+                        jsonPolygon.optString("_id", null),
+                        outerRing,
+                        holes,
+                        jsonPolygon.optString("name", null),
+                        jsonPolygon.optString("dataset", null),
+                        jsonPolygon.optString("slide", null),
+                        jsonPolygon.optString("created", null)
+                    );
+                    polygons.add(polygon2);
+                    break;
+            }
+        }
+        return polygons;
+    }
+
+    private static List<Polygon.Vertex> parseVertices(JSONArray jsonArray){
+        List<Polygon.Vertex> vertices = new ArrayList<>(jsonArray.length());
+            for (int j = 0; j < jsonArray.length(); j++) {
+                JSONArray point = jsonArray.getJSONArray(j); // e.g. [11255.70, 3696.45]
                 double x = point.getDouble(0);
                 double y = point.getDouble(1);
                 vertices.add(new Polygon.Vertex(x, y));
             }
+        return vertices;
+    }
 
-            Polygon polygon = new Polygon(
-                    jsonPolygon.optString("_id", null),
-                    vertices,
-                    jsonPolygon.optString("name", null),
-                    jsonPolygon.optString("dataset", null),
-                    jsonPolygon.optString("slide", null),
-                    jsonPolygon.optString("created", null)
-            );
-            polygons.add(polygon);
+    private static List<List<Polygon.Vertex>> parseHoles(JSONArray jsonArray, int startIndex) {
+        List<List<Polygon.Vertex>> holes = new ArrayList<>(jsonArray.length() - startIndex);
+        for (int j = startIndex; j < jsonArray.length(); j++) {
+            holes.add(parseVertices(jsonArray.getJSONArray(j)));
         }
-        return polygons;
+        return holes;
+    }
+
+    static String outerShape(JSONArray vertices) {
+        boolean allFlat = true;
+        boolean allNested = true;
+
+        for (int i = 0; i < vertices.length(); i++) {
+            JSONArray el = vertices.getJSONArray(i);
+            boolean elIsNested = el.length() > 0 && el.get(0) instanceof JSONArray;
+            if (elIsNested) allFlat = false;
+            else allNested = false;
+        }
+
+        if (allFlat) return "flat";     // [[x], [y], [z]]  -> one level: array of arrays
+        if (allNested) return "nested"; 
+        return "mixed";                 // shouldn;t happen
     }
 
     private AnnotationPoint jsonToAnnotation(JSONObject json) throws JSONException {

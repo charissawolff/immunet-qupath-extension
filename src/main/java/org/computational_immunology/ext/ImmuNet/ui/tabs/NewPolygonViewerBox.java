@@ -1,5 +1,6 @@
 package org.computational_immunology.ext.ImmuNet.ui.tabs;
 
+import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
 import org.computational_immunology.ext.ImmuNet.core.models.Polygon;
 import org.computational_immunology.ext.ImmuNet.core.models.PolygonConverter;
@@ -102,8 +103,11 @@ public class NewPolygonViewerBox extends TableView<PathObject> {
 
     private void handleAddClicked(PathObject polygon, Button button) {
         button.setDisable(true);
+        ImmuNetLog.log("Adding polygon: " + polygon.getName() + " which is:" + polygon);
         Polygon polygonData = PolygonConverter.fromPathObject(polygon);
+        ImmuNetLog.log("Polygon from PathObject is " + polygonData);
         JSONObject polygonJson = PolygonConverter.toJSONObject(polygonData);
+        ImmuNetLog.log("Polygon JSON is " + polygonJson);
         AddPolygonCommand command = new AddPolygonCommand(polygonJson, dataUploadHandler);
         command.build();
         //visible on screen and not editable anymore
