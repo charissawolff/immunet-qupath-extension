@@ -1,8 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.core.imageServers;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
-import org.computational_immunology.ext.ImmuNet.core.handlers.TiffImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
@@ -17,11 +16,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /*
-The image server for showing a SLIDE, which consists of many TILES. 
+The image server for showing a SLIDE, which consists of many TILES.
 Here we use a SparseImageServer which is a AbstractTileableImageServer.
 This server determines the downsample values of the tiles; since we have 2 or 3 different layers. The THUMB and the composite,
 each for the thumb.jpg or composite.jpg in backend server. Furthermore a third layer is made (overview) for some slides, so that Qupath doesn't crash
-when opening slides with hundreds of tiles due to memory issues. 
+when opening slides with hundreds of tiles due to memory issues.
 
 For each tile region, we build a TileImageServer per resolution and register it into the SparseImageServer.Builder.
 Build() returns the finished SparseImageServer. This SparseImageServer instance (together with QuPath's own viewer)
@@ -46,9 +45,9 @@ public class SlideImageServer {
             String datasetName,
             String slideName,
             double compositeSwitchDownsample,
-            ImageRequestHandler imageRequestHandler) {
+            ServerGateway serverGateway) {
         try {
-            double[] downsamples = deriveJpgDownsamples(tileMetadataList, datasetName, slideName, imageRequestHandler);
+            double[] downsamples = deriveJpgDownsamples(tileMetadataList, datasetName, slideName, serverGateway);
             downsampleComposite = downsamples[1];
 
             DownsampleLevels downsampleLevels = getDownsampleLevels(tileMetadataList, compositeSwitchDownsample, downsamples[0], downsampleComposite);
@@ -70,7 +69,7 @@ public class SlideImageServer {
                 );
 
                 TileMetadata thumbTile = tileMetadata.withType(TileMetadata.ImageType.THUMB);
-                JpgTileImageServer thumbServer = new JpgTileImageServer(thumbTile, datasetName, slideName, downsampleThumb, imageRequestHandler);
+                JpgTileImageServer thumbServer = new JpgTileImageServer(thumbTile, datasetName, slideName, downsampleThumb, serverGateway);
                 builder.serverRegion(tileRegion, registeredDownsampleThumb, thumbServer);
 
                 // register this overview level to not crash upon opening the image
@@ -79,7 +78,7 @@ public class SlideImageServer {
                 }
 
                 TileMetadata compositeTile = tileMetadata.withType(TileMetadata.ImageType.COMPOSITE);
-                JpgTileImageServer compositeServer = new JpgTileImageServer(compositeTile, datasetName, slideName, downsampleComposite, imageRequestHandler);
+                JpgTileImageServer compositeServer = new JpgTileImageServer(compositeTile, datasetName, slideName, downsampleComposite, serverGateway);
                 builder.serverRegion(tileRegion, downsampleComposite, compositeServer);
             }
             return builder.build();
@@ -95,8 +94,7 @@ public class SlideImageServer {
             String datasetName,
             String slideName,
             double compositeSwitchDownsample,
-            ImageRequestHandler imageRequestHandler,
-            TiffImageRequestHandler tiffImageRequestHandler) {
+            ServerGateway serverGateway) {
         try {
             // components.tiff is always fetched at full native resolution and resized locally
             //unlike the JPG path's thumb.jpg/composite.jpg, which are pre-downsampled
@@ -105,8 +103,8 @@ public class SlideImageServer {
             DownsampleLevels downsampleLevels = getDownsampleLevels(tileMetadataList, compositeSwitchDownsample, 1.0, tiffDisplayDownsample);
 
             // however we do need the jpg downsamples because of the COORDINATES for the ANNOTATION POINTS that were done in the vectra webapp!!
-            try{ 
-                double[] jpgDownsamples = deriveJpgDownsamples(tileMetadataList, datasetName, slideName, imageRequestHandler);
+            try{
+                double[] jpgDownsamples = deriveJpgDownsamples(tileMetadataList, datasetName, slideName, serverGateway);
                 downsampleComposite = jpgDownsamples[1]; //save it for the annotation coordinate system, which is in the composite.jpg coordinate system
             } catch (IOException | InterruptedException e) {
                 ImmuNetLog.error("Error deriving JPG downsamples for slide " + slideName + " in dataset " + datasetName, e);
@@ -128,17 +126,17 @@ public class SlideImageServer {
                 );
 
                 TiffCompositeTileImageServer thumbServer = new TiffCompositeTileImageServer(
-                        datasetMetadata, tileMetadata, datasetName, slideName, registeredDownsampleThumb, tiffImageRequestHandler);
+                        datasetMetadata, tileMetadata, datasetName, slideName, registeredDownsampleThumb, serverGateway);
                 builder.serverRegion(tileRegion, registeredDownsampleThumb, thumbServer);
 
                 if (registerOverviewLevel) {
                     TiffCompositeTileImageServer overviewServer = new TiffCompositeTileImageServer(
-                            datasetMetadata, tileMetadata, datasetName, slideName, overviewDownsample, tiffImageRequestHandler);
+                            datasetMetadata, tileMetadata, datasetName, slideName, overviewDownsample, serverGateway);
                     builder.serverRegion(tileRegion, overviewDownsample, overviewServer);
                 }
 
                 TiffCompositeTileImageServer compositeServer = new TiffCompositeTileImageServer(
-                        datasetMetadata, tileMetadata, datasetName, slideName, tiffDisplayDownsample, tiffImageRequestHandler);
+                        datasetMetadata, tileMetadata, datasetName, slideName, tiffDisplayDownsample, serverGateway);
                 builder.serverRegion(tileRegion, tiffDisplayDownsample, compositeServer);
             }
             return builder.build();
@@ -218,7 +216,7 @@ public class SlideImageServer {
             List<TileMetadata> tileMetadataList,
             String datasetName,
             String slideName,
-            ImageRequestHandler imageRequestHandler) throws IOException, InterruptedException {
+            ServerGateway serverGateway) throws IOException, InterruptedException {
         BufferedImage thumbSample = null;
         BufferedImage compositeSample = null;
         TileMetadata sampleMetadata = null;
@@ -228,10 +226,10 @@ public class SlideImageServer {
         do {
             TileMetadata candidate = tileMetadataList.get(idx);
             try {
-                thumbSample = imageRequestHandler.fetchTileImage(
-                        candidate.withType(TileMetadata.ImageType.THUMB), datasetName, slideName).getImage();
-                compositeSample = imageRequestHandler.fetchTileImage(
-                        candidate.withType(TileMetadata.ImageType.COMPOSITE), datasetName, slideName).getImage();
+                thumbSample = serverGateway.fetchTileImage(
+                        datasetName, slideName, candidate.withType(TileMetadata.ImageType.THUMB)).getImage();
+                compositeSample = serverGateway.fetchTileImage(
+                        datasetName, slideName, candidate.withType(TileMetadata.ImageType.COMPOSITE)).getImage();
                 sampleMetadata = candidate;
             } catch (IOException e) {
                 ImmuNetLog.log("Sample tile " + candidate.getCode() + " could not be fetched at both resolutions, trying next tile");

@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
+import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
+import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPointConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.ImageConverter;
@@ -27,6 +29,8 @@ public class ServerGateway extends DataRequestHandler {
     private final String SLIDE_PATH = "v/datasets/%s/";
     private final String DATASET_METADATA_PATH = "v/datasets/%s";
     private static final String SLIDE_POLYGONS = "v/datasets/%s/%s/polygons.json"; // datasetName, slideName
+    private static final String SLIDE_ANNOTATIONS = "/v/annotations/%s/%s/"; // datasetName, slideName
+    private static final String TILE_ANNOTATIONS = "v/datasets/%s/%s/%s/annotations.json"; // datasetName, slideName, tileCode
     private static final String TILE_IMAGE_PATH_FORMAT = "v/datasets/%s/%s/%s/%s.jpg"; // datasetName, slideName, tileCode, imageType
     private static final String TILEMETADATAPATH_FORMAT = "v/datasets/%s/%s/"; // datasetName, slideName
     private static final String TIFF_COMPONENTS_TILE_PATH_FORMAT = "v/datasets/%s/%s/%s/components.tiff"; //dataset, slide and tile
@@ -94,6 +98,60 @@ public class ServerGateway extends DataRequestHandler {
             ImmuNetLog.error("Error decoding components.tiff for tile code: " + tileMetadata.getCode() + " at path: " + path, e);
             throw e;
         }
+    }
+
+    public List<String> fetchSlideAnnotations(String dataset, String slide) throws IOException, JSONException, InterruptedException {
+        String path = String.format(SLIDE_ANNOTATIONS, dataset, slide);
+        List<String> tileCodes = new ArrayList<>();
+
+        HttpResponse<String> response = pageFetcher.fetchStringPage(path);
+
+        int status = response.statusCode();
+        if (status == 404) {
+            return tileCodes; // no annotations for this dataset/slide
+        }
+        if (status < 200 || status >= 300) {
+            throw new IOException("Could not fetch annotations for dataset: " + dataset
+                    + " with slide: " + slide + " (status " + status + ")");
+        }
+
+        String body = response.body().trim();
+        if (body.isEmpty()) {
+            return tileCodes; // empty body means there are no annotations
+        }
+
+        JSONArray array = new JSONArray(body);
+        for (int i = 0; i < array.length(); i++) {
+            tileCodes.add(array.getString(i));
+        }
+        return tileCodes;
+    }
+
+    public List<AnnotationPoint> fetchAnnotations(String dataset, String slide, String tile) throws IOException, JSONException, InterruptedException {
+        String path = String.format(TILE_ANNOTATIONS, dataset, slide, tile);
+        List<AnnotationPoint> annotations = new ArrayList<>();
+
+        HttpResponse<String> response = pageFetcher.fetchStringPage(path);
+
+        int status = response.statusCode();
+        if (status == 404) {
+            return annotations; // no annotations for this dataset/slide
+        }
+        if (status < 200 || status >= 300) {
+            throw new IOException("Could not fetch annotations for dataset: " + dataset
+                    + " with slide: " + slide + " (status " + status + ")");
+        }
+
+        String body = response.body().trim();
+        if (body.isEmpty()) {
+            return annotations; // empty body means there are no annotations
+        }
+
+        JSONArray array = new JSONArray(body);
+        for (int i = 0; i < array.length(); i++) {
+            annotations.add(AnnotationPointConverter.fromJson(array.getJSONObject(i)));
+        }
+        return annotations;
     }
 
     public List<AnnotationPolygon> fetchPolygons(String dataset, String slide) throws IOException, JSONException, InterruptedException {

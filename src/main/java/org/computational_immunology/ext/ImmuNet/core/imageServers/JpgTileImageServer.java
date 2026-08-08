@@ -1,7 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.core.imageServers;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.Tile;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 
@@ -17,13 +17,13 @@ import java.io.IOException;
 
 public class JpgTileImageServer extends TileImageServer {
     private final double downsampleValue;
-    private final ImageRequestHandler imageRequestHandler;
+    private final ServerGateway serverGateway;
     private final ImageServerMetadata metadata;
 
-    public JpgTileImageServer(TileMetadata tileMetadata, String datasetName, String slideName, double downsampleValue, ImageRequestHandler imageRequestHandler) {
+    public JpgTileImageServer(TileMetadata tileMetadata, String datasetName, String slideName, double downsampleValue, ServerGateway serverGateway) {
         super(tileMetadata, datasetName, slideName);
         this.downsampleValue = downsampleValue;
-        this.imageRequestHandler = imageRequestHandler;
+        this.serverGateway = serverGateway;
 
         int fullWidth  = tileMetadata.getPixelWidth();
         int fullHeight = tileMetadata.getPixelHeight();
@@ -49,7 +49,7 @@ public class JpgTileImageServer extends TileImageServer {
         int requestedWidth = tileRequest.getTileWidth();
         int requestedHeight = tileRequest.getTileHeight();
         try {
-            Tile fetchedTile = imageRequestHandler.fetchTileImage(tileMetadata, datasetName, slideName);
+            Tile fetchedTile = serverGateway.fetchTileImage(datasetName, slideName, tileMetadata);
             ImmuNetLog.log("Fetching tile of type {}", tileMetadata.getType());
             return fetchedTile.resizeJpgImage(requestedWidth, requestedHeight, false, 1);
         } catch (InterruptedException e) {

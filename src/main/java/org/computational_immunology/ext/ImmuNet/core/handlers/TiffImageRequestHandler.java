@@ -52,7 +52,7 @@ public class TiffImageRequestHandler extends ImageRequestHandler {
     public Tile fetchComponentsTiffImage(TileMetadata tileMetadata, String datasetName, String slideName)
             throws IOException, InterruptedException {
         String path = String.format(TIFF_COMPONENTS_TILE_PATH_FORMAT, datasetName, slideName, tileMetadata.getCode());
-        componentsSemaphore.acquire();
+        componentsTiffSemaphore.acquire();
         try {
             byte[] bytes = fetchBytes(path);
             BufferedImage image = decodeChannels(bytes);
@@ -61,7 +61,7 @@ public class TiffImageRequestHandler extends ImageRequestHandler {
             ImmuNetLog.error("Error decoding components.tiff for tile code: " + tileMetadata.getCode() + " at path: " + path, e);
             throw e;
         } finally {
-            componentsSemaphore.release();
+            componentsTiffSemaphore.release();
         }
     }
 

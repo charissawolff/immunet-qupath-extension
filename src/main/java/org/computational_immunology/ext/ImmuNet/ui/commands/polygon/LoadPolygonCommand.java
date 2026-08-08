@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.models.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
@@ -16,11 +16,11 @@ import qupath.lib.objects.PathObject;
 
 public class LoadPolygonCommand extends AbstractAsyncCommand<List<AnnotationPolygon>> {
     private final SelectedDataStore selectedDataStore;
-    private final AnnotationRequestHandler annotationRequestHandler;
+    private final ServerGateway serverGateway;
 
-    public LoadPolygonCommand(AnnotationRequestHandler annotationRequestHandler, SelectedDataStore selectedDataStore) {
+    public LoadPolygonCommand(ServerGateway serverGateway, SelectedDataStore selectedDataStore) {
         this.selectedDataStore = selectedDataStore;
-        this.annotationRequestHandler = annotationRequestHandler;
+        this.serverGateway = serverGateway;
     }
 
     @Override
@@ -48,7 +48,7 @@ public class LoadPolygonCommand extends AbstractAsyncCommand<List<AnnotationPoly
             return polygons; // No dataset or slide selected, exit the method
         }
         try{
-            List<AnnotationPolygon> ps = annotationRequestHandler.fetchPolygons(datasetName, slideName);
+            List<AnnotationPolygon> ps = serverGateway.fetchPolygons(datasetName, slideName);
             for (AnnotationPolygon p : ps) {
                 ImmuNetLog.log("Fetched polygon with ID: " + p.getId() + " for dataset: " + datasetName + ", slide: " + slideName);
                 polygons.add(p);

@@ -3,12 +3,9 @@ package org.computational_immunology.ext.ImmuNet.ui.tabs;
 import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
-import org.computational_immunology.ext.ImmuNet.core.handlers.MiscDataRequestHandler;
-import org.computational_immunology.ext.ImmuNet.core.handlers.TiffImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
-import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.ClearImageViewerCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.LoadDatasetsCommand;
@@ -38,24 +35,16 @@ import javafx.scene.control.Tooltip;
 
 public class DatasetSelectorTab extends CustomSidePanelTab {
 
-    private final ImageRequestHandler imageRequestHandler;
-    private final AnnotationRequestHandler annotationRequestHandler;
-    private final MiscDataRequestHandler miscDatarequestHandler;
-    private final TiffImageRequestHandler tiffImageRequestHandler;
+    private final ServerGateway serverGateway;
     private final TileHoverController tileHoverController;
     private final SelectedDataStore selectedDataStore;
     private SlideLoadWorkflow currentWorkflow;
     private final PauseTransition buttonPause = new PauseTransition((Duration.seconds(2)));
 
-    public DatasetSelectorTab(ImageRequestHandler imageRequestHandler, AnnotationRequestHandler annotationRequestHandler, 
-                                MiscDataRequestHandler miscDatarequestHandler, 
-                                TiffImageRequestHandler tiffImageRequestHandler, SelectedDataStore selectedDataStore, 
+    public DatasetSelectorTab(ServerGateway serverGateway, SelectedDataStore selectedDataStore,
                                 TileHoverController tileHoverController) {
         super("Image selector");
-        this.imageRequestHandler = imageRequestHandler;
-        this.annotationRequestHandler = annotationRequestHandler;
-        this.miscDatarequestHandler = miscDatarequestHandler;
-        this.tiffImageRequestHandler = tiffImageRequestHandler;
+        this.serverGateway = serverGateway;
         this.selectedDataStore = selectedDataStore;
         this.tileHoverController = tileHoverController;
 
@@ -81,7 +70,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         //two buttons next to each other, one for loading datasets and one for clearing the current selection from viewer
         Button loadDataBtn = makeButton("Load Datasets", new Dimensions(40, 120));
         loadDataBtn.setOnAction(e -> {
-            LoadDatasetsCommand loadDatasetCommand = new LoadDatasetsCommand(miscDatarequestHandler);
+            LoadDatasetsCommand loadDatasetCommand = new LoadDatasetsCommand(serverGateway);
             loadDatasetCommand.build();
             loadDatasetCommand.setOnDone(() -> {
                 List<String> datasets = loadDatasetCommand.getTask().getValue();
@@ -179,7 +168,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                     currentWorkflow.cancel();
                     return;
                 }
-                SlideLoadWorkflow workflow = new SlideLoadWorkflow(dsName, tsName, compositeTransitionSlider.getValue(), imageRequestHandler, miscDatarequestHandler, annotationRequestHandler, tiffImageRequestHandler, useTiffComposite.get(),selectedDataStore);
+                SlideLoadWorkflow workflow = new SlideLoadWorkflow(dsName, tsName, compositeTransitionSlider.getValue(), serverGateway, useTiffComposite.get(), selectedDataStore);
                 workflow.build();
 
                 workflow.setOnSlideReady(slide -> {
@@ -235,7 +224,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
     private void updateSlideByDataset(ListViewerBox datasetBox, ListViewerBox slideBox){
         datasetBox.getListView().getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
                 if (newValue != null){
-                    LoadSlideDataCommand loadSlideDataCommand = new LoadSlideDataCommand(miscDatarequestHandler, newValue);
+                    LoadSlideDataCommand loadSlideDataCommand = new LoadSlideDataCommand(serverGateway, newValue);
                     loadSlideDataCommand.build(); // Update tissue slide box
                     loadSlideDataCommand.setOnDone(() -> {
                         List<String> slides = loadSlideDataCommand.getTask().getValue();

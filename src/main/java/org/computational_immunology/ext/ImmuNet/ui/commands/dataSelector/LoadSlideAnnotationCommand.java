@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
-import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPointConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
@@ -22,7 +22,7 @@ import qupath.lib.objects.PathObject;
 
 public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<AnnotationPoint>>  {
     private final SelectedDataStore selectedDataStore;
-    private final AnnotationRequestHandler annotationRequestHandler;
+    private final ServerGateway serverGateway;
     private volatile ExecutorService fetchExecutor;
     private String datasetName;
     private String slideName;
@@ -30,9 +30,9 @@ public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<Annota
     private double downsampleComposite;
 
 
-    public LoadSlideAnnotationCommand(SelectedDataStore selectedDataStore, AnnotationRequestHandler annotationRequestHandler) {
+    public LoadSlideAnnotationCommand(SelectedDataStore selectedDataStore, ServerGateway serverGateway) {
         this.selectedDataStore = selectedDataStore;
-        this.annotationRequestHandler = annotationRequestHandler;
+        this.serverGateway = serverGateway;
 
     }
 
@@ -60,7 +60,7 @@ public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<Annota
             return new ArrayList<>();
         }
         try {
-            List<String> tileCodes = annotationRequestHandler.fetchSlideAnnotations(datasetName, slideName);
+            List<String> tileCodes = serverGateway.fetchSlideAnnotations(datasetName, slideName);
             if (task.isCancelled()) {
                 // avoid creating the executor at all if we were cancelled while fetching tile codes,
                 // so a cancelled fetch can never come up with a fresh pool after the caller was told we're done
@@ -114,7 +114,7 @@ public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<Annota
 
     public List<AnnotationPoint> fetchTileAnnotations(String tileCode, List<TileMetadata> tileMetadataList) {
         try{
-            List<AnnotationPoint> annotations = annotationRequestHandler.fetchAnnotations(datasetName, slideName, tileCode);
+            List<AnnotationPoint> annotations = serverGateway.fetchAnnotations(datasetName, slideName, tileCode);
             return annotations;
         } catch (Exception e) {
             ImmuNetLog.error("Error fetching annotations for dataset: " + datasetName + ", slide: " + slideName + ", tile: " + tileCode, e);

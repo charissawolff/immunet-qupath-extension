@@ -5,8 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
@@ -39,16 +39,16 @@ import java.util.Map;
 
 public class PolygonViewerTab extends CustomSidePanelTab {
 
-    private final AnnotationRequestHandler annotationRequestHandler;
+    private final ServerGateway serverGateway;
     private final JsonDataUploadHandler dataUploadHandler;
     private final SelectedDataStore selectedDataStore;
     private static PolygonTracker polygonTracker;
 
-    public PolygonViewerTab(AnnotationRequestHandler annotationRequestHandler,
+    public PolygonViewerTab(ServerGateway serverGateway,
                             JsonDataUploadHandler dataUploadHandler,
                             SelectedDataStore selectedDataStore, PolygonTracker polygonTracker) {
         super("Polygon viewer");
-        this.annotationRequestHandler = annotationRequestHandler;
+        this.serverGateway = serverGateway;
         this.dataUploadHandler = dataUploadHandler;
         this.selectedDataStore = selectedDataStore;
         PolygonViewerTab.polygonTracker = polygonTracker;
@@ -104,7 +104,7 @@ public class PolygonViewerTab extends CustomSidePanelTab {
 
 
         loadDataBtn.setOnAction(e -> {
-        LoadPolygonCommand loadPolygonDataCommand = new LoadPolygonCommand(annotationRequestHandler, selectedDataStore);
+        LoadPolygonCommand loadPolygonDataCommand = new LoadPolygonCommand(serverGateway, selectedDataStore);
         loadPolygonDataCommand.build();
             if (selectedDataStore.getSelectedSlide() == null) {
                 ImmuNetLog.log("No slide selected, cannot load polygons");

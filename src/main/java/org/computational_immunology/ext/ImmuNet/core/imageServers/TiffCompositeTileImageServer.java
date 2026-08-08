@@ -7,9 +7,10 @@ import java.awt.image.WritableRaster;
 import java.io.IOException;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.TiffImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.Tile;
+import org.computational_immunology.ext.ImmuNet.core.models.TiffConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 
 import qupath.lib.common.ColorTools;
@@ -24,16 +25,16 @@ import java.util.Map;
 
 public class TiffCompositeTileImageServer extends TileImageServer {
     private final double downsampleValue;
-    private final TiffImageRequestHandler imageRequestHandler;
+    private final ServerGateway serverGateway;
     private final ImageServerMetadata metadata;
 
-    public TiffCompositeTileImageServer(DatasetMetadata datasetMetadata, 
+    public TiffCompositeTileImageServer(DatasetMetadata datasetMetadata,
         TileMetadata tileMetadata, String datasetName,
-            String slideName, double downsampleValue, 
-            TiffImageRequestHandler imageRequestHandler) {
+            String slideName, double downsampleValue,
+            ServerGateway serverGateway) {
         super(tileMetadata, datasetName, slideName);
         this.downsampleValue = downsampleValue;
-        this.imageRequestHandler = imageRequestHandler;
+        this.serverGateway = serverGateway;
 
         int fullWidth  = tileMetadata.getPixelWidth();
         int fullHeight = tileMetadata.getPixelHeight();
@@ -59,7 +60,7 @@ public class TiffCompositeTileImageServer extends TileImageServer {
         int requestedWidth = tileRequest.getTileWidth();
         int requestedHeight = tileRequest.getTileHeight();
         try {
-            Tile fetchedTile = imageRequestHandler.fetchComponentsTiffImage(tileMetadata, datasetName, slideName);
+            Tile fetchedTile = serverGateway.fetchComponentsTiffImage(tileMetadata, datasetName, slideName);
             ImmuNetLog.log("Fetching TIFF tile of type {}", tileMetadata.getType());
             return fetchedTile.resizeTiffImage(requestedWidth, requestedHeight);
         } catch (InterruptedException e) {
@@ -74,7 +75,7 @@ public class TiffCompositeTileImageServer extends TileImageServer {
     @Override
     protected BufferedImage blankTile(int width, int height) {
         int numChannels = metadata.getChannels().size();
-        WritableRaster raster = TiffImageRequestHandler.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, numChannels);
+        WritableRaster raster = TiffConverter.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, numChannels);
         var dummyColorModel = qupath.lib.color.ColorModelFactory.getDummyColorModel(32 * numChannels);
         return new BufferedImage(dummyColorModel, raster, false, null);
     }
