@@ -1,11 +1,8 @@
 package org.computational_immunology.ext.ImmuNet;
 
-import org.computational_immunology.ext.ImmuNet.core.handlers.AnnotationRequestHandler;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
-import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
-import org.computational_immunology.ext.ImmuNet.core.handlers.MiscDataRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGateway;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
-import org.computational_immunology.ext.ImmuNet.core.handlers.TiffImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverOverlay;
@@ -23,7 +20,7 @@ public class ImmuNetExtension implements QuPathExtension {
 
     // make the point radius larger 
     // This is a global QuPath preference, not per-object.
-    private static final int ANNOTATION_POINT_RADIUS = 8;
+    private static final int ANNOTATION_POINT_RADIUS = 4;
 
     @Override
     public void installExtension(QuPathGUI qupath) {
@@ -33,12 +30,9 @@ public class ImmuNetExtension implements QuPathExtension {
         // fill the detections
         //qupath.getOverlayOptions().setFillDetections(true);
 
-        // Built once here and injected down, this will be used to retrieve specifically tile images from the server
-        ImageRequestHandler imageRequestHandler = new ImageRequestHandler(ServerConnectionHandler.getInstance());
-        AnnotationRequestHandler annotationRequestHandler = new AnnotationRequestHandler(ServerConnectionHandler.getInstance());
-        MiscDataRequestHandler miscDataRequestHandler = new MiscDataRequestHandler(ServerConnectionHandler.getInstance());
-        JsonDataUploadHandler jsonDataUploadHandler = new JsonDataUploadHandler(ServerConnectionHandler.getInstance());
-        TiffImageRequestHandler tiffImageRequestHandler = new TiffImageRequestHandler(ServerConnectionHandler.getInstance());
+        // Built once here and injected down, this will be used to retrieve data and images from the server
+        ServerGateway serverGateway = new ServerGateway(ServerConnectionHandler.getInstance());
+        ServerUploadGateway jsonDataUploadHandler = new ServerUploadGateway(ServerConnectionHandler.getInstance());
 
         // Built once and injected down. THis tracks the currently loaded slide and the currently
         // selected tile, and wires mouse hover/click on the viewer to the tile highlight overlay.
@@ -50,7 +44,7 @@ public class ImmuNetExtension implements QuPathExtension {
         ServerConnectionTab serverConnectionTab = new ServerConnectionTab();
         serverConnectionTab.addCustomTab(qupath.getAnalysisTabPane());
 
-        DatasetSelectorTab datasetTab = new DatasetSelectorTab(imageRequestHandler, annotationRequestHandler, miscDataRequestHandler, tiffImageRequestHandler, selectedDataStore, tileHoverController);
+        DatasetSelectorTab datasetTab = new DatasetSelectorTab(serverGateway, selectedDataStore, tileHoverController);
         datasetTab.addCustomTab(qupath.getAnalysisTabPane());
 
 
@@ -59,7 +53,7 @@ public class ImmuNetExtension implements QuPathExtension {
         // polygon metadata added
         PolygonMetadataAdder polygonMetadataAdder = new PolygonMetadataAdder(polygonTracker, selectedDataStore);
         //polygon viewer tab
-        PolygonViewerTab polygonViewerTab = new PolygonViewerTab(annotationRequestHandler, jsonDataUploadHandler, selectedDataStore, polygonTracker);
+        PolygonViewerTab polygonViewerTab = new PolygonViewerTab(serverGateway, jsonDataUploadHandler, selectedDataStore, polygonTracker);
         polygonViewerTab.addCustomTab(qupath.getAnalysisTabPane());
     }
 

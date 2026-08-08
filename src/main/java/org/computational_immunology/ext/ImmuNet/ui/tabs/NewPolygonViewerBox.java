@@ -1,8 +1,8 @@
 package org.computational_immunology.ext.ImmuNet.ui.tabs;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.JsonDataUploadHandler;
-import org.computational_immunology.ext.ImmuNet.core.models.Polygon;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGateway;
+import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.models.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.AddPolygonCommand;
 import org.json.JSONObject;
@@ -28,9 +28,9 @@ Viewer box for viewing USER added new polygons, not the ones that are fetched fr
 Here user can see the polygons they added, and can choose to upload them to the server or remove them.
 */
 public class NewPolygonViewerBox extends TableView<PathObject> {
-    private final JsonDataUploadHandler dataUploadHandler;
+    private final ServerUploadGateway dataUploadHandler;
 
-    public NewPolygonViewerBox(ObservableList<PathObject> items, JsonDataUploadHandler dataUploadHandler) {
+    public NewPolygonViewerBox(ObservableList<PathObject> items, ServerUploadGateway dataUploadHandler) {
         super(items);
         this.dataUploadHandler = dataUploadHandler;
         setEditable(true);
@@ -104,7 +104,7 @@ public class NewPolygonViewerBox extends TableView<PathObject> {
     private void handleAddClicked(PathObject polygon, Button button) {
         button.setDisable(true);
         ImmuNetLog.log("Adding polygon: " + polygon.getName() + " which is:" + polygon);
-        Polygon polygonData = PolygonConverter.fromPathObject(polygon);
+        AnnotationPolygon polygonData = PolygonConverter.fromPathObject(polygon);
         ImmuNetLog.log("Polygon from PathObject is " + polygonData);
         JSONObject polygonJson = PolygonConverter.toJSONObject(polygonData);
         ImmuNetLog.log("Polygon JSON is " + polygonJson);

@@ -1,8 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.core.imageServers;
 
-import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
-import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
 
 import qupath.lib.images.servers.ImageServer;
 import qupath.lib.images.servers.ImageServerBuilder;
@@ -16,7 +15,7 @@ public class TileImageServerBuilder implements ImageServerBuilder<BufferedImage>
     String datasetName;
     String slideName;
     double downsampleValue;
-    ImageRequestHandler imageRequestHandler;
+    ServerGateway serverGateway;
 
     @Override
     public UriImageSupport<BufferedImage> checkImageSupport(URI uri, String... args) throws IOException {

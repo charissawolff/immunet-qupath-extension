@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
+import org.json.JSONObject;
 
 import qupath.lib.common.ColorTools;
 import qupath.lib.objects.PathObject;
@@ -37,6 +38,23 @@ public class AnnotationPointConverter {
     private static int colorForType(String type) {
         int index = Math.floorMod(type == null ? 0 : type.hashCode(), TYPE_COLOR_PALETTE.length);
         return TYPE_COLOR_PALETTE[index];
+    }
+
+    public static AnnotationPoint fromJson(JSONObject jsonObject){
+        //todo: add handling of missing values
+        return new AnnotationPoint(
+            jsonObject.getString("_id"),
+            jsonObject.getString("slide"),
+            jsonObject.getString("dataset"),
+            jsonObject.getString("tile"),
+            jsonObject.getInt("x"),
+            jsonObject.getInt("y"),
+            jsonObject.getString("t"),
+            jsonObject.getString("annotator"),
+            jsonObject.getString("purpose"),
+            jsonObject.getString("created")
+        );
+        
     }
 
     public static PathObject toPathObject(AnnotationPoint point, TileMetadata tileMetadata, double downsampleComposite) {

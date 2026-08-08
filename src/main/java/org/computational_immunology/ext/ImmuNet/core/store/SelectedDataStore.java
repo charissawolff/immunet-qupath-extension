@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.SelectedSlide;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
-import org.computational_immunology.ext.ImmuNet.core.models.Polygon;
+import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -14,7 +14,7 @@ public class SelectedDataStore {
     private final ReadOnlyObjectWrapper<SelectedSlide> selectedSlide = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyObjectWrapper<TileMetadata> selectedTile = new ReadOnlyObjectWrapper<>(); //only the tile meatdata as the tile image is not needed here and can be retrieved from the metadata
     private final ReadOnlyObjectWrapper<Double> downSampleComposite = new ReadOnlyObjectWrapper<>();
-    private final ReadOnlyObjectWrapper<List<Polygon>> Polygons = new ReadOnlyObjectWrapper<>();
+    private final ReadOnlyObjectWrapper<List<AnnotationPolygon>> Polygons = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyObjectWrapper<List<AnnotationPoint>> annotationPoints = new ReadOnlyObjectWrapper<>();
     public SelectedSlide getSelectedSlide() {
         return selectedSlide.get();
@@ -50,11 +50,11 @@ public class SelectedDataStore {
     }
 
 
-    public List<Polygon> getPolygons() {
+    public List<AnnotationPolygon> getPolygons() {
         return Polygons.get();
     }
 
-    public void setPolygons(List<Polygon> polygons) {
+    public void setPolygons(List<AnnotationPolygon> polygons) {
         Polygons.set(polygons);
     }
 

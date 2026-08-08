@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-public class ServerConnectionHandler implements PageFetcher,PagePoster<JSONArray> {
+public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArray> {
     private static final Duration REQUEST_TIMEOUT_SECONDS = Duration.ofSeconds(60);
     private static final ServerConnectionHandler INSTANCE = new ServerConnectionHandler();
 
