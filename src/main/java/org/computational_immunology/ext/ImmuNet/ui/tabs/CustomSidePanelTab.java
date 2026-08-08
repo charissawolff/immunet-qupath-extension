@@ -14,12 +14,13 @@ public class CustomSidePanelTab {
         this.name = panelName;
     }
 
-    public void addCustomTab(TabPane tabpane){
+    public Tab addCustomTab(TabPane tabpane){
         Tab tab = new Tab();
         tab.setText(this.name); 
         VBox content = getContent();
         tab.setContent(content); 
         tabpane.getTabs().add(tab);
+        return tab;
     }
 
     /**
