@@ -2,20 +2,23 @@ package org.computational_immunology.ext.ImmuNet.core.models;
 
 import java.util.List;
 import java.util.Objects;
+import org.locationtech.jts.geom.Geometry;
 
-public class Polygon{
+public class Polygon {
 
     private final String id;
-    private final List<Vertex> vertices;
+    private final List<Vertex> outerRing;
+    private final List<List<Vertex>> holes;
     private final String name;
     private final String dataset;
     private final String slide;
     private final String created;
 
-    public Polygon(String id, List<Vertex> vertices, String name,
+    public Polygon(String id, List<Vertex> outerRing, List<List<Vertex>> holes, String name,
                     String dataset, String slide, String created) {
         this.id = id;
-        this.vertices = vertices;
+        this.outerRing = outerRing;
+        this.holes = holes != null ? holes : List.of(); // ensure holes is never null
         this.name = name;
         this.dataset = dataset;
         this.slide = slide;
@@ -23,7 +26,8 @@ public class Polygon{
     }
 
     public String getId() { return id; }
-    public List<Vertex> getVertices() { return vertices; }
+    public List<Vertex> getOuterRing() { return outerRing; }
+    public List<List<Vertex>> getHoles() { return holes; }
     public String getName() { return name; }
     public String getDataset() { return dataset; }
     public String getSlide() { return slide; }
