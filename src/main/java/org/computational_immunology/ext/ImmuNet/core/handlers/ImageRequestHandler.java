@@ -32,12 +32,12 @@ public class ImageRequestHandler {
     }
 
     // Get list of tiles belonging to a slide
-    public List<TileMetadata> getAllTileMetadatas(String datasetName, String slideName) throws IOException, InterruptedException {
+    public List<TileMetadata> getTileMetadatas(String datasetName, String slideName) throws IOException, InterruptedException {
         String path = String.format(TILEMETADATAPATH_FORMAT, datasetName, slideName);
         List<TileMetadata> tileMetadatas;
         String allTilesJson = pageFetcher.fetchStringPage(path).body();
 
-        //ImmuNetLog.log("Path at getAllTileMetadatas is " + path);
+        //ImmuNetLog.log("Path at getTileMetadatas is " + path);
         //ImmuNetLog.log(allTilesJson);
 
         JSONArray parsedOutput = new JSONArray(allTilesJson);

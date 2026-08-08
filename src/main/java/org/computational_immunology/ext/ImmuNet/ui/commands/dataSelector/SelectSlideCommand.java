@@ -60,7 +60,7 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
     @Override
     protected SparseImageServer execute(Consumer<String> progressReporter) throws Exception {
         progressReporter.accept("Fetching slide metadata...");
-        tilesMetadata = imageRequestHandler.getAllTileMetadatas(datasetName, slideName);
+        tilesMetadata = imageRequestHandler.getTileMetadatas(datasetName, slideName);
         progressReporter.accept("Getting ready to process tiles...");
         SparseImageServer sparseServer;
         if (!useTiffComposite) {
