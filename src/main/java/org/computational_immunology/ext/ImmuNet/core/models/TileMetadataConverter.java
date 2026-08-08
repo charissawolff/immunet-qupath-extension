@@ -27,7 +27,7 @@ public class TileMetadataConverter {
         return tileMetadatas;
     }
 
-    public TileMetadata jsonToTileMetadata(JSONObject json, ImageType type) throws IOException, JSONException {
+    public static TileMetadata jsonToTileMetadata(JSONObject json, ImageType type) throws IOException, JSONException {
         return new TileMetadata(
                 json.getInt("id"),
                 json.getString("code"),

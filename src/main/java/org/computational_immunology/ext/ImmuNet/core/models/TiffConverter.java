@@ -29,11 +29,23 @@ Used to convert bytes from an image from the server into the necessary layered i
 */
 public class TiffConverter {
 
+    private static final int MAX_CONCURRENT_TIFF_COMPONENT_FETCHES = 10;
+    private static final Semaphore componentsTiffSemaphore = new Semaphore(MAX_CONCURRENT_TIFF_COMPONENT_FETCHES);
+
     private TiffConverter() {
         /* should not be initialized */
     }
 
-    public static BufferedImage imageFromBytes(byte[] bytes) throws IOException {
+    public static BufferedImage imageFromBytes(byte[] bytes) throws IOException, InterruptedException {
+        componentsTiffSemaphore.acquire();
+        try {
+            return decode(bytes);
+        } finally {
+            componentsTiffSemaphore.release();
+        }
+    }
+
+    private static BufferedImage decode(byte[] bytes) throws IOException {
         ImagePlus imp = new Opener().openTiff(new ByteArrayInputStream(bytes), "components");
         if (imp == null) {
             throw new IOException("Could not decode components.tiff with ImageJ");
