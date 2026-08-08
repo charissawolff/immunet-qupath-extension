@@ -116,16 +116,17 @@ public class AnnotationRequestHandler {
 
             JSONArray jsonVertices = jsonPolygon.getJSONArray("vertices");
             List<Polygon.Vertex> vertices = new ArrayList<>(jsonVertices.length());
-            for (int j = 0; j < jsonVertices.length(); j++) {
-                JSONArray point = jsonVertices.getJSONArray(j); // e.g. [11255.70, 3696.45]
-                double x = point.getDouble(0);
-                double y = point.getDouble(1);
-                vertices.add(new Polygon.Vertex(x, y));
-            }
+            //for (int j = 0; j < jsonVertices.length(); j++) {
+            //    JSONArray point = jsonVertices.getJSONArray(j); // e.g. [11255.70, 3696.45]
+            //    double x = point.getDouble(0);
+            //    double y = point.getDouble(1);
+            //    vertices.add(new Polygon.Vertex(x, y));
+            //}
 
             Polygon polygon = new Polygon(
                     jsonPolygon.optString("_id", null),
                     vertices,
+                    null,
                     jsonPolygon.optString("name", null),
                     jsonPolygon.optString("dataset", null),
                     jsonPolygon.optString("slide", null),

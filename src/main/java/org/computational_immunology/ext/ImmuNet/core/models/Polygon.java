@@ -32,6 +32,17 @@ public class Polygon {
     public String getDataset() { return dataset; }
     public String getSlide() { return slide; }
     public String getCreated() { return created; }
+    public String toString() {
+        return "Polygon{" +
+                "id='" + id + '\'' +
+                ", outerRing=" + outerRing +
+                ", holes=" + holes +
+                ", name='" + name + '\'' +
+                ", dataset='" + dataset + '\'' +
+                ", slide='" + slide + '\'' +
+                ", created='" + created + '\'' +
+                '}';
+    }
 
     /**
      * The text to show for this polygon in the UI

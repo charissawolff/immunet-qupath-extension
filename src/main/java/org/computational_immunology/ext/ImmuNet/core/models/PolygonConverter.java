@@ -1,6 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.core.models;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,7 +16,9 @@ import org.json.JSONObject;
 import org.json.JSONString;
 
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.LinearRing;
 
 import qupath.lib.geom.Point2;
@@ -95,13 +98,26 @@ public class PolygonConverter {
         String created = (String) pathObject.getMetadata().get("created");
 
         ROI roi = pathObject.getROI();
-        
-        List<Vertex> vertices = roi.getAllPoints();
-        List<Vertex> vertexList = vertices.stream()
-            .map(point -> new Vertex(point.getX(), point.getY()))
-            .toList();
+        Geometry geometry = roi.getGeometry();
 
-        return new Polygon(id, vertexList, name, dataset, slide, created);
+        if (!(geometry instanceof org.locationtech.jts.geom.Polygon jtsPolygon)) {
+            throw new IllegalArgumentException("ROI geometry is not a single Polygon: " + geometry.getGeometryType());
+        }
+
+        List<Vertex> outerRing = toVertices(jtsPolygon.getExteriorRing());
+
+        List<List<Vertex>> holes = new ArrayList<>();
+        for (int i = 0; i < jtsPolygon.getNumInteriorRing(); i++) {
+            holes.add(toVertices(jtsPolygon.getInteriorRingN(i)));
+        }
+
+        return new Polygon(id, outerRing, holes, name, dataset, slide, created);
+    }
+
+    private static List<Vertex> toVertices(LineString ring) {
+        return Arrays.stream(ring.getCoordinates())
+            .map(c -> new Vertex(c.x, c.y))
+            .toList();
     }
 
     public static JSONObject toJSONObject(Polygon polygon) {
@@ -113,8 +129,18 @@ public class PolygonConverter {
         jsonObject.put("created", polygon.getCreated());
 
         JSONArray verticesArray = new JSONArray();
-        for (Vertex vertex : polygon.getVertices()) {
-            verticesArray.put(new JSONArray().put(vertex.getX()).put(vertex.getY()));
+        // The shape has to be [[outerRing], [hole1], [hole2], ...]
+        JSONArray outerRingArray = new JSONArray();
+        for (Vertex vertex : polygon.getOuterRing()) {
+            outerRingArray.put(new JSONArray().put(vertex.getX()).put(vertex.getY()));
+        }
+        verticesArray.put(outerRingArray);
+        for (List<Vertex> hole : polygon.getHoles()) {
+            JSONArray holeArray = new JSONArray();
+            for (Vertex vertex : hole) {
+                holeArray.put(new JSONArray().put(vertex.getX()).put(vertex.getY()));
+            }
+            verticesArray.put(holeArray);
         }
         jsonObject.put("vertices", verticesArray);
 
