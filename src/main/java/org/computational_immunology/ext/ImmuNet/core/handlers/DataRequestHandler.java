@@ -31,7 +31,7 @@ public class DataRequestHandler {
     }
 
     public byte[] fetchBytes(String path) throws IOException, InterruptedException {
-        var response = pageFetcher.fetchPage(path);
+        var response = pageFetcher.fetchImagePage(path);
         if (response == null) {
             throw new IOException("Could not fetch image at path: " + path);
         }

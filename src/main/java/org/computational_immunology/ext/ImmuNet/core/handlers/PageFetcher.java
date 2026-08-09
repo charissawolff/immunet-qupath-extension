@@ -7,4 +7,5 @@ import java.net.http.HttpResponse;
 public interface PageFetcher {
     HttpResponse<InputStream> fetchPage(String localPath) throws IOException, InterruptedException;
     HttpResponse<String> fetchStringPage(String localPath) throws IOException, InterruptedException;
+    HttpResponse<InputStream> fetchImagePage(String localPath) throws IOException, InterruptedException;
 }
