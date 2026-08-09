@@ -17,7 +17,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArray> {
-    private static final Duration REQUEST_TIMEOUT_SECONDS = Duration.ofSeconds(60);
+    private static final Duration REQUEST_TIMEOUT_SECONDS = Duration.ofSeconds(20);
+    private static final Duration REQUEST_TIMEOUT_IMAGE_SECONDS = Duration.ofSeconds(120);
+    private static final int MAX_POST_ATTEMPTS = 3;
+    private static final Duration POST_RETRY_DELAY = Duration.ofSeconds(20);
     private static final ServerConnectionHandler INSTANCE = new ServerConnectionHandler();
 
     //used to tell main thread that the ssh tunnel is now ready
@@ -129,6 +132,25 @@ public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArra
         }
     }
 
+    public HttpResponse<InputStream> fetchImagePage(String localPath) throws IOException, InterruptedException {
+        HttpRequest getRequest = HttpRequest.newBuilder()
+                .uri(buildUri(localPath))
+                .header("Cookie", sessionCookie)
+                .timeout(REQUEST_TIMEOUT_IMAGE_SECONDS)
+                .GET()
+                .build();
+        try{
+            HttpResponse<InputStream> response = client.send(getRequest, BodyHandlers.ofInputStream());
+            checkStatusCode(response.statusCode());
+            return response;
+        } catch (InterruptedException e) {
+            throw e;
+        } catch(IOException e){
+            ImmuNetLog.error("Could not fetch page {}", localPath, e);
+            return null;
+        }
+    }
+
     // Fetch content with type String
     public HttpResponse<String> fetchStringPage(String localPath) throws IOException, InterruptedException {
         HttpRequest getRequest = HttpRequest.newBuilder()
@@ -149,27 +171,36 @@ public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArra
         }
     }
 
-    /**
-     * Send a post request with credentials to login page
-     *
-     * @return HTTP reponse of the server as String
-     * @throws InterruptedException
-     * @throws IOException
-     */
+    private HttpResponse<String> sendPostWithRetry(HttpRequest request) throws IOException, InterruptedException {
+        IOException lastException = null;
+        for (int attempt = 1; attempt <= MAX_POST_ATTEMPTS; attempt++) {
+            try {
+                HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
+                checkStatusCode(response.statusCode());
+                return response;
+            } catch (IOException e) {
+                lastException = e;
+                if (attempt < MAX_POST_ATTEMPTS) {
+                    Thread.sleep(POST_RETRY_DELAY.toMillis());
+                }
+            }
+        }
+        throw lastException;
+    }
+
     public HttpResponse<String> postRequestVectraLogin(String username, String password) throws InterruptedException {
         HttpRequest postRequest = HttpRequest.newBuilder()
                 .uri(buildUri("v/login"))
+                .timeout(REQUEST_TIMEOUT_SECONDS)
                 .POST(HttpRequest.BodyPublishers.ofString("username=" + username + "&password=" + password))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .build();
 
         try {
-            HttpResponse<String> response = client.send(postRequest, BodyHandlers.ofString());
-            checkStatusCode(response.statusCode());
-            return response;
+            return sendPostWithRetry(postRequest);
         } catch (InterruptedException e) {
             throw e;
-        } catch(IOException e){
+        } catch (IOException e) {
             ImmuNetLog.error("Could not log into Vectra database", e);
             return null;
         }
@@ -191,17 +222,15 @@ public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArra
     }
 
     public HttpResponse<String> postObject(String localPath, JSONArray payload) throws IOException, InterruptedException {
-        // Send a POST request to the specified local path with the provided JSON payload
         HttpRequest postRequest = HttpRequest.newBuilder()
                 .uri(buildUri(localPath))
+                .timeout(REQUEST_TIMEOUT_SECONDS)
                 .header("Cookie", sessionCookie)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .build();
-        try{
-            HttpResponse<String> response = client.send(postRequest, BodyHandlers.ofString());
-            checkStatusCode(response.statusCode());
-            return response;
+        try {
+            return sendPostWithRetry(postRequest);
         } catch (IOException | InterruptedException e) {
             ImmuNetLog.error("Could not post object", e);
             throw e;
