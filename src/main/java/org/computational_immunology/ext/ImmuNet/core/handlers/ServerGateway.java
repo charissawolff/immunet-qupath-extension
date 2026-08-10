@@ -33,7 +33,7 @@ public class ServerGateway extends DataRequestHandler {
     private static final String TILE_ANNOTATIONS = "v/datasets/%s/%s/%s/annotations.json"; // datasetName, slideName, tileCode
     private static final String TILE_IMAGE_PATH_FORMAT = "v/datasets/%s/%s/%s/%s.jpg"; // datasetName, slideName, tileCode, imageType
     private static final String TILEMETADATAPATH_FORMAT = "v/datasets/%s/%s/"; // datasetName, slideName
-    private static final String TIFF_COMPONENTS_TILE_PATH_FORMAT = "v/datasets/%s/%s/%s/components.tiff"; //dataset, slide and tile
+    private static final String TIFF_COMPONENTS_TILE_PATH_FORMAT = "v/datasets/%s/%s/%s/components.tiff?downsample=%f"; //dataset, slide and tile
 
     public ServerGateway(PageFetcher pageFetcher) {
         super(pageFetcher);
@@ -87,9 +87,9 @@ public class ServerGateway extends DataRequestHandler {
         }
     }
 
-    public Tile fetchComponentsTiffImage(TileMetadata tileMetadata, String datasetName, String slideName)
+    public Tile fetchComponentsTiffImage(TileMetadata tileMetadata, String datasetName, String slideName, double downsampleFactor)
             throws IOException, InterruptedException {
-        String path = String.format(TIFF_COMPONENTS_TILE_PATH_FORMAT, datasetName, slideName, tileMetadata.getCode());
+        String path = String.format(TIFF_COMPONENTS_TILE_PATH_FORMAT, datasetName, slideName, tileMetadata.getCode(), downsampleFactor);
         try {
             byte[] bytes = fetchBytes(path);
             BufferedImage image = TiffConverter.imageFromBytes(bytes);

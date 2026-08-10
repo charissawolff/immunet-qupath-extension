@@ -60,7 +60,7 @@ public class TiffCompositeTileImageServer extends TileImageServer {
         int requestedWidth = tileRequest.getTileWidth();
         int requestedHeight = tileRequest.getTileHeight();
         try {
-            Tile fetchedTile = serverGateway.fetchComponentsTiffImage(tileMetadata, datasetName, slideName);
+            Tile fetchedTile = serverGateway.fetchComponentsTiffImage(tileMetadata, datasetName, slideName, 1.0);
             ImmuNetLog.log("Fetching TIFF tile of type {}", tileMetadata.getType());
             return fetchedTile.resizeTiffImage(requestedWidth, requestedHeight);
         } catch (InterruptedException e) {
