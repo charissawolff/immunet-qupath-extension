@@ -28,7 +28,6 @@ decides which registered tile/resolution to actually fetch as the user zooms and
 
 */
 public class TiffSlideImageServer {
-    private final int FACTOR = 10;
     private static final double OVERVIEW_TARGET_MAX_DIMENSION = 2048;
     //IMPORTANT: this variable also determines where the annotations are going to be. It must ALWAYS hold the  jpg-composite derived ration
     // (declared tile width /actually fetched composite.jpg width) for the slide,
@@ -42,32 +41,26 @@ public class TiffSlideImageServer {
         return downsampleComposite;
     }
     public SparseImageServer build(
-        DatasetMetadata datasetMetadata,
+        //DatasetMetadata datasetMetadata,
         List<TileMetadata> tileMetadataList,
         String datasetName,
         String slideName,
-        double compositeSwitchDownsample,
         ServerGateway serverGateway) {
-        double[] downsamples = new double[]{
-            10 * FACTOR, 5 * FACTOR, 2.5 * FACTOR, 1.0 * FACTOR,
-            0.5 * FACTOR, 0.25 * FACTOR, 0.1 * FACTOR
-        };
+        double[] downsamples = new double[]{10,5,3,2,1};
         try {
             SparseImageServer.Builder builder = new SparseImageServer.Builder() ;
             for (TileMetadata tileMetadata : tileMetadataList) {
                 ImageRegion tileRegion = ImageRegion.createInstance(
-                        (int) (tileMetadata.getX() * FACTOR),
-                        (int) (tileMetadata.getY() * FACTOR),
-                        (int) (tileMetadata.getWidth() * FACTOR),
-                        (int) (tileMetadata.getHeight() * FACTOR),
+                        (int) (tileMetadata.getPixelX()),
+                        (int) (tileMetadata.getPixelY()),
+                        (int) (tileMetadata.getWidth()),
+                        (int) (tileMetadata.getHeight()),
                         0, 0
                 );
                 for (double downsample : downsamples) {
-                    if (tileMetadata.getType() == ImageType.COMPOSITE && downsample == compositeSwitchDownsample) {
-                        downsampleComposite = downsample;
-                    }
                     TiffTileImageServer tileServer = new TiffTileImageServer(
-                            datasetMetadata, tileMetadata, datasetName, slideName, downsample, serverGateway);
+                                tileMetadata, datasetName, slideName, downsample, serverGateway);
+                            //datasetMetadata, tileMetadata, datasetName, slideName, downsample, serverGateway);
                     builder.serverRegion(tileRegion, downsample, tileServer);
                 }
             }
@@ -78,9 +71,9 @@ public class TiffSlideImageServer {
         }
     }
 
-
     public static List<TileImageServer> getThumbServers(SparseImageServer sparseServer) throws IOException {
-        double thumbDownsample = sparseServer.getPreferredDownsamples()[1];
+        double thumbDownsample = sparseServer.getPreferredDownsamples()[-1]; // Get the last (highest) downsample value
+        ImmuNetLog.log("Fetching thumb servers for downsample: {}", thumbDownsample);
         List<TileImageServer> thumbServers = new ArrayList<>();
         for (ImageRegion region : sparseServer.getManager().getRegions()) {
             try {

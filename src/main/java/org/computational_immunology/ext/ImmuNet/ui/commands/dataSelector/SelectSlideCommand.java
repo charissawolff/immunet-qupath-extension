@@ -3,6 +3,7 @@ package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.imageServers.SlideImageServer;
+import org.computational_immunology.ext.ImmuNet.core.imageServers.TiffSlideImageServer;
 import org.computational_immunology.ext.ImmuNet.core.imageServers.TileImageServer;
 import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
@@ -39,7 +40,7 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
     private final Boolean useTiffComposite;
     private final double compositeSwitchDownsample;
     private volatile ExecutorService prefetchExecutor;
-    private List<TileMetadata> tilesMetadata;
+    private List<TileMetadata> tileMetadatas;
 
     public SelectSlideCommand(String datasetName, String slideName, double compositeSwitchDownsample,
         ServerGateway serverGateway, Boolean useTiffComposite) {
@@ -53,17 +54,19 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
     @Override
     protected SparseImageServer execute(Consumer<String> progressReporter) throws Exception {
         progressReporter.accept("Fetching slide metadata...");
-        tilesMetadata = serverGateway.getTileMetadatas(datasetName, slideName);
+        tileMetadatas = serverGateway.getTileMetadatas(datasetName, slideName);
         progressReporter.accept("Getting ready to process tiles...");
         SparseImageServer sparseServer;
+         List<TileImageServer> allThumbServers;
         if (!useTiffComposite) {
-            sparseServer = SlideImageServer.build(tilesMetadata, datasetName, slideName, compositeSwitchDownsample, serverGateway);
+            sparseServer = SlideImageServer.build(tileMetadatas, datasetName, slideName, compositeSwitchDownsample, serverGateway);
+            allThumbServers = SlideImageServer.getThumbServers(sparseServer);
         } else {
-            DatasetMetadata datasetMetadata = serverGateway.getDatasetMetadata(datasetName);
-            sparseServer = SlideImageServer.buildTiff(datasetMetadata, tilesMetadata, datasetName, slideName, compositeSwitchDownsample, serverGateway);
+            //get tiff
+            sparseServer = new TiffSlideImageServer().build( tileMetadatas, datasetName, slideName, serverGateway);
+            allThumbServers = TiffSlideImageServer.getThumbServers(sparseServer);
         }
-        List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
-        progressReporter.accept("Fetching" + tilesMetadata.size() +"files...");
+        progressReporter.accept("Fetching " + tileMetadatas.size() +" files...");
         if (task.isCancelled()) {
             return null;
         }
@@ -153,6 +156,6 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
      * succeeded yet. Lets other commands (see SlideLoadWorkflow) reuse it instead of re-fetching.
      */
     public List<TileMetadata> getTilesMetadata() {
-        return tilesMetadata == null ? null : Collections.unmodifiableList(tilesMetadata);
+        return tileMetadatas == null ? null : Collections.unmodifiableList(tileMetadatas);
     }
 }

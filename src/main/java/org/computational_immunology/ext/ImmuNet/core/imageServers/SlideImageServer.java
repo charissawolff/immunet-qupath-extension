@@ -87,65 +87,7 @@ public class SlideImageServer {
             throw new RuntimeException(e);
         }
     }
-
-    public static SparseImageServer buildTiff(
-            DatasetMetadata datasetMetadata,
-            List<TileMetadata> tileMetadataList,
-            String datasetName,
-            String slideName,
-            double compositeSwitchDownsample,
-            ServerGateway serverGateway) {
-        try {
-            // components.tiff is always fetched at full native resolution and resized locally
-            //unlike the JPG path's thumb.jpg/composite.jpg, which are pre-downsampled
-            // server-side and need deriveJpgDownsamples to discover by how much.
-            double tiffDisplayDownsample = 1.0;
-            DownsampleLevels downsampleLevels = getDownsampleLevels(tileMetadataList, compositeSwitchDownsample, 1.0, tiffDisplayDownsample);
-
-            // however we do need the jpg downsamples because of the COORDINATES for the ANNOTATION POINTS that were done in the vectra webapp!!
-            try{
-                double[] jpgDownsamples = deriveJpgDownsamples(tileMetadataList, datasetName, slideName, serverGateway);
-                downsampleComposite = jpgDownsamples[1]; //save it for the annotation coordinate system, which is in the composite.jpg coordinate system
-            } catch (IOException | InterruptedException e) {
-                ImmuNetLog.error("Error deriving JPG downsamples for slide " + slideName + " in dataset " + datasetName, e);
-                throw new RuntimeException(e);
-            }
-
-            double registeredDownsampleThumb = downsampleLevels.registeredDownsampleThumb();
-            double overviewDownsample = downsampleLevels.overviewDownsample();
-            boolean registerOverviewLevel = downsampleLevels.registerOverviewLevel();
-
-            SparseImageServer.Builder builder = new SparseImageServer.Builder() ;
-            for (var tileMetadata : tileMetadataList) {
-                ImageRegion tileRegion = ImageRegion.createInstance(
-                        tileMetadata.getPixelX(),
-                        tileMetadata.getPixelY(),
-                        tileMetadata.getPixelWidth(),
-                        tileMetadata.getPixelHeight(),
-                        0, 0
-                );
-
-                TiffTileImageServer thumbServer = new TiffTileImageServer(
-                        datasetMetadata, tileMetadata, datasetName, slideName, registeredDownsampleThumb, serverGateway);
-                builder.serverRegion(tileRegion, registeredDownsampleThumb, thumbServer);
-
-                if (registerOverviewLevel) {
-                    TiffTileImageServer overviewServer = new TiffTileImageServer(
-                            datasetMetadata, tileMetadata, datasetName, slideName, overviewDownsample, serverGateway);
-                    builder.serverRegion(tileRegion, overviewDownsample, overviewServer);
-                }
-
-                TiffTileImageServer compositeServer = new TiffTileImageServer(
-                        datasetMetadata, tileMetadata, datasetName, slideName, tiffDisplayDownsample, serverGateway);
-                builder.serverRegion(tileRegion, tiffDisplayDownsample, compositeServer);
-            }
-            return builder.build();
-        } catch (IOException e) {
-            ImmuNetLog.error("Error building TIFF SparseImageServer for slide " + slideName + " in dataset " + datasetName, e);
-            throw new RuntimeException(e);
-        }
-    }
-
+    
     // how pre-downsampled is the raw fetched source file?
     private static DownsampleLevels getDownsampleLevels(
         List<TileMetadata> tileMetadataList, double compositeSwitchDownsample,

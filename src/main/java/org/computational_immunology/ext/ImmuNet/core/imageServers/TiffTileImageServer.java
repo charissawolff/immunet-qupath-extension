@@ -24,12 +24,11 @@ import java.util.List;
 import java.util.Map;
 
 public class TiffTileImageServer extends TileImageServer {
-    private final int FACTOR = 10;
     private final double downsampleValue;
     private final ServerGateway serverGateway;
     private final ImageServerMetadata metadata;
 
-    public TiffTileImageServer(DatasetMetadata datasetMetadata,
+    public TiffTileImageServer(//DatasetMetadata datasetMetadata,
         TileMetadata tileMetadata, String datasetName,
             String slideName, double downsampleValue,
             ServerGateway serverGateway) {
@@ -37,20 +36,21 @@ public class TiffTileImageServer extends TileImageServer {
         this.downsampleValue = downsampleValue;
         this.serverGateway = serverGateway;
 
-        int fullWidth  = (int) tileMetadata.getWidth()* FACTOR;
-        int fullHeight = (int) tileMetadata.getHeight() * FACTOR;
+        int fullWidth  = tileMetadata.getPixelWidth();
+        int fullHeight = tileMetadata.getPixelHeight();
         int levelWidth  = Math.max(1, (int) Math.round(fullWidth  / downsampleValue));
         int levelHeight = Math.max(1, (int) Math.round(fullHeight / downsampleValue));
-        double declaredDownsample = fullWidth / (double) levelWidth;
+        double declaredDownsample = downsampleValue;
 
-        double dx = 1/(FACTOR *tileMetadata.getDx()); //µm per pixel while tilemetadata has pixels per µm, so we need to invert it to get the correct value for qupath
-        double dy = 1/(FACTOR * tileMetadata.getDy());
+        double dx = 1/ tileMetadata.getDx(); //µm per pixel while tilemetadata has pixels per µm, so we need to invert it to get the correct value for qupath
+        double dy = 1/ tileMetadata.getDy();
 
         this.metadata = new ImageServerMetadata.Builder()
                 .width(fullWidth).height(fullHeight)
                 .name(datasetName + "/" + slideName + "/" + tileMetadata.getCode() + " (" + tileMetadata.getType() + ")")
                 .rgb(false).pixelType(PixelType.FLOAT32)
-                .channels(toImageChannels(datasetMetadata.getAntibodyPanel()))
+                .channels(ImageChannel.getDefaultChannelList(8)) //
+                //.channels(toImageChannels(datasetMetadata.getAntibodyPanel()))
                 .pixelSizeMicrons(dx, dy) //
                 .sizeZ(1).sizeT(1)
                 .levels(new ImageServerMetadata.ImageResolutionLevel.Builder(fullWidth, fullHeight)

@@ -91,6 +91,7 @@ public class ServerGateway extends DataRequestHandler {
             throws IOException, InterruptedException {
         String path = String.format(TIFF_COMPONENTS_TILE_PATH_FORMAT, datasetName, slideName, tileMetadata.getCode(), downsampleFactor);
         try {
+            ImmuNetLog.log("Fetching components.tiff for downsample {} at path: {}", downsampleFactor, path);
             byte[] bytes = fetchBytes(path);
             BufferedImage image = TiffConverter.imageFromBytes(bytes);
             return new Tile(tileMetadata, image);
