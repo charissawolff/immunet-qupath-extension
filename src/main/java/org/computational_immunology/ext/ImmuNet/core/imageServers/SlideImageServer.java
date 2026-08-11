@@ -115,7 +115,7 @@ public class SlideImageServer {
             double overviewDownsample = downsampleLevels.overviewDownsample();
             boolean registerOverviewLevel = downsampleLevels.registerOverviewLevel();
 
-            SparseImageServer.Builder builder = new SparseImageServer.Builder();
+            SparseImageServer.Builder builder = new SparseImageServer.Builder() ;
             for (var tileMetadata : tileMetadataList) {
                 ImageRegion tileRegion = ImageRegion.createInstance(
                         tileMetadata.getPixelX(),
@@ -125,17 +125,17 @@ public class SlideImageServer {
                         0, 0
                 );
 
-                TiffCompositeTileImageServer thumbServer = new TiffCompositeTileImageServer(
+                TiffTileImageServer thumbServer = new TiffTileImageServer(
                         datasetMetadata, tileMetadata, datasetName, slideName, registeredDownsampleThumb, serverGateway);
                 builder.serverRegion(tileRegion, registeredDownsampleThumb, thumbServer);
 
                 if (registerOverviewLevel) {
-                    TiffCompositeTileImageServer overviewServer = new TiffCompositeTileImageServer(
+                    TiffTileImageServer overviewServer = new TiffTileImageServer(
                             datasetMetadata, tileMetadata, datasetName, slideName, overviewDownsample, serverGateway);
                     builder.serverRegion(tileRegion, overviewDownsample, overviewServer);
                 }
 
-                TiffCompositeTileImageServer compositeServer = new TiffCompositeTileImageServer(
+                TiffTileImageServer compositeServer = new TiffTileImageServer(
                         datasetMetadata, tileMetadata, datasetName, slideName, tiffDisplayDownsample, serverGateway);
                 builder.serverRegion(tileRegion, tiffDisplayDownsample, compositeServer);
             }

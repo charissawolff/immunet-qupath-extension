@@ -31,11 +31,15 @@ public class JpgTileImageServer extends TileImageServer {
         int levelHeight = Math.max(1, (int) Math.round(fullHeight / downsampleValue));
         double declaredDownsample = fullWidth / (double) levelWidth;
 
+        double dx = 1/tileMetadata.getDx(); //µm per pixel while tilemetadata has pixels per µm, so we need to invert it to get the correct value for qupath
+        double dy = 1/tileMetadata.getDy();
+
         this.metadata = new ImageServerMetadata.Builder()
                 .width(fullWidth).height(fullHeight)
                 .name(datasetName + "/" + slideName + "/" + tileMetadata.getCode() + " (" + tileMetadata.getType() + ")")
                 .rgb(true).pixelType(PixelType.UINT8)
                 .channels(ImageChannel.getDefaultRGBChannels())
+                .pixelSizeMicrons(dx, dy) 
                 .sizeZ(1).sizeT(1)
                 .levels(new ImageServerMetadata.ImageResolutionLevel.Builder(fullWidth, fullHeight)
                         .addLevel(declaredDownsample, levelWidth, levelHeight)

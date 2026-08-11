@@ -35,7 +35,9 @@ public class TileMetadataConverter {
                 json.getDouble("x"),
                 json.getDouble("y"),
                 json.getDouble("width"),
-                json.getDouble("height")
+                json.getDouble("height"),
+                json.getDouble("dx"),
+                json.getDouble("dy")
         );
     }
 }
