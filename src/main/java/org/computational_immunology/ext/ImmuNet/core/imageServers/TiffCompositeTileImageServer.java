@@ -22,19 +22,13 @@ import qupath.lib.images.servers.TileRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
-public class TiffTileImageServer extends TileImageServer {
-    private static final long ZOOM_SETTLE_MILLIS = 200;
-    private static final AtomicLong REQUEST_SEQUENCE = new AtomicLong();
-    private static final ConcurrentHashMap<String, Long> LATEST_REQUEST_PER_TILE = new ConcurrentHashMap<>();
-
+public class TiffCompositeTileImageServer extends TileImageServer {
     private final double downsampleValue;
     private final ServerGateway serverGateway;
     private final ImageServerMetadata metadata;
 
-    public TiffTileImageServer(//DatasetMetadata datasetMetadata,
+    public TiffCompositeTileImageServer(DatasetMetadata datasetMetadata,
         TileMetadata tileMetadata, String datasetName,
             String slideName, double downsampleValue,
             ServerGateway serverGateway) {
@@ -46,18 +40,13 @@ public class TiffTileImageServer extends TileImageServer {
         int fullHeight = tileMetadata.getPixelHeight();
         int levelWidth  = Math.max(1, (int) Math.round(fullWidth  / downsampleValue));
         int levelHeight = Math.max(1, (int) Math.round(fullHeight / downsampleValue));
-        double declaredDownsample = downsampleValue;
-
-        double dx = 1/ tileMetadata.getDx(); //µm per pixel while tilemetadata has pixels per µm, so we need to invert it to get the correct value for qupath
-        double dy = 1/ tileMetadata.getDy();
+        double declaredDownsample = fullWidth / (double) levelWidth;
 
         this.metadata = new ImageServerMetadata.Builder()
                 .width(fullWidth).height(fullHeight)
-                .name(datasetName + "/" + slideName + "/" + tileMetadata.getCode() + " (" + tileMetadata.getType() + downsampleValue +")")
+                .name(datasetName + "/" + slideName + "/" + tileMetadata.getCode() + " (" + tileMetadata.getType() + ")")
                 .rgb(false).pixelType(PixelType.FLOAT32)
-                .channels(ImageChannel.getDefaultChannelList(8)) //
-                //.channels(toImageChannels(datasetMetadata.getAntibodyPanel()))
-                .pixelSizeMicrons(dx, dy) //
+                .channels(toImageChannels(datasetMetadata.getAntibodyPanel()))
                 .sizeZ(1).sizeT(1)
                 .levels(new ImageServerMetadata.ImageResolutionLevel.Builder(fullWidth, fullHeight)
                         .addLevel(declaredDownsample, levelWidth, levelHeight)
@@ -70,24 +59,9 @@ public class TiffTileImageServer extends TileImageServer {
     public BufferedImage readTile(TileRequest tileRequest) throws IOException {
         int requestedWidth = tileRequest.getTileWidth();
         int requestedHeight = tileRequest.getTileHeight();
-        double downsample = tileRequest.getDownsample();
-
-        String tileKey = datasetName + "/" + slideName + "/" + tileMetadata.getCode();
-        long requestId = REQUEST_SEQUENCE.incrementAndGet();
-        LATEST_REQUEST_PER_TILE.put(tileKey, requestId);
         try {
-            Thread.sleep(ZOOM_SETTLE_MILLIS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return blankTile(requestedWidth, requestedHeight);
-        }
-        if (LATEST_REQUEST_PER_TILE.get(tileKey) != requestId) {
-            return blankTile(requestedWidth, requestedHeight);
-        }
-
-        try {
-            Tile fetchedTile = serverGateway.fetchComponentsTiffImage(tileMetadata, datasetName, slideName, downsample);
-            ImmuNetLog.log("Fetching TIFF tile with downsample {} ", downsample);
+            Tile fetchedTile = serverGateway.fetchComponentsTiffImage(tileMetadata, datasetName, slideName, tileRequest.getDownsample());
+            ImmuNetLog.log("Fetching TIFF tile of type {}", tileMetadata.getType());
             return fetchedTile.resizeTiffImage(requestedWidth, requestedHeight);
         } catch (InterruptedException e) {
             ImmuNetLog.log("Error in reading TIFF Tile in Tile image server");
@@ -102,13 +76,13 @@ public class TiffTileImageServer extends TileImageServer {
     protected BufferedImage blankTile(int width, int height) {
         int numChannels = metadata.getChannels().size();
         WritableRaster raster = TiffConverter.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, numChannels);
-        var colorModel = qupath.lib.color.ColorModelFactory.createColorModel(PixelType.FLOAT32, metadata.getChannels());
-        return new BufferedImage(colorModel, raster, false, null);
+        var dummyColorModel = qupath.lib.color.ColorModelFactory.getDummyColorModel(32 * numChannels);
+        return new BufferedImage(dummyColorModel, raster, false, null);
     }
 
     @Override
     protected String createID() {
-        return datasetName + "/" + slideName + "/" + tileMetadata.getCode() + "-TIFF" + downsampleValue;
+        return datasetName + "/" + slideName + "/" + tileMetadata.getCode() + "-COMPOSITE-TIFF";
     }
 
     @Override
