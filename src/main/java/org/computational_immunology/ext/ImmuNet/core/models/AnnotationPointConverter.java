@@ -58,8 +58,8 @@ public class AnnotationPointConverter {
     }
 
     public static PathObject toPathObject(AnnotationPoint point, TileMetadata tileMetadata, double downsampleComposite) {
-        double absoluteX = tileMetadata.getX() + point.getX() * downsampleComposite;
-        double absoluteY = tileMetadata.getY() + point.getY() * downsampleComposite;
+        double absoluteX = tileMetadata.getPixelX() + point.getX() * downsampleComposite;
+        double absoluteY = tileMetadata.getPixelY() + point.getY() * downsampleComposite;
         ROI roi = ROIs.createPointsROI(absoluteX, absoluteY, ImagePlane.getDefaultPlane());
 
         PathClass pointClassification = PathClass.getInstance(point.getT(), colorForType(point.getT()));
@@ -100,9 +100,9 @@ public class AnnotationPointConverter {
             double absoluteX = roi.getCentroidX();
             double absoluteY = roi.getCentroidY();
 
-            double localX = Math.round((absoluteX - tileMetadata.getX()) / downsampleComposite);
-            double localY = Math.round((absoluteY - tileMetadata.getY()) / downsampleComposite);
-
+            double localX = Math.round((absoluteX - tileMetadata.getPixelX()) / downsampleComposite);
+            double localY = Math.round((absoluteY - tileMetadata.getPixelY()) / downsampleComposite);
+            
             points.add(new AnnotationPoint(
                     metadata.get("id"),
                     metadata.get("slide"),
