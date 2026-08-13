@@ -28,8 +28,8 @@ public record SelectedSlide(String datasetName, String slideName, List<TileMetad
 
     public Optional<TileMetadata> tileAt(double imageX, double imageY) {
         for (TileMetadata tile : tileMetadataList) {
-            if (imageX >= tile.getX() && imageX < tile.getX() + tile.getWidth()
-                    && imageY >= tile.getY() && imageY < tile.getY() + tile.getHeight()) {
+            if (imageX >= tile.getPixelX() && imageX < tile.getPixelX() + tile.getPixelWidth()
+                    && imageY >= tile.getPixelY() && imageY < tile.getPixelY() + tile.getPixelHeight()) {
                 return Optional.of(tile);
             }
         }

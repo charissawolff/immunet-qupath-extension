@@ -68,6 +68,6 @@ public class TileHoverOverlay extends AbstractOverlay {
     }
 
     private static Shape tileShape(TileMetadata tile) {
-        return new Rectangle2D.Double(tile.getX(), tile.getY(), tile.getWidth(), tile.getHeight());
+        return new Rectangle2D.Double(tile.getPixelX(), tile.getPixelY(), tile.getPixelWidth(), tile.getPixelHeight());
     }
 }
