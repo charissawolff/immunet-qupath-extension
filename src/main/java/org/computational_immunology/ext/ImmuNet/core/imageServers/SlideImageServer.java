@@ -103,10 +103,10 @@ public class SlideImageServer {
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
         double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
         for (var tileMetadata : tileMetadataList) {
-            minX = Math.min(minX, tileMetadata.getX());
-            minY = Math.min(minY, tileMetadata.getY());
-            maxX = Math.max(maxX, tileMetadata.getX() + tileMetadata.getWidth());
-            maxY = Math.max(maxY, tileMetadata.getY() + tileMetadata.getHeight());
+            minX = Math.min(minX, tileMetadata.getPixelX());
+            minY = Math.min(minY, tileMetadata.getPixelY());
+            maxX = Math.max(maxX, tileMetadata.getPixelX() + tileMetadata.getPixelWidth());
+            maxY = Math.max(maxY, tileMetadata.getPixelY() + tileMetadata.getPixelHeight());
         }
         double totalWidth = maxX - minX;
         double totalHeight = maxY - minY;
