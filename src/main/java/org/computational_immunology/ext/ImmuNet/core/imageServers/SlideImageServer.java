@@ -48,13 +48,21 @@ public class SlideImageServer {
             double compositeSwitchDownsample,
             ServerGateway serverGateway) {
         try {
+            //in the future, a param to say how many levels based on the number of tiles
+            // for now, just 5 levels. 4 baased on the thumb and 1 on composite
             double overviewDownsample = getOverviewDownsample(tileMetadataList);
             ImmuNetLog.log("overviewDownsample value is" + overviewDownsample);
             double compositeDownsample= 1.0;
             ImmuNetLog.log("compositeDownsample" + compositeDownsample);
             downsampleComposite = compositeDownsample;
-            double thumbDownsample = (overviewDownsample+compositeDownsample) /2;
-            ImmuNetLog.log("thumbDownsample" + thumbDownsample);
+            double middleDownsample = (overviewDownsample+compositeDownsample) /2;
+            ImmuNetLog.log("middleDownsample" + middleDownsample);
+
+            double quarterDownsample = (overviewDownsample+middleDownsample) /2;
+            ImmuNetLog.log("quarterDownsample" + quarterDownsample);
+
+            double eigthDownsample = (overviewDownsample+quarterDownsample) /2;
+            ImmuNetLog.log("eigthDownsample" + eigthDownsample);
             boolean registerOverviewLevel = overviewDownsample > 1;
 
             // we are making image regions being the same size as the tiles we get from backend
@@ -69,8 +77,10 @@ public class SlideImageServer {
                 );
 
                 TileMetadata thumbTile = tileMetadata.withType(TileMetadata.ImageType.THUMB);
-                JpgTileImageServer thumbServer = new JpgTileImageServer(thumbTile, datasetName, slideName, thumbDownsample, serverGateway);
-                builder.serverRegion(tileRegion, thumbDownsample, thumbServer);
+                JpgTileImageServer thumbServer = new JpgTileImageServer(thumbTile, datasetName, slideName, middleDownsample, serverGateway);
+                builder.serverRegion(tileRegion, middleDownsample, thumbServer);
+                builder.serverRegion(tileRegion, quarterDownsample, thumbServer);
+                builder.serverRegion(tileRegion, eigthDownsample, thumbServer);
 
                 // register this overview level to not crash upon opening the image
                 if (registerOverviewLevel) {
@@ -105,11 +115,11 @@ public class SlideImageServer {
     }
 
     public static List<TileImageServer> getThumbServers(SparseImageServer sparseServer) throws IOException {
-        double thumbDownsample = sparseServer.getPreferredDownsamples()[1];
+        double middleDownsample = sparseServer.getPreferredDownsamples()[1];
         List<TileImageServer> thumbServers = new ArrayList<>();
         for (ImageRegion region : sparseServer.getManager().getRegions()) {
             try {
-                ImageServer<BufferedImage> server = sparseServer.getManager().getServer(region, thumbDownsample);
+                ImageServer<BufferedImage> server = sparseServer.getManager().getServer(region, middleDownsample);
                 if (server instanceof TileImageServer tileImageServer) {
                     thumbServers.add(tileImageServer);
                 } else {
