@@ -63,7 +63,7 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
             allThumbServers = SlideImageServer.getThumbServers(sparseServer);
         } else {
             //get tiff
-            sparseServer = new TiffSlideImageServer().build( tileMetadatas, datasetName, slideName, serverGateway);
+            sparseServer = SlideImageServer.buildTiff(tileMetadatas, datasetName, slideName, serverGateway);
             allThumbServers = TiffSlideImageServer.getThumbServers(sparseServer);
         }
         progressReporter.accept("Fetching " + tileMetadatas.size() +" files...");

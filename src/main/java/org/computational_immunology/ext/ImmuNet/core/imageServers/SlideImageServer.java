@@ -55,13 +55,13 @@ public class SlideImageServer {
             double compositeDownsample= 1.0;
             ImmuNetLog.log("compositeDownsample" + compositeDownsample);
             downsampleComposite = compositeDownsample;
-            double middleDownsample = (overviewDownsample+compositeDownsample) /2;
+            double middleDownsample = (compositeDownsample+overviewDownsample) /2;
             ImmuNetLog.log("middleDownsample" + middleDownsample);
 
-            double quarterDownsample = (overviewDownsample+middleDownsample) /2;
+            double quarterDownsample = (compositeDownsample+middleDownsample) /2;
             ImmuNetLog.log("quarterDownsample" + quarterDownsample);
 
-            double eigthDownsample = (overviewDownsample+quarterDownsample) /2;
+            double eigthDownsample = (compositeDownsample+quarterDownsample) /2;
             ImmuNetLog.log("eigthDownsample" + eigthDownsample);
             boolean registerOverviewLevel = overviewDownsample > 1;
 
@@ -97,6 +97,76 @@ public class SlideImageServer {
             throw new RuntimeException(e);
         }
     }
+
+    public static SparseImageServer buildTiff(
+        List<TileMetadata> tileMetadataList,
+        String datasetName,
+        String slideName,
+        ServerGateway serverGateway) {
+        try {
+            double overviewDownsample = getOverviewDownsample(tileMetadataList);
+            ImmuNetLog.log("overviewDownsample value is" + overviewDownsample);
+            double compositeDownsample= 1.0;
+            ImmuNetLog.log("compositeDownsample" + compositeDownsample);
+            downsampleComposite = compositeDownsample;
+            double middleDownsample = (compositeDownsample+overviewDownsample) /2;
+            ImmuNetLog.log("middleDownsample" + middleDownsample);
+
+            double quarterDownsample = (compositeDownsample+middleDownsample) /2;
+            ImmuNetLog.log("quarterDownsample" + quarterDownsample);
+
+            double eigthDownsample = (compositeDownsample+quarterDownsample) /2;
+            ImmuNetLog.log("eigthDownsample" + eigthDownsample);
+
+            double sixteenthDownsample = (compositeDownsample+eigthDownsample) /2;
+            ImmuNetLog.log("sixteenthDownsample" + sixteenthDownsample);
+
+            double thirtysecondDownsample = (compositeDownsample+sixteenthDownsample) /2;
+            ImmuNetLog.log("thirtysecondDownsample" + thirtysecondDownsample);
+
+            double sixtyfourthDownsample = (compositeDownsample+thirtysecondDownsample) /2;
+            ImmuNetLog.log("sixtyfourthDownsample" + sixtyfourthDownsample);
+
+            double onehundredtwentyeighthDownsample = (compositeDownsample+sixtyfourthDownsample) /2;
+            ImmuNetLog.log("onehundredtwentyeighthDownsample" + onehundredtwentyeighthDownsample);
+
+            boolean registerOverviewLevel = overviewDownsample > 1;
+            SparseImageServer.Builder builder = new SparseImageServer.Builder();
+            for (var tileMetadata : tileMetadataList) {
+                ImageRegion tileRegion = ImageRegion.createInstance(
+                        tileMetadata.getPixelX(),
+                        tileMetadata.getPixelY(),
+                        tileMetadata.getPixelWidth(),
+                        tileMetadata.getPixelHeight(),
+                        0, 0
+                );
+
+                TileMetadata thumbTile = tileMetadata.withType(TileMetadata.ImageType.THUMB);
+                TiffTileImageServer thumbServer = new TiffTileImageServer(thumbTile, datasetName, slideName, middleDownsample, serverGateway);
+                builder.serverRegion(tileRegion, middleDownsample, thumbServer);
+                builder.serverRegion(tileRegion, quarterDownsample, thumbServer);
+                builder.serverRegion(tileRegion, eigthDownsample, thumbServer);
+                builder.serverRegion(tileRegion, sixteenthDownsample, thumbServer);
+                builder.serverRegion(tileRegion, thirtysecondDownsample, thumbServer);
+                builder.serverRegion(tileRegion, sixtyfourthDownsample, thumbServer);
+                builder.serverRegion(tileRegion, onehundredtwentyeighthDownsample, thumbServer);
+
+                // register this overview level to not crash upon opening the image
+                if (registerOverviewLevel) {
+                    builder.serverRegion(tileRegion, overviewDownsample, thumbServer);
+                }
+
+                TileMetadata compositeTile = tileMetadata.withType(TileMetadata.ImageType.COMPOSITE);
+                TiffTileImageServer compositeServer = new TiffTileImageServer(compositeTile, datasetName, slideName, compositeDownsample, serverGateway);
+                builder.serverRegion(tileRegion, compositeDownsample, compositeServer);
+        }
+        return builder.build();
+        } catch (IOException e) {
+            ImmuNetLog.error("Error building SparseImageServer for slide " + slideName + " in dataset " + datasetName, e);
+            throw new RuntimeException(e);
+        }
+    }
+            
     
     public static double getOverviewDownsample(List<TileMetadata> tileMetadataList){
         //make sure it's under OVERVIEW_TARGET_MAX_DIMENSION pixels 

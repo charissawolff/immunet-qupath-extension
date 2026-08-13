@@ -1,16 +1,13 @@
 package org.computational_immunology.ext.ImmuNet.core.imageServers;
 
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 import java.io.IOException;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.Tile;
-import org.computational_immunology.ext.ImmuNet.core.models.TiffConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 
 import qupath.lib.common.ColorTools;
@@ -22,14 +19,8 @@ import qupath.lib.images.servers.TileRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class TiffTileImageServer extends TileImageServer {
-    private static final long ZOOM_SETTLE_MILLIS = 200;
-    private static final AtomicLong REQUEST_SEQUENCE = new AtomicLong();
-    private static final ConcurrentHashMap<String, Long> LATEST_REQUEST_PER_TILE = new ConcurrentHashMap<>();
-
     private final double downsampleValue;
     private final ServerGateway serverGateway;
     private final ImageServerMetadata metadata;
@@ -48,8 +39,8 @@ public class TiffTileImageServer extends TileImageServer {
         int levelHeight = Math.max(1, (int) Math.round(fullHeight / downsampleValue));
         double declaredDownsample = downsampleValue;
 
-        double dx = 1/ tileMetadata.getDx(); //µm per pixel while tilemetadata has pixels per µm, so we need to invert it to get the correct value for qupath
-        double dy = 1/ tileMetadata.getDy();
+        double dx = tileMetadata.getDx(); // pixel per µm
+        double dy = tileMetadata.getDy();
 
         this.metadata = new ImageServerMetadata.Builder()
                 .width(fullWidth).height(fullHeight)
@@ -72,22 +63,9 @@ public class TiffTileImageServer extends TileImageServer {
         int requestedHeight = tileRequest.getTileHeight();
         double downsample = tileRequest.getDownsample();
 
-        String tileKey = datasetName + "/" + slideName + "/" + tileMetadata.getCode();
-        long requestId = REQUEST_SEQUENCE.incrementAndGet();
-        LATEST_REQUEST_PER_TILE.put(tileKey, requestId);
         try {
-            Thread.sleep(ZOOM_SETTLE_MILLIS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return blankTile(requestedWidth, requestedHeight);
-        }
-        if (LATEST_REQUEST_PER_TILE.get(tileKey) != requestId) {
-            return blankTile(requestedWidth, requestedHeight);
-        }
-
-        try {
-            Tile fetchedTile = serverGateway.fetchComponentsTiffImage(tileMetadata, datasetName, slideName, downsample);
             ImmuNetLog.log("Fetching TIFF tile with downsample {} ", downsample);
+            Tile fetchedTile = serverGateway.fetchComponentsTiffImage(tileMetadata, datasetName, slideName, downsample);
             return fetchedTile.resizeTiffImage(requestedWidth, requestedHeight);
         } catch (InterruptedException e) {
             ImmuNetLog.log("Error in reading TIFF Tile in Tile image server");
@@ -96,14 +74,6 @@ public class TiffTileImageServer extends TileImageServer {
             ImmuNetLog.log("Could not fetch TIFF tile image for tile code: " + tileMetadata.getCode() + " at dataset: " + datasetName + ", slide: " + slideName, e);
             return blankTile(requestedWidth, requestedHeight);
         }
-    }
-
-    @Override
-    protected BufferedImage blankTile(int width, int height) {
-        int numChannels = metadata.getChannels().size();
-        WritableRaster raster = TiffConverter.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, numChannels);
-        var colorModel = qupath.lib.color.ColorModelFactory.createColorModel(PixelType.FLOAT32, metadata.getChannels());
-        return new BufferedImage(colorModel, raster, false, null);
     }
 
     @Override
