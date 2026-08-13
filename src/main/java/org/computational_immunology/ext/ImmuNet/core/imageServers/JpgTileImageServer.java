@@ -31,8 +31,8 @@ public class JpgTileImageServer extends TileImageServer {
         int levelHeight = Math.max(1, (int) Math.round(fullHeight / downsampleValue));
         double declaredDownsample = fullWidth / (double) levelWidth;
 
-        double dx = 1/tileMetadata.getDx(); //µm per pixel while tilemetadata has pixels per µm, so we need to invert it to get the correct value for qupath
-        double dy = 1/tileMetadata.getDy();
+        double dx =tileMetadata.getDx(); //µm per pixel while tilemetadata has pixels per µm, so we need to invert it to get the correct value for qupath
+        double dy = tileMetadata.getDy();
 
         this.metadata = new ImageServerMetadata.Builder()
                 .width(fullWidth).height(fullHeight)
