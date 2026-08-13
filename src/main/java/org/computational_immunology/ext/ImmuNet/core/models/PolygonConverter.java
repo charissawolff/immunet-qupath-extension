@@ -34,7 +34,7 @@ import qupath.lib.roi.interfaces.ROI;
 
 public class PolygonConverter {
 
-    public static PathObject toPathObject(AnnotationPolygon p) {
+    public static PathObject toPathObject(AnnotationPolygon p, double dx, double dy) {
         //instead of being the polygon class, we need it to use geometryToROI do it can hold holes
 
         
@@ -43,7 +43,7 @@ public class PolygonConverter {
 
         GeometryFactory gf = new GeometryFactory();
         List<Coordinate> outerRingCoords = outerRing.stream()
-                .map(v -> new Coordinate(v.getX(), v.getY()))
+                .map(v -> new Coordinate(v.getX() / dx, v.getY() / dy))
                 .collect(Collectors.toList());
 
         if (!outerRingCoords.get(0).equals2D(outerRingCoords.get(outerRingCoords.size() - 1))) {
@@ -57,7 +57,7 @@ public class PolygonConverter {
 
         for (List<AnnotationPolygon.Vertex> hole : holes) {
             List<Coordinate> holeCoords = hole.stream()
-                .map(v -> new Coordinate(v.getX(), v.getY()))
+                .map(v -> new Coordinate(v.getX() / dx, v.getY() / dy))
                 .collect(Collectors.toList());
 
         if (!holeCoords.get(0).equals2D(holeCoords.get(holeCoords.size() - 1))) {
@@ -90,7 +90,7 @@ public class PolygonConverter {
         /* This utility class should not be instantiated */
     }
 
-    public static AnnotationPolygon fromPathObject(PathObject pathObject) {
+    public static AnnotationPolygon fromPathObject(PathObject pathObject, double dx, double dy) {
         String id = (String) pathObject.getMetadata().get("id");
         //read directly from pathObject metadata, since name can be changed by user
         String name = pathObject.getName();
@@ -105,19 +105,19 @@ public class PolygonConverter {
             throw new IllegalArgumentException("ROI geometry is not a single Polygon: " + geometry.getGeometryType());
         }
 
-        List<Vertex> outerRing = toVertices(jtsPolygon.getExteriorRing());
+        List<Vertex> outerRing = toVertices(jtsPolygon.getExteriorRing(), dx, dy);
 
         List<List<Vertex>> holes = new ArrayList<>();
         for (int i = 0; i < jtsPolygon.getNumInteriorRing(); i++) {
-            holes.add(toVertices(jtsPolygon.getInteriorRingN(i)));
+            holes.add(toVertices(jtsPolygon.getInteriorRingN(i), dx, dy));
         }
 
         return new AnnotationPolygon(id, outerRing, holes, name, dataset, slide, created);
     }
 
-    private static List<Vertex> toVertices(LineString ring) {
+    private static List<Vertex> toVertices(LineString ring, double dx, double dy) {
         return Arrays.stream(ring.getCoordinates())
-            .map(c -> new Vertex(c.x, c.y))
+            .map(c -> new Vertex(c.x * dx, c.y * dy))
             .toList();
     }
 
