@@ -3,7 +3,6 @@ package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.imageServers.SlideImageServer;
-import org.computational_immunology.ext.ImmuNet.core.imageServers.TiffSlideImageServer;
 import org.computational_immunology.ext.ImmuNet.core.imageServers.TileImageServer;
 import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
@@ -57,15 +56,14 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
         tileMetadatas = serverGateway.getTileMetadatas(datasetName, slideName);
         progressReporter.accept("Getting ready to process tiles...");
         SparseImageServer sparseServer;
-        List<TileImageServer> allThumbServers;
         if (!useTiffComposite) {
             sparseServer = SlideImageServer.build(tileMetadatas, datasetName, slideName, compositeSwitchDownsample, serverGateway);
-            allThumbServers = SlideImageServer.getThumbServers(sparseServer);
         } else {
             //get tiff
             sparseServer = SlideImageServer.buildTiff(tileMetadatas, datasetName, slideName, serverGateway);
-            allThumbServers = TiffSlideImageServer.getThumbServers(sparseServer);
         }
+
+        List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
         progressReporter.accept("Fetching " + tileMetadatas.size() +" files...");
         if (task.isCancelled()) {
             return null;
