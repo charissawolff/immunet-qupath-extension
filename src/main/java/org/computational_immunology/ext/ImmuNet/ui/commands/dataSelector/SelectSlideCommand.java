@@ -63,7 +63,7 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
             sparseServer = SlideImageServer.buildTiff(tileMetadatas, datasetName, slideName, serverGateway);
         }
 
-        List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
+        List<TileImageServer> allThumbServers = SlideImageServer.getOverviewServers(sparseServer);
         progressReporter.accept("Fetching " + tileMetadatas.size() +" files...");
         if (task.isCancelled()) {
             return null;

@@ -28,7 +28,7 @@ decides which registered tile/resolution to actually fetch as the user zooms and
 
 */
 public class SlideImageServer {
-    private static final double OVERVIEW_TARGET_MAX_DIMENSION = 2048;
+    private static final double OVERVIEW_TARGET_MAX_DIMENSION = 2048.0; // target maximum dimension for overview level
 
     //IMPORTANT: this variable also determines where the annotations are going to be. It is always 1, now that we changed
     // the coordinate system of the tiles into pixels by using the dy/dx values. So it is always 1.
@@ -48,22 +48,24 @@ public class SlideImageServer {
             double compositeSwitchDownsample,
             ServerGateway serverGateway) {
         try {
-            //in the future, a param to say how many levels based on the number of tiles
-            // for now, just 5 levels. 4 baased on the thumb and 1 on composite
             double overviewDownsample = getOverviewDownsample(tileMetadataList);
             ImmuNetLog.log("overviewDownsample value is" + overviewDownsample);
-            double compositeDownsample= 1.0;
-            ImmuNetLog.log("compositeDownsample" + compositeDownsample);
-            downsampleComposite = compositeDownsample;
-            double middleDownsample = (compositeDownsample+overviewDownsample) /2;
-            ImmuNetLog.log("middleDownsample" + middleDownsample);
+            double fullResolutionDownsample= 1.0;
+            downsampleComposite = fullResolutionDownsample;
+            ImmuNetLog.log("fullResolutionDownsample" + fullResolutionDownsample);
+            downsampleComposite = fullResolutionDownsample;
 
-            double quarterDownsample = (compositeDownsample+middleDownsample) /2;
-            ImmuNetLog.log("quarterDownsample" + quarterDownsample);
-
-            double eigthDownsample = (compositeDownsample+quarterDownsample) /2;
-            ImmuNetLog.log("eigthDownsample" + eigthDownsample);
-            boolean registerOverviewLevel = overviewDownsample > 1;
+            boolean registerOverviewLevel = overviewDownsample > fullResolutionDownsample;
+            List<Double> downsampleQuantiles = null;
+            double middleDownsample = 0.0;
+            if (registerOverviewLevel) {
+                downsampleQuantiles = getDownsampleQuantiles(fullResolutionDownsample, overviewDownsample, 4);
+                middleDownsample = downsampleQuantiles.get(downsampleQuantiles.size() / 2);
+                ImmuNetLog.log("downsample quantiles are: " + downsampleQuantiles);
+            } else {
+                ImmuNetLog.log("No overview levels besides full resolution ");
+            }
+            
 
             // we are making image regions being the same size as the tiles we get from backend
             SparseImageServer.Builder builder = new SparseImageServer.Builder();
@@ -76,20 +78,20 @@ public class SlideImageServer {
                         0, 0
                 );
 
-                TileMetadata thumbTile = tileMetadata.withType(TileMetadata.ImageType.THUMB);
-                JpgTileImageServer thumbServer = new JpgTileImageServer(thumbTile, datasetName, slideName, middleDownsample, serverGateway);
-                builder.serverRegion(tileRegion, middleDownsample, thumbServer);
-                builder.serverRegion(tileRegion, quarterDownsample, thumbServer);
-                builder.serverRegion(tileRegion, eigthDownsample, thumbServer);
-
-                // register this overview level to not crash upon opening the image
+                // register a thumb pyramid only when the slide is actually bigger than the overview target;
+                // otherwise every interpolated level would fall below fullResolutionDownsample
                 if (registerOverviewLevel) {
+                    TileMetadata thumbTile = tileMetadata.withType(TileMetadata.ImageType.THUMB);
+                    JpgTileImageServer thumbServer = new JpgTileImageServer(thumbTile, datasetName, slideName, middleDownsample, serverGateway);
+                    for (double downsample : downsampleQuantiles) {
+                        builder.serverRegion(tileRegion, downsample, thumbServer);
+                    }
                     builder.serverRegion(tileRegion, overviewDownsample, thumbServer);
                 }
 
-                TileMetadata compositeTile = tileMetadata.withType(TileMetadata.ImageType.COMPOSITE);
-                JpgTileImageServer compositeServer = new JpgTileImageServer(compositeTile, datasetName, slideName, compositeDownsample, serverGateway);
-                builder.serverRegion(tileRegion, compositeDownsample, compositeServer);
+                TileMetadata fullResolutionTile = tileMetadata.withType(TileMetadata.ImageType.COMPOSITE);
+                JpgTileImageServer fullResolutionServer = new JpgTileImageServer(fullResolutionTile, datasetName, slideName, fullResolutionDownsample, serverGateway);
+                builder.serverRegion(tileRegion, fullResolutionDownsample, fullResolutionServer);
             }
             return builder.build();
         } catch (IOException e) {
@@ -106,31 +108,21 @@ public class SlideImageServer {
         try {
             double overviewDownsample = getOverviewDownsample(tileMetadataList);
             ImmuNetLog.log("overviewDownsample value is" + overviewDownsample);
-            double compositeDownsample= 1.0;
-            ImmuNetLog.log("compositeDownsample" + compositeDownsample);
-            downsampleComposite = compositeDownsample;
-            double middleDownsample = (compositeDownsample+overviewDownsample) /2;
-            ImmuNetLog.log("middleDownsample" + middleDownsample);
+            double fullResolutionDownsample= 1.0;
+            ImmuNetLog.log("fullResolutionDownsample" + fullResolutionDownsample);
 
-            double quarterDownsample = (compositeDownsample+middleDownsample) /2;
-            ImmuNetLog.log("quarterDownsample" + quarterDownsample);
+            boolean registerOverviewLevel = overviewDownsample > fullResolutionDownsample;
+            List<Double> downsampleQuantiles = null;
+            double middleDownsample = 0.0;
+            if (registerOverviewLevel) {
+                downsampleQuantiles = getDownsampleQuantiles(fullResolutionDownsample, overviewDownsample, 12);
+                middleDownsample = downsampleQuantiles.get(downsampleQuantiles.size() / 2);
+                ImmuNetLog.log("downsample quantiles are: " + downsampleQuantiles);
+            } else {
+                ImmuNetLog.log("No overview levels besides full resolution ");
+            }
+            
 
-            double eigthDownsample = (compositeDownsample+quarterDownsample) /2;
-            ImmuNetLog.log("eigthDownsample" + eigthDownsample);
-
-            double sixteenthDownsample = (compositeDownsample+eigthDownsample) /2;
-            ImmuNetLog.log("sixteenthDownsample" + sixteenthDownsample);
-
-            double thirtysecondDownsample = (compositeDownsample+sixteenthDownsample) /2;
-            ImmuNetLog.log("thirtysecondDownsample" + thirtysecondDownsample);
-
-            double sixtyfourthDownsample = (compositeDownsample+thirtysecondDownsample) /2;
-            ImmuNetLog.log("sixtyfourthDownsample" + sixtyfourthDownsample);
-
-            double onehundredtwentyeighthDownsample = (compositeDownsample+sixtyfourthDownsample) /2;
-            ImmuNetLog.log("onehundredtwentyeighthDownsample" + onehundredtwentyeighthDownsample);
-
-            boolean registerOverviewLevel = overviewDownsample > 1;
             SparseImageServer.Builder builder = new SparseImageServer.Builder();
             for (var tileMetadata : tileMetadataList) {
                 ImageRegion tileRegion = ImageRegion.createInstance(
@@ -141,33 +133,37 @@ public class SlideImageServer {
                         0, 0
                 );
 
-                TileMetadata thumbTile = tileMetadata.withType(TileMetadata.ImageType.THUMB);
-                TiffTileImageServer thumbServer = new TiffTileImageServer(thumbTile, datasetName, slideName, middleDownsample, serverGateway);
-                builder.serverRegion(tileRegion, middleDownsample, thumbServer);
-                builder.serverRegion(tileRegion, quarterDownsample, thumbServer);
-                builder.serverRegion(tileRegion, eigthDownsample, thumbServer);
-                builder.serverRegion(tileRegion, sixteenthDownsample, thumbServer);
-                builder.serverRegion(tileRegion, thirtysecondDownsample, thumbServer);
-                builder.serverRegion(tileRegion, sixtyfourthDownsample, thumbServer);
-                builder.serverRegion(tileRegion, onehundredtwentyeighthDownsample, thumbServer);
-
-                // register this overview level to not crash upon opening the image
+                // register a thumb pyramid only when the slide is actually bigger than the overview target;
+                // otherwise every interpolated level would fall below fullResolutionDownsample
                 if (registerOverviewLevel) {
+                    TileMetadata thumbTile = tileMetadata.withType(TileMetadata.ImageType.THUMB);
+                    TiffTileImageServer thumbServer = new TiffTileImageServer(thumbTile, datasetName, slideName, middleDownsample, serverGateway);
+                    for (double downsample : downsampleQuantiles) {
+                        builder.serverRegion(tileRegion, downsample, thumbServer);
+                    }
                     builder.serverRegion(tileRegion, overviewDownsample, thumbServer);
                 }
 
-                TileMetadata compositeTile = tileMetadata.withType(TileMetadata.ImageType.COMPOSITE);
-                TiffTileImageServer compositeServer = new TiffTileImageServer(compositeTile, datasetName, slideName, compositeDownsample, serverGateway);
-                builder.serverRegion(tileRegion, compositeDownsample, compositeServer);
-        }
-        return builder.build();
+                TileMetadata fullResolutionTile = tileMetadata.withType(TileMetadata.ImageType.COMPOSITE);
+                TiffTileImageServer fullResolutionServer = new TiffTileImageServer(fullResolutionTile, datasetName, slideName, fullResolutionDownsample, serverGateway);
+                builder.serverRegion(tileRegion, fullResolutionDownsample, fullResolutionServer);
+            }
+            return builder.build();
         } catch (IOException e) {
             ImmuNetLog.error("Error building SparseImageServer for slide " + slideName + " in dataset " + datasetName, e);
             throw new RuntimeException(e);
         }
     }
+
+    private static List<Double> getDownsampleQuantiles(double fullResolutionDownsample, double overviewDownsample, int count) {
+        List<Double> quantiles = new ArrayList<>();
+        for (int i = 1; i < count; i++) {
+            double fraction = (double) i / count;
+            quantiles.add(fullResolutionDownsample + fraction * (overviewDownsample - fullResolutionDownsample));
+        }
+        return quantiles;
+    }
             
-    
     public static double getOverviewDownsample(List<TileMetadata> tileMetadataList){
         //make sure it's under OVERVIEW_TARGET_MAX_DIMENSION pixels 
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
@@ -184,7 +180,7 @@ public class SlideImageServer {
         return overviewDownsample;
     }
 
-    public static List<TileImageServer> getThumbServers(SparseImageServer sparseServer) throws IOException {
+    public static List<TileImageServer> getOverviewServers(SparseImageServer sparseServer) throws IOException {
         double middleDownsample = sparseServer.getPreferredDownsamples()[1];
         List<TileImageServer> thumbServers = new ArrayList<>();
         for (ImageRegion region : sparseServer.getManager().getRegions()) {
