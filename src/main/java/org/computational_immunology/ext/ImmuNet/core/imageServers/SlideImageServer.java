@@ -47,15 +47,24 @@ public class SlideImageServer {
             double compositeSwitchDownsample,
             ServerGateway serverGateway) {
         try {
-            double[] downsamples = deriveJpgDownsamples(tileMetadataList, datasetName, slideName, serverGateway);
-            downsampleComposite = downsamples[1];
+            //double[] downsamples = deriveJpgDownsamples(tileMetadataList, datasetName, slideName, serverGateway);
+            //downsampleComposite = downsamples[1];
 
-            DownsampleLevels downsampleLevels = getDownsampleLevels(tileMetadataList, compositeSwitchDownsample, downsamples[0], downsampleComposite);
+            double overviewDownsample = getOverviewDownsample(tileMetadataList);
+            ImmuNetLog.log("overviewDownsample value is" + overviewDownsample);
+            double compositeDownsample= 1.0;
+            ImmuNetLog.log("compositeDownsample" + compositeDownsample);
+            downsampleComposite = compositeDownsample;
+            double thumbDownsample = (overviewDownsample+compositeDownsample) /2;
+            ImmuNetLog.log("thumbDownsample" + thumbDownsample);
 
-            double downsampleThumb = downsampleLevels.downsampleThumb();
-            double registeredDownsampleThumb = downsampleLevels.registeredDownsampleThumb();
-            double overviewDownsample = downsampleLevels.overviewDownsample();
-            boolean registerOverviewLevel = downsampleLevels.registerOverviewLevel();
+
+            //DownsampleLevels downsampleLevels = getDownsampleLevels(tileMetadataList, compositeSwitchDownsample, downsamples[0], downsampleComposite);
+
+            //double downsampleThumb = downsampleLevels.downsampleThumb();
+            //double registeredDownsampleThumb = downsampleLevels.registeredDownsampleThumb();
+            //double overviewDownsample = downsampleLevels.overviewDownsample();
+            boolean registerOverviewLevel = overviewDownsample > 1;
 
             // we are making image regions being the same size as the tiles we get from backend
             SparseImageServer.Builder builder = new SparseImageServer.Builder();
@@ -69,8 +78,8 @@ public class SlideImageServer {
                 );
 
                 TileMetadata thumbTile = tileMetadata.withType(TileMetadata.ImageType.THUMB);
-                JpgTileImageServer thumbServer = new JpgTileImageServer(thumbTile, datasetName, slideName, downsampleThumb, serverGateway);
-                builder.serverRegion(tileRegion, registeredDownsampleThumb, thumbServer);
+                JpgTileImageServer thumbServer = new JpgTileImageServer(thumbTile, datasetName, slideName, thumbDownsample, serverGateway);
+                builder.serverRegion(tileRegion, thumbDownsample, thumbServer);
 
                 // register this overview level to not crash upon opening the image
                 if (registerOverviewLevel) {
@@ -78,16 +87,33 @@ public class SlideImageServer {
                 }
 
                 TileMetadata compositeTile = tileMetadata.withType(TileMetadata.ImageType.COMPOSITE);
-                JpgTileImageServer compositeServer = new JpgTileImageServer(compositeTile, datasetName, slideName, downsampleComposite, serverGateway);
-                builder.serverRegion(tileRegion, downsampleComposite, compositeServer);
+                JpgTileImageServer compositeServer = new JpgTileImageServer(compositeTile, datasetName, slideName, compositeDownsample, serverGateway);
+                builder.serverRegion(tileRegion, compositeDownsample, compositeServer);
             }
             return builder.build();
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             ImmuNetLog.error("Error building SparseImageServer for slide " + slideName + " in dataset " + datasetName, e);
             throw new RuntimeException(e);
         }
     }
     
+
+    public static double getOverviewDownsample(List<TileMetadata> tileMetadataList){
+        //make sure it's under OVERVIEW_TARGET_MAX_DIMENSION pixels 
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+        for (var tileMetadata : tileMetadataList) {
+            minX = Math.min(minX, tileMetadata.getX());
+            minY = Math.min(minY, tileMetadata.getY());
+            maxX = Math.max(maxX, tileMetadata.getX() + tileMetadata.getWidth());
+            maxY = Math.max(maxY, tileMetadata.getY() + tileMetadata.getHeight());
+        }
+        double totalWidth = maxX - minX;
+        double totalHeight = maxY - minY;
+        double overviewDownsample = Math.max(totalWidth, totalHeight) / OVERVIEW_TARGET_MAX_DIMENSION;
+        return overviewDownsample;
+    }
+
     // how pre-downsampled is the raw fetched source file?
     private static DownsampleLevels getDownsampleLevels(
         List<TileMetadata> tileMetadataList, double compositeSwitchDownsample,
@@ -188,9 +214,11 @@ public class SlideImageServer {
         double thumbHeightRatio = sampleMetadata.getHeight() / thumbSample.getHeight();
         double downsampleThumb = (thumbWidthRatio + thumbHeightRatio) / 2.0;
 
-        double compositeWidthRatio = sampleMetadata.getWidth() / compositeSample.getWidth();
-        double compositeHeightRatio = sampleMetadata.getHeight() / compositeSample.getHeight();
-        double downsampleComposite = (compositeWidthRatio + compositeHeightRatio) / 2.0;
+        //double compositeWidthRatio = sampleMetadata.getWidth() / compositeSample.getWidth();
+        //double compositeHeightRatio = sampleMetadata.getHeight() / compositeSample.getHeight();
+        double downsampleComposite = 1.0; //(compositeWidthRatio + compositeHeightRatio) / 2.0;
+
+        ImmuNetLog.log("the downsample composite of jpeg is ", downsampleComposite);
 
         ImmuNetLog.log("Derived downsamples from sample tile {}: downsampleThumb={}, downsampleComposite={}",
                 sampleMetadata.getCode(), downsampleThumb, downsampleComposite);

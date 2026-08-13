@@ -57,7 +57,7 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
         tileMetadatas = serverGateway.getTileMetadatas(datasetName, slideName);
         progressReporter.accept("Getting ready to process tiles...");
         SparseImageServer sparseServer;
-         List<TileImageServer> allThumbServers;
+        List<TileImageServer> allThumbServers;
         if (!useTiffComposite) {
             sparseServer = SlideImageServer.build(tileMetadatas, datasetName, slideName, compositeSwitchDownsample, serverGateway);
             allThumbServers = SlideImageServer.getThumbServers(sparseServer);

@@ -55,17 +55,18 @@ public record TileMetadata(int id, String code, ImageType type,
     }
 
     public int getPixelX() {
-        return (int) Math.round(x);
+        return (int) Math.round(x / dx);
     }
     public int getPixelY() {
-        return (int) Math.round(y);
+        return (int) Math.round(y / dy);
     }
     public int getPixelWidth() {
-        return (int) Math.round(x + w) - getPixelX();
+        return (int) Math.round((x + w) / dx) - getPixelX();
     }
     public int getPixelHeight() {
-        return (int) Math.round(y + h) - getPixelY();
+        return (int) Math.round((y + h) / dy) - getPixelY();
     }
+
     public double getDx() {
         return dx;
     }
