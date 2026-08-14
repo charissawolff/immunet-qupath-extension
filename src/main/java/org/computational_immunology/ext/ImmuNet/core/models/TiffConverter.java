@@ -18,8 +18,9 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 
 import ij.ImagePlus;
-import ij.ImageStack;
-import ij.io.Opener;
+import ij.io.FileInfo;
+import ij.io.FileOpener;
+import ij.io.TiffDecoder;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
@@ -46,21 +47,27 @@ public class TiffConverter {
     }
 
     private static BufferedImage decode(byte[] bytes) throws IOException {
-        ImagePlus imp = new Opener().openTiff(new ByteArrayInputStream(bytes), "components");
-        if (imp == null) {
+        // Opener.openTiff() silently keeps only the first page whenever pages differ in size/type
+        // (true here: channels + a smaller thumbnail), so pages are read individually instead.
+        FileInfo[] pages = new TiffDecoder(new ByteArrayInputStream(bytes), "components").getTiffInfo();
+        if (pages == null || pages.length == 0) {
             throw new IOException("Could not decode components.tiff with ImageJ");
         }
-        ImageStack stack = imp.getStack();
 
-        // Instead of assuming how many channels there are, group slices by their actual (width, height) and
-        // take the largest group as the channels because components.tiff also contains a smaller THUMB image,
-        // which won't match that size and is excluded this way rather than by a hardcoded slice count.
+        // Group slices by their actual (width, height) and take the largest group as the channels,
+        // because components.tiff also contains a smaller THUMB image.
         Map<List<Integer>, List<ImageProcessor>> slicesBySize = new LinkedHashMap<>();
-        for (int i = 1; i <= stack.getSize(); i++) {
-            ImageProcessor ip = stack.getProcessor(i);
+        for (FileInfo fi : pages) {
+            fi.inputStream = new ByteArrayInputStream(bytes);
+            ImagePlus page = new FileOpener(fi).openImage();
+            if (page == null) {
+                throw new IOException("Could not decode a page of components.tiff with ImageJ");
+            }
+            ImageProcessor ip = page.getProcessor();
             List<Integer> size = List.of(ip.getWidth(), ip.getHeight());
             slicesBySize.computeIfAbsent(size, k -> new ArrayList<>()).add(ip);
         }
+
         List<ImageProcessor> channelProcessors = slicesBySize.values().stream()
                 .max(Comparator.comparingInt(List::size))
                 .orElseThrow(() -> new IOException("components.tiff has no slices"));
@@ -79,6 +86,7 @@ public class TiffConverter {
         var colorModel = qupath.lib.color.ColorModelFactory.createColorModel(pixelTypeOf(dataType), numChannels, false);
         return new BufferedImage(colorModel, raster, false, null);
     }
+
 
     private static int dataBufferTypeOf(ImageProcessor ip) {
         if (ip instanceof FloatProcessor) {
