@@ -57,12 +57,15 @@ public class PolygonConverter {
 
         // Now we need to scale the coordinates by dx and dy
         PathObject scaledPathObject = PathObjectTools.transformObject(polygonPathObject, AffineTransform.getScaleInstance(1/dx, 1/dy), true, false);    
+        PathClass polygonClass = PathClass.getInstance(p.getId());
+        scaledPathObject.setPathClass(polygonClass); //to have different colors too
         scaledPathObject.setName(p.getName());
         scaledPathObject.getMetadata().put("id", p.getId());
         scaledPathObject.getMetadata().put("name", p.getName());
         scaledPathObject.getMetadata().put("dataset", p.getDataset());
         scaledPathObject.getMetadata().put("slide", p.getSlide());
         scaledPathObject.getMetadata().put("created", p.getCreated());
+        scaledPathObject.getMetadata().put("type", p.getType());
 
         scaledPathObject.setLocked(true); // Lock the polygon to prevent accidental modifications
         return scaledPathObject;
@@ -70,8 +73,8 @@ public class PolygonConverter {
 
     public static AnnotationPolygon fromPathObject(PathObject pathObject, double dx, double dy) {
         Geometry geometry = pathObject.getROI().getGeometry();
-        if (!(geometry instanceof org.locationtech.jts.geom.Polygon)) {
-            throw new IllegalArgumentException("ROI geometry is not a single Polygon: " + geometry.getGeometryType());
+        if (!(geometry instanceof org.locationtech.jts.geom.Polygon) && !(geometry instanceof org.locationtech.jts.geom.MultiPolygon)) {
+            throw new IllegalArgumentException("ROI geometry is not a single Polygon or MultiPolygon: " + geometry.getGeometryType());
         }
 
         PathObject transformedPathObject = PathObjectTools.transformObject(pathObject, AffineTransform.getScaleInstance(dx, dy), true, false);
@@ -119,7 +122,12 @@ public class PolygonConverter {
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject jsonPolygon = jsonArray.getJSONObject(i);
 
-            // get the raw array, trying the future key first, falling back to today's key
+            String type = jsonPolygon.optString("type", "Polygon");
+            if (!Arrays.asList("Polygon", "MultiPolygon").contains(type)) {
+                type = "Polygon";
+            }
+
+            // get the raw array, note that sometimes it's vertices (old) and "coordinates" (new) depending on how/when the polygon was created. 
             JSONArray rawCoordinates = jsonPolygon.has("coordinates")
                     ? jsonPolygon.getJSONArray("coordinates")
                     : jsonPolygon.getJSONArray("vertices");
@@ -133,12 +141,8 @@ public class PolygonConverter {
             } else {
                 coordinates = rawCoordinates;
             }
-            closeRingsIfNeeded(coordinates);
+            closeRingsIfNeeded(coordinates, type);
 
-            String type = jsonPolygon.optString("type", "Polygon");
-            if (!Arrays.asList("Polygon", "MultiPolygon").contains(type)) {
-                type = "Polygon";
-            }
             AnnotationPolygon polygon = new AnnotationPolygon(
                 jsonPolygon.optString("id", jsonPolygon.optString("_id", null)),
                 coordinates,
@@ -153,10 +157,21 @@ public class PolygonConverter {
         return polygons;
     }
 
-    // JTS's LinearRing throws if a ring's first and last coordinate don't match. 
-    private static void closeRingsIfNeeded(JSONArray coordinates) {
-        for (int i = 0; i < coordinates.length(); i++) {
-            JSONArray ring = coordinates.getJSONArray(i);
+    // Polygon coordinates are [[[ring], [hole], ...]]]. MultiPolygon coordinates are one level deeper: [[[[ring],[hole]...]], [[[ring]...]], ...]]].
+    private static void closeRingsIfNeeded(JSONArray coordinates, String type) {
+        if ("MultiPolygon".equals(type)) {
+            for (int i = 0; i < coordinates.length(); i++) {
+                closeRings(coordinates.getJSONArray(i));
+            }
+        } else {
+            closeRings(coordinates);
+        }
+    }
+
+    // Make sure the ring's first and last coordinates are exactly the same; error else
+    private static void closeRings(JSONArray rings) {
+        for (int i = 0; i < rings.length(); i++) {
+            JSONArray ring = rings.getJSONArray(i);
             if (ring.length() == 0) continue;
             JSONArray first = ring.getJSONArray(0);
             JSONArray last = ring.getJSONArray(ring.length() - 1);
