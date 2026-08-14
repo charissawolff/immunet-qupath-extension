@@ -39,7 +39,7 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
     private final Boolean useTiffComposite;
     private final double compositeSwitchDownsample;
     private volatile ExecutorService prefetchExecutor;
-    private List<TileMetadata> tilesMetadata;
+    private List<TileMetadata> tileMetadatas;
 
     public SelectSlideCommand(String datasetName, String slideName, double compositeSwitchDownsample,
         ServerGateway serverGateway, Boolean useTiffComposite) {
@@ -53,17 +53,18 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
     @Override
     protected SparseImageServer execute(Consumer<String> progressReporter) throws Exception {
         progressReporter.accept("Fetching slide metadata...");
-        tilesMetadata = serverGateway.getTileMetadatas(datasetName, slideName);
+        tileMetadatas = serverGateway.getTileMetadatas(datasetName, slideName);
         progressReporter.accept("Getting ready to process tiles...");
         SparseImageServer sparseServer;
         if (!useTiffComposite) {
-            sparseServer = SlideImageServer.build(tilesMetadata, datasetName, slideName, compositeSwitchDownsample, serverGateway);
+            sparseServer = SlideImageServer.build(tileMetadatas, datasetName, slideName, compositeSwitchDownsample, serverGateway);
         } else {
-            DatasetMetadata datasetMetadata = serverGateway.getDatasetMetadata(datasetName);
-            sparseServer = SlideImageServer.buildTiff(datasetMetadata, tilesMetadata, datasetName, slideName, compositeSwitchDownsample, serverGateway);
+            //get tiff
+            sparseServer = SlideImageServer.buildTiff(tileMetadatas, datasetName, slideName, serverGateway);
         }
-        List<TileImageServer> allThumbServers = SlideImageServer.getThumbServers(sparseServer);
-        progressReporter.accept("Fetching" + tilesMetadata.size() +"files...");
+
+        List<TileImageServer> allThumbServers = SlideImageServer.getOverviewServers(sparseServer);
+        progressReporter.accept("Fetching " + tileMetadatas.size() +" files...");
         if (task.isCancelled()) {
             return null;
         }
@@ -153,6 +154,6 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
      * succeeded yet. Lets other commands (see SlideLoadWorkflow) reuse it instead of re-fetching.
      */
     public List<TileMetadata> getTilesMetadata() {
-        return tilesMetadata == null ? null : Collections.unmodifiableList(tilesMetadata);
+        return tileMetadatas == null ? null : Collections.unmodifiableList(tileMetadatas);
     }
 }

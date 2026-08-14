@@ -68,6 +68,8 @@ public class SlideLoadWorkflow {
             // Slide loading is done, but annotation fetching is about to start. Set the data in the store for the app to use.
             selectedDataStore.setSelectedSlide(new SelectedSlide(datasetName, slideName, selectSlideCommand.getTilesMetadata()));
             selectedDataStore.setDownSampleComposite(SlideImageServer.getDownsampleComposite());
+            selectedDataStore.setDx(selectSlideCommand.getTilesMetadata().get(0).getDx());
+            selectedDataStore.setDy(selectSlideCommand.getTilesMetadata().get(0).getDy());
 
             presentAnnotationsCommand.start();
             if (onSlideReady != null) {

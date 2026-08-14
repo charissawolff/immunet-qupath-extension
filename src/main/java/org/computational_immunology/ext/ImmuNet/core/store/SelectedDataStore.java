@@ -14,6 +14,8 @@ public class SelectedDataStore {
     private final ReadOnlyObjectWrapper<SelectedSlide> selectedSlide = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyObjectWrapper<TileMetadata> selectedTile = new ReadOnlyObjectWrapper<>(); //only the tile meatdata as the tile image is not needed here and can be retrieved from the metadata
     private final ReadOnlyObjectWrapper<Double> downSampleComposite = new ReadOnlyObjectWrapper<>();
+    private final ReadOnlyObjectWrapper<Double> dx = new ReadOnlyObjectWrapper<>();
+    private final ReadOnlyObjectWrapper<Double> dy = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyObjectWrapper<List<AnnotationPolygon>> Polygons = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyObjectWrapper<List<AnnotationPoint>> annotationPoints = new ReadOnlyObjectWrapper<>();
     public SelectedSlide getSelectedSlide() {
@@ -30,6 +32,8 @@ public class SelectedDataStore {
         selectedSlide.set(null);
         selectedTile.set(null);
         downSampleComposite.set(null);
+        dx.set(null);
+        dy.set(null);
         Polygons.set(null);
         annotationPoints.set(null);
     }
@@ -47,6 +51,20 @@ public class SelectedDataStore {
     }
     public double getDownSampleComposite() {
         return downSampleComposite.get();
+    }
+
+    public void setDx(double value) {
+        this.dx.set(value);
+    }
+    public double getDx() {
+        return dx.get();
+    }
+
+    public void setDy(double value) {
+        this.dy.set(value);
+    }
+    public double getDy() {
+        return dy.get();
     }
 
 

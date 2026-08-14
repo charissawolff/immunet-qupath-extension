@@ -9,6 +9,7 @@ import qupath.lib.images.servers.ImageServerMetadata;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
@@ -44,7 +45,10 @@ public abstract class TileImageServer extends AbstractTileableImageServer {
     @Override
     public abstract ImageServerMetadata getOriginalMetadata();
 
-    protected abstract BufferedImage blankTile(int width, int height);
+    protected BufferedImage blankTile(int width, int height) throws IOException {
+        return getEmptyTile(width, height);
+    }
+
 
     @Override
     public Collection<URI> getURIs() {

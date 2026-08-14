@@ -4,6 +4,7 @@ import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.models.PolygonConverter;
+import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.AddPolygonCommand;
 import org.json.JSONObject;
 
@@ -29,10 +30,12 @@ Here user can see the polygons they added, and can choose to upload them to the 
 */
 public class NewPolygonViewerBox extends TableView<PathObject> {
     private final ServerUploadGateway dataUploadHandler;
+    private final SelectedDataStore selectedDataStore;
 
-    public NewPolygonViewerBox(ObservableList<PathObject> items, ServerUploadGateway dataUploadHandler) {
+    public NewPolygonViewerBox(ObservableList<PathObject> items, ServerUploadGateway dataUploadHandler, SelectedDataStore selectedDataStore) {
         super(items);
         this.dataUploadHandler = dataUploadHandler;
+        this.selectedDataStore = selectedDataStore;
         setEditable(true);
         setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         getColumns().add(buildThumbnailColumn());
@@ -104,7 +107,7 @@ public class NewPolygonViewerBox extends TableView<PathObject> {
     private void handleAddClicked(PathObject polygon, Button button) {
         button.setDisable(true);
         ImmuNetLog.log("Adding polygon: " + polygon.getName() + " which is:" + polygon);
-        AnnotationPolygon polygonData = PolygonConverter.fromPathObject(polygon);
+        AnnotationPolygon polygonData = PolygonConverter.fromPathObject(polygon, selectedDataStore.getDx(), selectedDataStore.getDy());
         ImmuNetLog.log("Polygon from PathObject is " + polygonData);
         JSONObject polygonJson = PolygonConverter.toJSONObject(polygonData);
         ImmuNetLog.log("Polygon JSON is " + polygonJson);

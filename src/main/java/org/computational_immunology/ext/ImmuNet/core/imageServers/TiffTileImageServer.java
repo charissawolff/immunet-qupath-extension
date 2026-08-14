@@ -20,12 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class TiffCompositeTileImageServer extends TileImageServer {
+public class TiffTileImageServer extends TileImageServer {
     private final double downsampleValue;
     private final ServerGateway serverGateway;
     private final ImageServerMetadata metadata;
 
-    public TiffCompositeTileImageServer(DatasetMetadata datasetMetadata,
+    public TiffTileImageServer(//DatasetMetadata datasetMetadata,
         TileMetadata tileMetadata, String datasetName,
             String slideName, double downsampleValue,
             ServerGateway serverGateway) {
@@ -37,13 +37,18 @@ public class TiffCompositeTileImageServer extends TileImageServer {
         int fullHeight = tileMetadata.getPixelHeight();
         int levelWidth  = Math.max(1, (int) Math.round(fullWidth  / downsampleValue));
         int levelHeight = Math.max(1, (int) Math.round(fullHeight / downsampleValue));
-        double declaredDownsample = fullWidth / (double) levelWidth;
+        double declaredDownsample = downsampleValue;
+
+        double dx = tileMetadata.getDx(); // pixel per µm
+        double dy = tileMetadata.getDy();
 
         this.metadata = new ImageServerMetadata.Builder()
                 .width(fullWidth).height(fullHeight)
-                .name(datasetName + "/" + slideName + "/" + tileMetadata.getCode() + " (" + tileMetadata.getType() + ")")
+                .name(datasetName + "/" + slideName + "/" + tileMetadata.getCode() + " (" + tileMetadata.getType() + downsampleValue +")")
                 .rgb(false).pixelType(PixelType.FLOAT32)
-                .channels(toImageChannels(datasetMetadata.getAntibodyPanel()))
+                .channels(ImageChannel.getDefaultChannelList(8)) //
+                //.channels(toImageChannels(datasetMetadata.getAntibodyPanel()))
+                .pixelSizeMicrons(dx, dy) //
                 .sizeZ(1).sizeT(1)
                 .levels(new ImageServerMetadata.ImageResolutionLevel.Builder(fullWidth, fullHeight)
                         .addLevel(declaredDownsample, levelWidth, levelHeight)
@@ -56,9 +61,11 @@ public class TiffCompositeTileImageServer extends TileImageServer {
     public BufferedImage readTile(TileRequest tileRequest) throws IOException {
         int requestedWidth = tileRequest.getTileWidth();
         int requestedHeight = tileRequest.getTileHeight();
+        double downsample = tileRequest.getDownsample();
+
         try {
-            Tile fetchedTile = serverGateway.fetchComponentsTiffImage(tileMetadata, datasetName, slideName, tileRequest.getDownsample());
-            ImmuNetLog.log("Fetching TIFF tile of type {}", tileMetadata.getType());
+            ImmuNetLog.log("Fetching TIFF tile with downsample {} ", downsample);
+            Tile fetchedTile = serverGateway.fetchComponentsTiffImage(tileMetadata, datasetName, slideName, downsample);
             return fetchedTile.resizeTiffImage(requestedWidth, requestedHeight);
         } catch (InterruptedException e) {
             ImmuNetLog.log("Error in reading TIFF Tile in Tile image server");
@@ -71,7 +78,7 @@ public class TiffCompositeTileImageServer extends TileImageServer {
 
     @Override
     protected String createID() {
-        return datasetName + "/" + slideName + "/" + tileMetadata.getCode() + "-COMPOSITE-TIFF";
+        return datasetName + "/" + slideName + "/" + tileMetadata.getCode() + "-TIFF" + downsampleValue;
     }
 
     @Override

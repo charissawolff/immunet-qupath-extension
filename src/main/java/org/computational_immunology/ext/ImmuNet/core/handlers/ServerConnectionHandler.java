@@ -18,9 +18,11 @@ import java.util.concurrent.TimeUnit;
 
 public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArray> {
     private static final Duration REQUEST_TIMEOUT_SECONDS = Duration.ofSeconds(20);
-    private static final Duration REQUEST_TIMEOUT_IMAGE_SECONDS = Duration.ofSeconds(120);
+    private static final Duration REQUEST_TIMEOUT_IMAGE_SECONDS = Duration.ofSeconds(2400);
     private static final int MAX_POST_ATTEMPTS = 3;
     private static final Duration POST_RETRY_DELAY = Duration.ofSeconds(20);
+    private static final int MAX_IMAGE_ATTEMPTS = 2;
+    private static final Duration IMAGE_RETRY_DELAY = Duration.ofMillis(500);
     private static final ServerConnectionHandler INSTANCE = new ServerConnectionHandler();
 
     //used to tell main thread that the ssh tunnel is now ready
@@ -139,16 +141,19 @@ public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArra
                 .timeout(REQUEST_TIMEOUT_IMAGE_SECONDS)
                 .GET()
                 .build();
-        try{
-            HttpResponse<InputStream> response = client.send(getRequest, BodyHandlers.ofInputStream());
-            checkStatusCode(response.statusCode());
-            return response;
-        } catch (InterruptedException e) {
-            throw e;
-        } catch(IOException e){
-            ImmuNetLog.error("Could not fetch page {}", localPath, e);
-            return null;
+        for (int attempt = 1; attempt <= MAX_IMAGE_ATTEMPTS; attempt++) {
+            try {
+                HttpResponse<InputStream> response = client.send(getRequest, BodyHandlers.ofInputStream());
+                checkStatusCode(response.statusCode());
+                return response;
+            } catch (IOException e) {
+                ImmuNetLog.error("Could not fetch page {}", localPath, e);
+                if (attempt < MAX_IMAGE_ATTEMPTS) {
+                    Thread.sleep(IMAGE_RETRY_DELAY.toMillis());
+                }
+            }
         }
+        return null;
     }
 
     // Fetch content with type String

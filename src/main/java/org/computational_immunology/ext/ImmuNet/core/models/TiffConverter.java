@@ -76,11 +76,8 @@ public class TiffConverter {
             copyBand(channelProcessors.get(band), raster, band);
         }
 
-        // Dummy color model: QuPath's own multi-channel display reads raw sample values directly per
-        // channel, never through a tile's own ColorModel - this is just to satisfy BufferedImage's API.
-        int bitsPerSample = bitsPerSample(dataType);
-        var dummyColorModel = qupath.lib.color.ColorModelFactory.getDummyColorModel(bitsPerSample * numChannels);
-        return new BufferedImage(dummyColorModel, raster, false, null);
+        var colorModel = qupath.lib.color.ColorModelFactory.createColorModel(pixelTypeOf(dataType), numChannels, false);
+        return new BufferedImage(colorModel, raster, false, null);
     }
 
     private static int dataBufferTypeOf(ImageProcessor ip) {
@@ -112,12 +109,11 @@ public class TiffConverter {
         }
     }
 
-    private static int bitsPerSample(int dataBufferType) {
+    private static qupath.lib.images.servers.PixelType pixelTypeOf(int dataBufferType) {
         return switch (dataBufferType) {
-            case DataBuffer.TYPE_BYTE -> 8;
-            case DataBuffer.TYPE_USHORT, DataBuffer.TYPE_SHORT -> 16;
-            case DataBuffer.TYPE_INT, DataBuffer.TYPE_FLOAT -> 32;
-            default -> 8;
+            case DataBuffer.TYPE_USHORT -> qupath.lib.images.servers.PixelType.UINT16;
+            case DataBuffer.TYPE_FLOAT -> qupath.lib.images.servers.PixelType.FLOAT32;
+            default -> qupath.lib.images.servers.PixelType.UINT8;
         };
     }
 }

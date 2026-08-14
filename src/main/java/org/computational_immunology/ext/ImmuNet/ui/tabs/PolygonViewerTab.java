@@ -158,7 +158,7 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         Label newPolygonListTitle = new Label("User added polygons");
         newPolygonListTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
 
-        NewPolygonViewerBox newPolygonViewerBox = new NewPolygonViewerBox(userAddedPolygons, dataUploadHandler);
+        NewPolygonViewerBox newPolygonViewerBox = new NewPolygonViewerBox(userAddedPolygons, dataUploadHandler, selectedDataStore);
         newPolygonViewerBox.setPrefHeight(250);
         VBox.setMargin(newPolygonListTitle, new Insets(10, 2, 0, 2)); // Space between list and buttons
         VBox.setMargin(newPolygonViewerBox, new Insets(2, 2, 10, 2)); // Space between list and buttons
