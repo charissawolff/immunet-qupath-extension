@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.awt.Shape;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 
@@ -21,6 +22,11 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.util.AffineTransformation;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import qupath.lib.geom.Point2;
 import qupath.lib.objects.PathObject;
@@ -31,59 +37,33 @@ import qupath.lib.roi.GeometryROI;
 import qupath.lib.roi.GeometryTools;
 import qupath.lib.roi.ROIs;
 import qupath.lib.roi.interfaces.ROI;
+import qupath.lib.io.GsonTools;
+import qupath.lib.objects.PathObjectTools;
 
 public class PolygonConverter {
 
     public static PathObject toPathObject(AnnotationPolygon p, double dx, double dy) {
-        //instead of being the polygon class, we need it to use geometryToROI do it can hold holes
+        List<PathObject> pathObjects = new ArrayList<>();
+        // make json string from coords + type of annotation polygon
+        JsonObject element = new JsonObject();
+        element.addProperty("type", p.getType());
+        element.add("coordinates", JsonParser.parseString(p.getCoordinates().toString()));
 
-        
-        List<AnnotationPolygon.Vertex> outerRing = p.getOuterRing();
-        List<List<AnnotationPolygon.Vertex>> holes = p.getHoles();
-
-        GeometryFactory gf = new GeometryFactory();
-        List<Coordinate> outerRingCoords = outerRing.stream()
-                .map(v -> new Coordinate(v.getX() / dx, v.getY() / dy))
-                .collect(Collectors.toList());
-
-        if (!outerRingCoords.get(0).equals2D(outerRingCoords.get(outerRingCoords.size() - 1))) {
-            outerRingCoords.add(outerRingCoords.get(0)); // close the ring
+        try{
+            pathObjects = GsonTools.parseObjectsFromGeoJSON(element);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse GeoJSON: " + e.getMessage(), e);
         }
+        PathObject polygonPathObject = pathObjects.get(0); // Assuming only one polygon is present
 
-        Coordinate[] outerRingCoordsArray = outerRingCoords.toArray(new Coordinate[0]);
-        LinearRing outerLinearRing = gf.createLinearRing(outerRingCoordsArray);
-
-        List<LinearRing> holeLinearRings = new ArrayList<>();
-
-        for (List<AnnotationPolygon.Vertex> hole : holes) {
-            List<Coordinate> holeCoords = hole.stream()
-                .map(v -> new Coordinate(v.getX() / dx, v.getY() / dy))
-                .collect(Collectors.toList());
-
-        if (!holeCoords.get(0).equals2D(holeCoords.get(holeCoords.size() - 1))) {
-            holeCoords.add(holeCoords.get(0)); // close the ring
-            }
-        Coordinate[] holeCoordsArray = holeCoords.toArray(new Coordinate[0]);
-        holeLinearRings.add(gf.createLinearRing(holeCoordsArray));
-        }
-
-        LinearRing[] holesArray = holeLinearRings.toArray(new LinearRing[0]);
-        org.locationtech.jts.geom.Polygon polygon = gf.createPolygon(outerLinearRing, holesArray);
-        polygon.normalize();
-
-        ROI roi = GeometryTools.geometryToROI(polygon, ImagePlane.getDefaultPlane());
-
-        PathClass polygonClass = PathClass.getInstance(p.getId());
-        PathObject polygonPathObject = PathObjects.createAnnotationObject(roi, polygonClass);
-        polygonPathObject.setName(p.getName());
-        polygonPathObject.getMetadata().put("id", p.getId());
-        polygonPathObject.getMetadata().put("name", p.getName());
-        polygonPathObject.getMetadata().put("dataset", p.getDataset());
-        polygonPathObject.getMetadata().put("slide", p.getSlide());
-        polygonPathObject.getMetadata().put("created", p.getCreated());
-
-        polygonPathObject.setLocked(true); // Lock the polygon to prevent accidental modifications
-        return polygonPathObject;
+        // Now we need to scale the coordinates by dx and dy
+        PathObject scaledPathObject = PathObjectTools.transformObject(polygonPathObject, AffineTransform.getScaleInstance(1/dx, 1/dy), true, false);    
+        scaledPathObject.getMetadata().put("id", p.getId());
+        scaledPathObject.getMetadata().put("name", p.getName());
+        scaledPathObject.getMetadata().put("dataset", p.getDataset());
+        scaledPathObject.getMetadata().put("slide", p.getSlide());
+        scaledPathObject.getMetadata().put("created", p.getCreated());
+        return scaledPathObject;
     }
 
     private PolygonConverter() {
@@ -131,10 +111,10 @@ public class PolygonConverter {
 
         JSONArray verticesArray = new JSONArray();
         JSONArray outerRingArray = new JSONArray();
-        for (Vertex vertex : polygon.getOuterRing()) {
-            outerRingArray.put(new JSONArray().put(vertex.getX()).put(vertex.getY()));
-        }
-        if (polygon.getHoles().isEmpty()) {
+        //for (Vertex vertex : polygon.getOuterRing()) {
+        //    outerRingArray.put(new JSONArray().put(vertex.getX()).put(vertex.getY()));
+        //}
+        //if (polygon.getHoles().isEmpty()) {
             // No holes: keep the flat shape [[x,y], [x,y], ...] for backward compatibility
             // with the Vue frontend, which can not paint nested vertices.
             verticesArray = outerRingArray;
