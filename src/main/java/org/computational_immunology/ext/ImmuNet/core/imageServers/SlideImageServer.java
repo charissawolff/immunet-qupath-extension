@@ -41,7 +41,6 @@ public class SlideImageServer {
             List<TileMetadata> tileMetadataList,
             String datasetName,
             String slideName,
-            double compositeSwitchDownsample,
             ServerGateway serverGateway) {
         try {
             int overviewDownsample = getOverviewDownsample(tileMetadataList);

@@ -38,15 +38,13 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
     private final String slideName;
     private final ServerGateway serverGateway;
     private final Boolean useTiffComposite;
-    private final double compositeSwitchDownsample;
     private volatile ExecutorService prefetchExecutor;
     private List<TileMetadata> tileMetadatas;
 
-    public SelectSlideCommand(String datasetName, String slideName, double compositeSwitchDownsample,
+    public SelectSlideCommand(String datasetName, String slideName,
         ServerGateway serverGateway, Boolean useTiffComposite) {
         this.datasetName = datasetName;
         this.slideName = slideName;
-        this.compositeSwitchDownsample = compositeSwitchDownsample;
         this.serverGateway = serverGateway;
         this.useTiffComposite = useTiffComposite;
     }
@@ -58,7 +56,7 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
         progressReporter.accept("Getting ready to process tiles...");
         SparseImageServer sparseServer;
         if (!useTiffComposite) {
-            sparseServer = SlideImageServer.build(tileMetadatas, datasetName, slideName, compositeSwitchDownsample, serverGateway);
+            sparseServer = SlideImageServer.build(tileMetadatas, datasetName, slideName, serverGateway);
         } else {
             //get tiff
             List<String> channelList = serverGateway.getSlideChannels(datasetName, slideName);

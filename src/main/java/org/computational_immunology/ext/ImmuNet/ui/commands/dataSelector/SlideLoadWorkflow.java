@@ -35,12 +35,12 @@ public class SlideLoadWorkflow {
 
     private Consumer<SelectedSlide> onSlideReady;
 
-    public SlideLoadWorkflow(String datasetName, String slideName, double compositeSwitchDownsample,
+    public SlideLoadWorkflow(String datasetName, String slideName,
                               ServerGateway serverGateway, Boolean useTiffComposite,
                               SelectedDataStore selectedDataStore) {
         this.datasetName = datasetName;
         this.slideName = slideName;
-        this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, compositeSwitchDownsample, serverGateway, useTiffComposite);
+        this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, serverGateway, useTiffComposite);
         this.presentAnnotationsCommand = new LoadSlideAnnotationCommand(selectedDataStore, serverGateway);
         this.selectedDataStore = selectedDataStore;
     }
