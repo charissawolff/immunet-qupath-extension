@@ -14,6 +14,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /*
 The image server for showing a SLIDE, which consists of many TILES.
@@ -104,6 +105,7 @@ public class SlideImageServer {
         List<TileMetadata> tileMetadataList,
         String datasetName,
         String slideName,
+        List<String> channelList,
         ServerGateway serverGateway) {
         try {
             double overviewDownsample = getOverviewDownsample(tileMetadataList);
@@ -137,7 +139,7 @@ public class SlideImageServer {
                 // otherwise every interpolated level would fall below fullResolutionDownsample
                 if (registerOverviewLevel) {
                     TileMetadata thumbTile = tileMetadata.withType(TileMetadata.ImageType.THUMB);
-                    TiffTileImageServer thumbServer = new TiffTileImageServer(thumbTile, datasetName, slideName, middleDownsample, serverGateway);
+                    TiffTileImageServer thumbServer = new TiffTileImageServer(thumbTile, datasetName, slideName, channelList, middleDownsample, serverGateway);
                     for (double downsample : downsampleQuantiles) {
                         builder.serverRegion(tileRegion, downsample, thumbServer);
                     }
@@ -145,7 +147,7 @@ public class SlideImageServer {
                 }
 
                 TileMetadata fullResolutionTile = tileMetadata.withType(TileMetadata.ImageType.COMPOSITE);
-                TiffTileImageServer fullResolutionServer = new TiffTileImageServer(fullResolutionTile, datasetName, slideName, fullResolutionDownsample, serverGateway);
+                TiffTileImageServer fullResolutionServer = new TiffTileImageServer(fullResolutionTile, datasetName, slideName, channelList, fullResolutionDownsample, serverGateway);
                 builder.serverRegion(tileRegion, fullResolutionDownsample, fullResolutionServer);
             }
             return builder.build();

@@ -25,9 +25,9 @@ public class TiffTileImageServer extends TileImageServer {
     private final ServerGateway serverGateway;
     private final ImageServerMetadata metadata;
 
-    public TiffTileImageServer(//DatasetMetadata datasetMetadata,
+    public TiffTileImageServer(// DatasetMetadata datasetMetadata,
         TileMetadata tileMetadata, String datasetName,
-            String slideName, double downsampleValue,
+            String slideName, List<String> channelList, double downsampleValue,
             ServerGateway serverGateway) {
         super(tileMetadata, datasetName, slideName);
         this.downsampleValue = downsampleValue;
@@ -46,8 +46,8 @@ public class TiffTileImageServer extends TileImageServer {
                 .width(fullWidth).height(fullHeight)
                 .name(datasetName + "/" + slideName + "/" + tileMetadata.getCode() + " (" + tileMetadata.getType() + downsampleValue +")")
                 .rgb(false).pixelType(PixelType.FLOAT32)
-                .channels(ImageChannel.getDefaultChannelList(8)) //
-                //.channels(toImageChannels(datasetMetadata.getAntibodyPanel()))
+                //.channels(ImageChannel.getDefaultChannelList(8)) //
+                .channels(toImageChannels(channelList))
                 .pixelSizeMicrons(dx, dy) //
                 .sizeZ(1).sizeT(1)
                 .levels(new ImageServerMetadata.ImageResolutionLevel.Builder(fullWidth, fullHeight)
@@ -91,16 +91,30 @@ public class TiffTileImageServer extends TileImageServer {
         return metadata;
     }
 
-    private static List<ImageChannel> toImageChannels(DatasetMetadata.AntibodyPanel antibodyPanel) {
+    private static List<ImageChannel> toImageChannels(List<String> channelList) {
         List<ImageChannel> channels = new ArrayList<>();
-        Map<String, int[]> defaultColors = antibodyPanel.getDefaultColors();
-        for (String name : antibodyPanel.getChannels()) {
-            int[] rgb = defaultColors.get(name);
-            if (rgb != null) {
-                channels.add(ImageChannel.getInstance(name, ColorTools.packRGB(rgb[0], rgb[1], rgb[2])));
-            } else {
-                channels.add(ImageChannel.getInstance(name, ImageChannel.getDefaultChannelColor(channels.size())));
-            }
+        List<int[]> defaultColors = new ArrayList<>();
+        // Define 16 different colors for the channels (RGB values)
+        defaultColors.add(new int[]{255, 0, 0}); // Red
+        defaultColors.add(new int[]{0, 255, 0}); // Green
+        defaultColors.add(new int[]{0, 0, 255}); // Blue
+        defaultColors.add(new int[]{255, 255, 0}); // Yellow
+        defaultColors.add(new int[]{255, 0, 255}); // Magenta
+        defaultColors.add(new int[]{0, 255, 255}); // Cyan
+        defaultColors.add(new int[]{255, 165, 0}); // Orange
+        defaultColors.add(new int[]{128, 0, 128}); // Purple
+        defaultColors.add(new int[]{0, 128, 0}); // Dark Green
+        defaultColors.add(new int[]{128, 128, 128}); // Gray
+        defaultColors.add(new int[]{255, 192, 203}); // Pink
+        defaultColors.add(new int[]{165, 42, 42}); // Brown
+        defaultColors.add(new int[]{0, 0, 128}); // Navy
+        defaultColors.add(new int[]{255, 215, 0}); // Gold
+        defaultColors.add(new int[]{0, 100, 0}); // Dark Green
+        defaultColors.add(new int[]{75, 0, 130}); // Indigo
+
+        for (String name : channelList) {
+            int[] rgb = defaultColors.get(channels.size() % defaultColors.size());
+            channels.add(ImageChannel.getInstance(name, ColorTools.packRGB(rgb[0], rgb[1], rgb[2])));
         }
         return channels;
     }

@@ -17,6 +17,7 @@ import qupath.lib.images.servers.SparseImageServer;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -60,7 +61,8 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
             sparseServer = SlideImageServer.build(tileMetadatas, datasetName, slideName, compositeSwitchDownsample, serverGateway);
         } else {
             //get tiff
-            sparseServer = SlideImageServer.buildTiff(tileMetadatas, datasetName, slideName, serverGateway);
+            List<String> channelList = serverGateway.getSlideChannels(datasetName, slideName);
+            sparseServer = SlideImageServer.buildTiff(tileMetadatas, datasetName, slideName, channelList, serverGateway);
         }
 
         List<TileImageServer> allThumbServers = SlideImageServer.getOverviewServers(sparseServer);
