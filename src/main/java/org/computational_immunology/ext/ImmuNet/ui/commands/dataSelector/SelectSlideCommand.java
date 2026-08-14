@@ -85,7 +85,7 @@ public class SelectSlideCommand extends AbstractAsyncCommand<SparseImageServer> 
         // initialize countdownlatch to make it possible to cancel midway of the executor
         CountDownLatch latch = new CountDownLatch(amountTiles);
 
-        prefetchExecutor = Executors.newFixedThreadPool(64);
+        prefetchExecutor = Executors.newFixedThreadPool(10);
         for (TileImageServer thumbServer : allThumbServers) {
             prefetchExecutor.submit(() -> {
                 try {
