@@ -13,7 +13,6 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 public class SelectedDataStore {
     private final ReadOnlyObjectWrapper<SelectedSlide> selectedSlide = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyObjectWrapper<TileMetadata> selectedTile = new ReadOnlyObjectWrapper<>(); //only the tile meatdata as the tile image is not needed here and can be retrieved from the metadata
-    private final ReadOnlyObjectWrapper<Double> downSampleComposite = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyObjectWrapper<Double> dx = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyObjectWrapper<Double> dy = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyObjectWrapper<List<AnnotationPolygon>> Polygons = new ReadOnlyObjectWrapper<>();
@@ -31,7 +30,6 @@ public class SelectedDataStore {
     public void clear() {
         selectedSlide.set(null);
         selectedTile.set(null);
-        downSampleComposite.set(null);
         dx.set(null);
         dy.set(null);
         Polygons.set(null);
@@ -44,13 +42,6 @@ public class SelectedDataStore {
 
     public void setSelectedTile(TileMetadata tile) {
         selectedTile.set(tile);
-    }
-
-    public void setDownSampleComposite(double downsampleComposite) {
-        this.downSampleComposite.set(downsampleComposite);
-    }
-    public double getDownSampleComposite() {
-        return downSampleComposite.get();
     }
 
     public void setDx(double value) {

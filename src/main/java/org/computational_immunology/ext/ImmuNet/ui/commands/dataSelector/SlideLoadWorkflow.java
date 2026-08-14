@@ -35,12 +35,12 @@ public class SlideLoadWorkflow {
 
     private Consumer<SelectedSlide> onSlideReady;
 
-    public SlideLoadWorkflow(String datasetName, String slideName, double compositeSwitchDownsample,
+    public SlideLoadWorkflow(String datasetName, String slideName,
                               ServerGateway serverGateway, Boolean useTiffComposite,
                               SelectedDataStore selectedDataStore) {
         this.datasetName = datasetName;
         this.slideName = slideName;
-        this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, compositeSwitchDownsample, serverGateway, useTiffComposite);
+        this.selectSlideCommand = new SelectSlideCommand(datasetName, slideName, serverGateway, useTiffComposite);
         this.presentAnnotationsCommand = new LoadSlideAnnotationCommand(selectedDataStore, serverGateway);
         this.selectedDataStore = selectedDataStore;
     }
@@ -67,7 +67,6 @@ public class SlideLoadWorkflow {
         selectSlideCommand.setOnDone(() -> {
             // Slide loading is done, but annotation fetching is about to start. Set the data in the store for the app to use.
             selectedDataStore.setSelectedSlide(new SelectedSlide(datasetName, slideName, selectSlideCommand.getTilesMetadata()));
-            selectedDataStore.setDownSampleComposite(SlideImageServer.getDownsampleComposite());
             selectedDataStore.setDx(selectSlideCommand.getTilesMetadata().get(0).getDx());
             selectedDataStore.setDy(selectSlideCommand.getTilesMetadata().get(0).getDy());
 

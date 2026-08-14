@@ -35,7 +35,7 @@ public class ServerGateway extends DataRequestHandler {
     private static final String TILE_ANNOTATIONS = "v/datasets/%s/%s/%s/annotations.json"; // datasetName, slideName, tileCode
     private static final String TILE_IMAGE_PATH_FORMAT = "v/datasets/%s/%s/%s/%s.jpg"; // datasetName, slideName, tileCode, imageType
     private static final String TILEMETADATAPATH_FORMAT = "v/datasets/%s/%s/"; // datasetName, slideName
-    private static final String TIFF_COMPONENTS_TILE_PATH_FORMAT = "v/datasets/%s/%s/%s/components.tiff?downsample=%f"; //dataset, slide and tile
+    private static final String TIFF_COMPONENTS_TILE_PATH_FORMAT = "v/datasets/%s/%s/%s/components.tiff?downsample=%d"; //dataset, slide and tile
     private static final String SLIDE_CHANNELS_PATH_FORMAT = "v/datasets/%s/%s/channels"; // datasetName, slideName
 
     public ServerGateway(PageFetcher pageFetcher) {
@@ -101,8 +101,9 @@ public class ServerGateway extends DataRequestHandler {
         }
     }
 
-    public Tile fetchComponentsTiffImage(TileMetadata tileMetadata, String datasetName, String slideName, double downsampleFactor)
+    public Tile fetchComponentsTiffImage(TileMetadata tileMetadata, String datasetName, String slideName, int downsampleFactor)
             throws IOException, InterruptedException {
+        //round up the downsample factor to the nearest integer so that the server can actually process it, because it treats non int numbers as 1 which is NOT what we want.
         String path = String.format(TIFF_COMPONENTS_TILE_PATH_FORMAT, datasetName, slideName, tileMetadata.getCode(), downsampleFactor);
         try {
             ImmuNetLog.log("Fetching components.tiff for downsample {} at path: {}", downsampleFactor, path);

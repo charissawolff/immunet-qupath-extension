@@ -57,9 +57,9 @@ public class AnnotationPointConverter {
         
     }
 
-    public static PathObject toPathObject(AnnotationPoint point, TileMetadata tileMetadata, double downsampleComposite) {
-        double absoluteX = tileMetadata.getPixelX() + point.getX() * downsampleComposite;
-        double absoluteY = tileMetadata.getPixelY() + point.getY() * downsampleComposite;
+    public static PathObject toPathObject(AnnotationPoint point, TileMetadata tileMetadata) {
+        double absoluteX = tileMetadata.getPixelX() + point.getX();
+        double absoluteY = tileMetadata.getPixelY() + point.getY();
         ROI roi = ROIs.createPointsROI(absoluteX, absoluteY, ImagePlane.getDefaultPlane());
 
         PathClass pointClassification = PathClass.getInstance(point.getT(), colorForType(point.getT()));
@@ -79,8 +79,7 @@ public class AnnotationPointConverter {
     }
 
     public static List<AnnotationPoint> fromPathObjects(List<PathObject> pathObjects,
-                                                        List<TileMetadata> tileMetadatas,
-                                                        double downsampleComposite) {
+                                                        List<TileMetadata> tileMetadatas) {
         List<AnnotationPoint> points = new ArrayList<>();
 
         for (PathObject pathObject : pathObjects) {
@@ -100,8 +99,8 @@ public class AnnotationPointConverter {
             double absoluteX = roi.getCentroidX();
             double absoluteY = roi.getCentroidY();
 
-            double localX = Math.round((absoluteX - tileMetadata.getPixelX()) / downsampleComposite);
-            double localY = Math.round((absoluteY - tileMetadata.getPixelY()) / downsampleComposite);
+            double localX = Math.round((absoluteX - tileMetadata.getPixelX()));
+            double localY = Math.round((absoluteY - tileMetadata.getPixelY()));
             
             points.add(new AnnotationPoint(
                     metadata.get("id"),
@@ -120,7 +119,7 @@ public class AnnotationPointConverter {
         return points;
     }
 
-    public static List<PathObject> toPathObjects(List<AnnotationPoint> points, List<TileMetadata> tileMetadatas, double downsampleComposite) {
+    public static List<PathObject> toPathObjects(List<AnnotationPoint> points, List<TileMetadata> tileMetadatas) {
         List<PathObject> pathObjects = new ArrayList<>();
         for (AnnotationPoint point : points) {
             TileMetadata tileMetadata = TileMetadata.findByCode(point.getTile(), tileMetadatas);
@@ -128,7 +127,7 @@ public class AnnotationPointConverter {
                 ImmuNetLog.error("No tile metadata found for tile code: {}, skipping this annotation", point.getTile());
                 continue;
             }
-            pathObjects.add(toPathObject(point, tileMetadata, downsampleComposite));
+            pathObjects.add(toPathObject(point, tileMetadata));
         }
         return pathObjects;
     }

@@ -10,7 +10,6 @@ import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.ClearImageViewerCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.LoadDatasetsCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.LoadSlideDataCommand;
-import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.SetPolygonVisibilityCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.SlideLoadWorkflow;
 
 import qupath.lib.gui.QuPathGUI;
@@ -113,18 +112,6 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         Label statusLabel = new Label();
 
         // add a slider to see what user wants to transition composite to be. The smaller the better
-        Slider compositeTransitionSlider = new Slider(0.2, 12, 1.5);
-        Label infoIcon = new Label("ⓘ");
-        infoIcon.setTooltip(new Tooltip(
-            "Controls how much you need to zoom in before the viewer loads full detail images.\n" +
-            "Lower = safer for weaker machines (more zoom needed before detail loads).\n" +
-            "Higher = sharper images sooner, but uses more memory. \n" +
-            "WARNING: If you set this higher, make sure that you allocate enough memory from your system. \n"+
-            "Change this at (Edit > Preferences > General > Maximum memory) and restart the application. \n" +
-            "If your machine crashes upon loading in slides, lower this or avoid zooming at all before tile selection."
-        ));
-        HBox sliderRow = new HBox(5, new Label("Safer zoom"), compositeTransitionSlider, new Label("Sharper, sooner"), infoIcon);
-
         // set the the button will return to default when button pause; after button is "done" showing whatever it had to show
         buttonPause.setOnFinished(event -> {
             openImgBtn.setStyle("-fx-text-fill: black;");
@@ -168,7 +155,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                     currentWorkflow.cancel();
                     return;
                 }
-                SlideLoadWorkflow workflow = new SlideLoadWorkflow(dsName, tsName, compositeTransitionSlider.getValue(), serverGateway, useTiffComposite.get(), selectedDataStore);
+                SlideLoadWorkflow workflow = new SlideLoadWorkflow(dsName, tsName, serverGateway, useTiffComposite.get(), selectedDataStore);
                 workflow.build();
 
                 workflow.setOnSlideReady(slide -> {
@@ -216,7 +203,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
 
         updateSlideByDataset(dsBox, tsBox);
 
-        sidePanelTab.getChildren().addAll(buttonRow, formatRow, dsBox.getBox(), tsBox.getBox(), openImgBtn, statusLabel, sliderRow, tileOverlayCheckbox);
+        sidePanelTab.getChildren().addAll(buttonRow, formatRow, dsBox.getBox(), tsBox.getBox(), openImgBtn, statusLabel, tileOverlayCheckbox);
 
         return sidePanelTab;
     }
