@@ -46,7 +46,6 @@ public class TiffTileImageServer extends TileImageServer {
                 .width(fullWidth).height(fullHeight)
                 .name(datasetName + "/" + slideName + "/" + tileMetadata.getCode() + " (" + tileMetadata.getType() + downsampleValue +")")
                 .rgb(false).pixelType(PixelType.FLOAT32)
-                //.channels(ImageChannel.getDefaultChannelList(8)) //
                 .channels(toImageChannels(channelList))
                 .pixelSizeMicrons(dx, dy) //
                 .sizeZ(1).sizeT(1)
@@ -65,7 +64,7 @@ public class TiffTileImageServer extends TileImageServer {
 
         try {
             ImmuNetLog.log("Fetching TIFF tile with downsample {} ", downsample);
-            Tile fetchedTile = serverGateway.fetchComponentsTiffImage(tileMetadata, datasetName, slideName, downsample);
+            Tile fetchedTile = serverGateway.fetchComponentsTiffImage(tileMetadata, datasetName, slideName, (int) downsample);
             return fetchedTile.resizeTiffImage(requestedWidth, requestedHeight);
         } catch (InterruptedException e) {
             ImmuNetLog.log("Error in reading TIFF Tile in Tile image server");
@@ -83,7 +82,7 @@ public class TiffTileImageServer extends TileImageServer {
 
     @Override
     public String getServerType() {
-        return "TiffCompositeTileImageServer";
+        return "TiffTileImageServer";
     }
 
     @Override
@@ -94,7 +93,7 @@ public class TiffTileImageServer extends TileImageServer {
     private static List<ImageChannel> toImageChannels(List<String> channelList) {
         List<ImageChannel> channels = new ArrayList<>();
         List<int[]> defaultColors = new ArrayList<>();
-        // Define 16 different colors for the channels (RGB values)
+        // Define 16 different colors for the channels to choose from (RGB values)
         defaultColors.add(new int[]{255, 0, 0}); // Red
         defaultColors.add(new int[]{0, 255, 0}); // Green
         defaultColors.add(new int[]{0, 0, 255}); // Blue

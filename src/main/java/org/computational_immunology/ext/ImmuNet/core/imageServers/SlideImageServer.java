@@ -49,7 +49,7 @@ public class SlideImageServer {
             double compositeSwitchDownsample,
             ServerGateway serverGateway) {
         try {
-            double overviewDownsample = getOverviewDownsample(tileMetadataList);
+            int overviewDownsample = getOverviewDownsample(tileMetadataList);
             ImmuNetLog.log("overviewDownsample value is" + overviewDownsample);
             double fullResolutionDownsample= 1.0;
             downsampleComposite = fullResolutionDownsample;
@@ -57,7 +57,7 @@ public class SlideImageServer {
             downsampleComposite = fullResolutionDownsample;
 
             boolean registerOverviewLevel = overviewDownsample > fullResolutionDownsample;
-            List<Double> downsampleQuantiles = null;
+            List<Integer> downsampleQuantiles = null;
             double middleDownsample = 0.0;
             if (registerOverviewLevel) {
                 downsampleQuantiles = getDownsampleQuantiles(fullResolutionDownsample, overviewDownsample, 4);
@@ -114,7 +114,7 @@ public class SlideImageServer {
             ImmuNetLog.log("fullResolutionDownsample" + fullResolutionDownsample);
 
             boolean registerOverviewLevel = overviewDownsample > fullResolutionDownsample;
-            List<Double> downsampleQuantiles = null;
+            List<Integer> downsampleQuantiles = null;
             double middleDownsample = 0.0;
             if (registerOverviewLevel) {
                 downsampleQuantiles = getDownsampleQuantiles(fullResolutionDownsample, overviewDownsample, 12);
@@ -157,16 +157,19 @@ public class SlideImageServer {
         }
     }
 
-    private static List<Double> getDownsampleQuantiles(double fullResolutionDownsample, double overviewDownsample, int count) {
-        List<Double> quantiles = new ArrayList<>();
+    private static List<Integer> getDownsampleQuantiles(double fullResolutionDownsample, double overviewDownsample, int count) {
+        List<Integer> quantiles = new ArrayList<>();
         for (int i = 1; i < count; i++) {
             double fraction = (double) i / count;
-            quantiles.add(fullResolutionDownsample + fraction * (overviewDownsample - fullResolutionDownsample));
+            double quantile = fullResolutionDownsample + fraction * (overviewDownsample - fullResolutionDownsample);
+            //round up to the nearest integer so that the server can actually process it, because it treats non int numbers as 1 which is NOT what we want.
+            quantile = Math.ceil(quantile);
+            quantiles.add((int) quantile);
         }
         return quantiles;
     }
             
-    public static double getOverviewDownsample(List<TileMetadata> tileMetadataList){
+    public static int getOverviewDownsample(List<TileMetadata> tileMetadataList){
         //make sure it's under OVERVIEW_TARGET_MAX_DIMENSION pixels 
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
         double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
@@ -179,7 +182,10 @@ public class SlideImageServer {
         double totalWidth = maxX - minX;
         double totalHeight = maxY - minY;
         double overviewDownsample = Math.max(totalWidth, totalHeight) / OVERVIEW_TARGET_MAX_DIMENSION;
-        return overviewDownsample;
+        //floor it up to the nearest integer so that the server can actually process it, because it treats non int numbers as 1 which is NOT what we want.
+        overviewDownsample = Math.ceil(overviewDownsample);
+        ImmuNetLog.log("Calculated overview downsample: " + overviewDownsample + " for total width: " + totalWidth + ", total height: " + totalHeight);
+        return (int) overviewDownsample;
     }
 
     public static List<TileImageServer> getOverviewServers(SparseImageServer sparseServer) throws IOException {
