@@ -4,7 +4,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
@@ -34,6 +36,7 @@ public class ServerGateway extends DataRequestHandler {
     private static final String TILE_IMAGE_PATH_FORMAT = "v/datasets/%s/%s/%s/%s.jpg"; // datasetName, slideName, tileCode, imageType
     private static final String TILEMETADATAPATH_FORMAT = "v/datasets/%s/%s/"; // datasetName, slideName
     private static final String TIFF_COMPONENTS_TILE_PATH_FORMAT = "v/datasets/%s/%s/%s/components.tiff?downsample=%f"; //dataset, slide and tile
+    private static final String SLIDE_CHANNELS_PATH_FORMAT = "v/datasets/%s/%s/channels"; // datasetName, slideName
 
     public ServerGateway(PageFetcher pageFetcher) {
         super(pageFetcher);
@@ -63,6 +66,17 @@ public class ServerGateway extends DataRequestHandler {
         String path = String.format(DATASET_METADATA_PATH, datasetName);
         JSONObject response = getWebpageAsJsonObject(path);
         return new DatasetMetadata(response);
+    }
+
+    public Map<Integer, String> getSlideChannelMap(String datasetName, String slideName) throws IOException, InterruptedException {
+        //map so that i know which channel is which
+        String path = String.format(SLIDE_CHANNELS_PATH_FORMAT, datasetName, slideName);
+        JSONArray channelData = getWebpageAsJsonArray(path);
+        Map<Integer, String> channelMap = new HashMap<>();
+        for (int i = 0; i < channelData.length(); i++) {
+            channelMap.put(i, channelData.getString(i));
+        }
+        return channelMap;
     }
 
     public List<TileMetadata> getTileMetadatas(String datasetName, String slideName) throws IOException, InterruptedException {
