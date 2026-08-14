@@ -27,7 +27,6 @@ public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<Annota
     private String datasetName;
     private String slideName;
     private List<TileMetadata> tilesMetadata;
-    private double downsampleComposite;
 
 
     public LoadSlideAnnotationCommand(SelectedDataStore selectedDataStore, ServerGateway serverGateway) {
@@ -39,7 +38,7 @@ public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<Annota
     @Override
     protected void onSuccess(List<AnnotationPoint> annotationPoints) {
         selectedDataStore.setAnnotationPoints(annotationPoints);
-        List<PathObject> pathObjects = AnnotationPointConverter.toPathObjects(annotationPoints, tilesMetadata, downsampleComposite);
+        List<PathObject> pathObjects = AnnotationPointConverter.toPathObjects(annotationPoints, tilesMetadata);
         RegisterNewClassificationsCommand registerClassificationsCommand = new RegisterNewClassificationsCommand(pathObjects);
         registerClassificationsCommand.execute();
         AttachPathObjectsToViewerCommand attachCommand = new AttachPathObjectsToViewerCommand(pathObjects);
@@ -52,7 +51,6 @@ public class LoadSlideAnnotationCommand extends AbstractAsyncCommand<List<Annota
         datasetName = selectedDataStore.getSelectedSlide().getDatasetName();
         slideName = selectedDataStore.getSelectedSlide().getSlideName();
         tilesMetadata = selectedDataStore.getSelectedSlide().getTileMetadataList();
-        downsampleComposite = selectedDataStore.getDownSampleComposite();
         progressReporter.accept("Fetching annotations for dataset: " + datasetName + ", slide: " + slideName);
         if (tilesMetadata == null) {
             ImmuNetLog.error("fetchSlideAnnotations called without tile metadata set. You need to call setTilesMetadata first for dataset: "

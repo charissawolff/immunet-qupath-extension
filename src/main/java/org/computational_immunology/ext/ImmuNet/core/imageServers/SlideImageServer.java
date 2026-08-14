@@ -36,11 +36,6 @@ public class SlideImageServer {
 
     // BECAUSE the annotations are stored in the backend in the coordinate system of the composite.jpg, not the original tile. since
     // annotations are gathered in the webapplication. 
-    private static double downsampleComposite;
-
-    public static double getDownsampleComposite() {
-        return downsampleComposite;
-    }
 
     public static SparseImageServer build(
             List<TileMetadata> tileMetadataList,
@@ -52,9 +47,7 @@ public class SlideImageServer {
             int overviewDownsample = getOverviewDownsample(tileMetadataList);
             ImmuNetLog.log("overviewDownsample value is" + overviewDownsample);
             double fullResolutionDownsample= 1.0;
-            downsampleComposite = fullResolutionDownsample;
             ImmuNetLog.log("fullResolutionDownsample" + fullResolutionDownsample);
-            downsampleComposite = fullResolutionDownsample;
 
             boolean registerOverviewLevel = overviewDownsample > fullResolutionDownsample;
             List<Integer> downsampleQuantiles = null;
