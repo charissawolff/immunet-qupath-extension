@@ -85,7 +85,7 @@ public class PolygonViewerTab extends CustomSidePanelTab {
                 new StringConverter<AnnotationPolygon>() {
                     @Override
                     public String toString(AnnotationPolygon p) {
-                        return p.getDisplayedName();
+                        return p.getName();
                     }
 
                     @Override

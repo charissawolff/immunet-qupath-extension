@@ -10,8 +10,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 
-import org.checkerframework.checker.units.qual.h;
-import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon.Vertex;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -59,48 +57,42 @@ public class PolygonConverter {
 
         // Now we need to scale the coordinates by dx and dy
         PathObject scaledPathObject = PathObjectTools.transformObject(polygonPathObject, AffineTransform.getScaleInstance(1/dx, 1/dy), true, false);    
+        scaledPathObject.setName(p.getName());
         scaledPathObject.getMetadata().put("id", p.getId());
         scaledPathObject.getMetadata().put("name", p.getName());
         scaledPathObject.getMetadata().put("dataset", p.getDataset());
         scaledPathObject.getMetadata().put("slide", p.getSlide());
         scaledPathObject.getMetadata().put("created", p.getCreated());
+
+        scaledPathObject.setLocked(true); // Lock the polygon to prevent accidental modifications
         return scaledPathObject;
     }
 
-    private PolygonConverter() {
-        /* This utility class should not be instantiated */
-    }
-
     public static AnnotationPolygon fromPathObject(PathObject pathObject, double dx, double dy) {
-        String id = (String) pathObject.getMetadata().get("id");
-        //read directly from pathObject metadata, since name can be changed by user
-        String name = pathObject.getName();
-        String dataset = (String) pathObject.getMetadata().get("dataset");
-        String slide = (String) pathObject.getMetadata().get("slide");
-        String created = (String) pathObject.getMetadata().get("created");
-
-        ROI roi = pathObject.getROI();
-        Geometry geometry = roi.getGeometry();
-
-        if (!(geometry instanceof org.locationtech.jts.geom.Polygon jtsPolygon)) {
+        Geometry geometry = pathObject.getROI().getGeometry();
+        if (!(geometry instanceof org.locationtech.jts.geom.Polygon)) {
             throw new IllegalArgumentException("ROI geometry is not a single Polygon: " + geometry.getGeometryType());
         }
 
-        List<Vertex> outerRing = toVertices(jtsPolygon.getExteriorRing(), dx, dy);
+        PathObject transformedPathObject = PathObjectTools.transformObject(pathObject, AffineTransform.getScaleInstance(dx, dy), true, false);
 
-        List<List<Vertex>> holes = new ArrayList<>();
-        for (int i = 0; i < jtsPolygon.getNumInteriorRing(); i++) {
-            holes.add(toVertices(jtsPolygon.getInteriorRingN(i), dx, dy));
-        }
+        String json = GsonTools.getInstance().toJson(transformedPathObject);
+        JsonObject geometryJson = JsonParser.parseString(json).getAsJsonObject().getAsJsonObject("geometry");
+        JSONArray coordinates = new JSONArray(geometryJson.getAsJsonArray("coordinates").toString());
+        String type = geometryJson.get("type").getAsString();
 
-        return new AnnotationPolygon(id, outerRing, holes, name, dataset, slide, created);
+        String id = (String) transformedPathObject.getMetadata().get("id");
+        //read directly from transformedPathObject metadata/name, since name can be changed by user when user adds a new polygon
+        String name = transformedPathObject.getName();
+        String dataset = (String) transformedPathObject.getMetadata().get("dataset");
+        String slide = (String) transformedPathObject.getMetadata().get("slide");
+        String created = (String) transformedPathObject.getMetadata().get("created");
+
+        return new AnnotationPolygon(id, coordinates, type, name, dataset, slide, created);
     }
 
     /*
-    For saving the AnnotationPolygon to the server, we need to convert it to a JSONObject. 
-    The coordinates are stored as a JSONArray of vertices, 
-    which can be either flat (no holes) or nested (with holes). 
-    The outer ring is always the first element in the JSONArray, and any holes follow as subsequent elements.
+
     */
     public static JSONObject toJSONObject(AnnotationPolygon polygon) {
         JSONObject jsonObject = new JSONObject();
@@ -173,26 +165,6 @@ public class PolygonConverter {
             }
         }
     }
-
-    private static List<AnnotationPolygon.Vertex> parseVertices(JSONArray jsonArray){
-        List<AnnotationPolygon.Vertex> vertices = new ArrayList<>(jsonArray.length());
-            for (int j = 0; j < jsonArray.length(); j++) {
-                JSONArray point = jsonArray.getJSONArray(j); // e.g. [11255.70, 3696.45]
-                double x = point.getDouble(0);
-                double y = point.getDouble(1);
-                vertices.add(new AnnotationPolygon.Vertex(x, y));
-            }
-        return vertices;
-    }
-
-    private static List<List<AnnotationPolygon.Vertex>> parseHoles(JSONArray jsonArray, int startIndex) {
-        List<List<AnnotationPolygon.Vertex>> holes = new ArrayList<>(jsonArray.length() - startIndex);
-        for (int j = startIndex; j < jsonArray.length(); j++) {
-            holes.add(parseVertices(jsonArray.getJSONArray(j)));
-        }
-        return holes;
-    }
-
     static String outerShape(JSONArray vertices) {
         boolean allFlat = true;
         boolean allNested = true;
@@ -207,5 +179,9 @@ public class PolygonConverter {
         if (allFlat) return "flat";     // [[x], [y], [z]]  -> one level: array of arrays
         if (allNested) return "nested"; 
         return "mixed";                 // shouldn;t happen
+    }
+
+    private PolygonConverter() {
+        /* This utility class should not be instantiated */
     }
 }

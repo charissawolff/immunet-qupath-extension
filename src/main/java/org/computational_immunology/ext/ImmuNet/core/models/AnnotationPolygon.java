@@ -1,20 +1,13 @@
 package org.computational_immunology.ext.ImmuNet.core.models;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 import org.json.JSONArray;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
-
-import com.google.gson.Gson;
 
 public class AnnotationPolygon {
 
     private final String id;
-    private final JSONArray coordinates; //can be any shape 
+    private final JSONArray coordinates; // GeoJSON-shaped: [[ring0 pts...], [ring1/hole pts...], ...]
     private final String type;
     private final String name;
     private final String dataset;
