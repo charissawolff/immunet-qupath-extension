@@ -68,15 +68,15 @@ public class ServerGateway extends DataRequestHandler {
         return new DatasetMetadata(response);
     }
 
-    public Map<Integer, String> getSlideChannelMap(String datasetName, String slideName) throws IOException, InterruptedException {
+    public List<String> getSlideChannels(String datasetName, String slideName) throws IOException, InterruptedException {
         //map so that i know which channel is which
         String path = String.format(SLIDE_CHANNELS_PATH_FORMAT, datasetName, slideName);
         JSONArray channelData = getWebpageAsJsonArray(path);
-        Map<Integer, String> channelMap = new HashMap<>();
+        List<String> channelList = new ArrayList<>();
         for (int i = 0; i < channelData.length(); i++) {
-            channelMap.put(i, channelData.getString(i));
+            channelList.add(channelData.getString(i));
         }
-        return channelMap;
+        return channelList;
     }
 
     public List<TileMetadata> getTileMetadatas(String datasetName, String slideName) throws IOException, InterruptedException {
