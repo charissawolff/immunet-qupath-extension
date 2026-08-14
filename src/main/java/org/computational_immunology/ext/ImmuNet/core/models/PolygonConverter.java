@@ -24,6 +24,7 @@ import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.geom.util.AffineTransformation;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -95,12 +96,12 @@ public class PolygonConverter {
         return new AnnotationPolygon(id, outerRing, holes, name, dataset, slide, created);
     }
 
-    private static List<Vertex> toVertices(LineString ring, double dx, double dy) {
-        return Arrays.stream(ring.getCoordinates())
-            .map(c -> new Vertex(c.x * dx, c.y * dy))
-            .toList();
-    }
-
+    /*
+    For saving the AnnotationPolygon to the server, we need to convert it to a JSONObject. 
+    The coordinates are stored as a JSONArray of vertices, 
+    which can be either flat (no holes) or nested (with holes). 
+    The outer ring is always the first element in the JSONArray, and any holes follow as subsequent elements.
+    */
     public static JSONObject toJSONObject(AnnotationPolygon polygon) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("id", polygon.getId());
@@ -108,29 +109,8 @@ public class PolygonConverter {
         jsonObject.put("dataset", polygon.getDataset());
         jsonObject.put("slide", polygon.getSlide());
         jsonObject.put("created", polygon.getCreated());
-
-        JSONArray verticesArray = new JSONArray();
-        JSONArray outerRingArray = new JSONArray();
-        //for (Vertex vertex : polygon.getOuterRing()) {
-        //    outerRingArray.put(new JSONArray().put(vertex.getX()).put(vertex.getY()));
-        //}
-        //if (polygon.getHoles().isEmpty()) {
-            // No holes: keep the flat shape [[x,y], [x,y], ...] for backward compatibility
-            // with the Vue frontend, which can not paint nested vertices.
-            verticesArray = outerRingArray;
-        } else {
-            // Holes present: shape is [[outerRing], [hole1], [hole2], ...]. Will not show on the vue frontend.
-            verticesArray.put(outerRingArray);
-            for (List<Vertex> hole : polygon.getHoles()) {
-                JSONArray holeArray = new JSONArray();
-                for (Vertex vertex : hole) {
-                    holeArray.put(new JSONArray().put(vertex.getX()).put(vertex.getY()));
-                }
-                verticesArray.put(holeArray);
-            }
-        }
-        jsonObject.put("vertices", verticesArray);
-
+        jsonObject.put("type", polygon.getType()); //Polygon, multiPolygon, etc.
+        jsonObject.put("coordinates", polygon.getCoordinates()); //can be any shape, flat or nested, but prefer the actual gson 3 nested one
         return jsonObject;
     }
 
@@ -146,42 +126,52 @@ public class PolygonConverter {
         List<AnnotationPolygon> polygons = new ArrayList<>();
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject jsonPolygon = jsonArray.getJSONObject(i);
-            JSONArray jsonVertices = jsonPolygon.getJSONArray("vertices");
-            // it is in the shape [[[outer ring], [hole1], [hole2]]]
-            // OR [[vertex1], [vertex2], [vertex3]] if there are no holes
-            //first check shape of json vertices
-            String shape = outerShape(jsonVertices);
-            switch (shape) {
-                case "flat":
-                   List<AnnotationPolygon.Vertex> vertices = parseVertices(jsonVertices);
-                    AnnotationPolygon polygon = new AnnotationPolygon(
-                            jsonPolygon.optString("_id", null),
-                            vertices,
-                            null,
-                            jsonPolygon.optString("name", null),
-                            jsonPolygon.optString("dataset", null),
-                            jsonPolygon.optString("slide", null),
-                            jsonPolygon.optString("created", null)
-                    );
-                    polygons.add(polygon);
-                    continue;
-                case "nested": 
-                    List<AnnotationPolygon.Vertex> outerRing = parseVertices(jsonVertices.getJSONArray(0));
-                    List<List<AnnotationPolygon.Vertex>> holes = parseHoles(jsonVertices, 1);
-                    AnnotationPolygon polygon2 = new AnnotationPolygon(
-                        jsonPolygon.optString("_id", null),
-                        outerRing,
-                        holes,
-                        jsonPolygon.optString("name", null),
-                        jsonPolygon.optString("dataset", null),
-                        jsonPolygon.optString("slide", null),
-                        jsonPolygon.optString("created", null)
-                    );
-                    polygons.add(polygon2);
-                    break;
+
+            // get the raw array, trying the future key first, falling back to today's key
+            JSONArray rawCoordinates = jsonPolygon.has("coordinates")
+                    ? jsonPolygon.getJSONArray("coordinates")
+                    : jsonPolygon.getJSONArray("vertices");
+
+            String shape = outerShape(rawCoordinates);
+            JSONArray coordinates;
+            if (shape.equals("flat")) {
+                // wrap in an extra array so a single ring is valid GeoJSON Polygon coordinates
+                coordinates = new JSONArray();
+                coordinates.put(rawCoordinates);
+            } else {
+                coordinates = rawCoordinates;
             }
+            closeRingsIfNeeded(coordinates);
+
+            String type = jsonPolygon.optString("type", "Polygon");
+            if (!Arrays.asList("Polygon", "MultiPolygon").contains(type)) {
+                type = "Polygon";
+            }
+            AnnotationPolygon polygon = new AnnotationPolygon(
+                jsonPolygon.optString("id", jsonPolygon.optString("_id", null)),
+                coordinates,
+                type,
+                jsonPolygon.optString("name", null),
+                jsonPolygon.optString("dataset", null),
+                jsonPolygon.optString("slide", null),
+                jsonPolygon.optString("created", null)
+            );
+            polygons.add(polygon);
         }
         return polygons;
+    }
+
+    // JTS's LinearRing throws if a ring's first and last coordinate don't match. 
+    private static void closeRingsIfNeeded(JSONArray coordinates) {
+        for (int i = 0; i < coordinates.length(); i++) {
+            JSONArray ring = coordinates.getJSONArray(i);
+            if (ring.length() == 0) continue;
+            JSONArray first = ring.getJSONArray(0);
+            JSONArray last = ring.getJSONArray(ring.length() - 1);
+            if (first.getDouble(0) != last.getDouble(0) || first.getDouble(1) != last.getDouble(1)) {
+                ring.put(first);
+            }
+        }
     }
 
     private static List<AnnotationPolygon.Vertex> parseVertices(JSONArray jsonArray){
