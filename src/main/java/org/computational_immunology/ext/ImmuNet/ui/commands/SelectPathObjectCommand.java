@@ -31,5 +31,9 @@ public class SelectPathObjectCommand {
         }
         List<PathObject> selectedSet = Collections.singletonList(selectedObject);
         hierarchy.getSelectionModel().setSelectedObjects(selectedSet, selectedObject);
+        //focus to the selected object
+        if (selectedObject.hasROI()) {
+            viewer.centerROI(selectedObject.getROI());
+        }
     }
 }

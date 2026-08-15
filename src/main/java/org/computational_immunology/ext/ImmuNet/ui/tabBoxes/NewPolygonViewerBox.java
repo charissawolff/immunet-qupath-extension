@@ -5,6 +5,7 @@ import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGatewa
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.models.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
+import org.computational_immunology.ext.ImmuNet.ui.commands.SelectPathObjectCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.AddPolygonCommand;
 import org.json.JSONObject;
 
@@ -15,6 +16,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -53,6 +55,14 @@ public class NewPolygonViewerBox extends VBox {
         tableView.getColumns().add(buildSlideColumn());
         tableView.getColumns().add(buildAddColumn());
         VBox.setVgrow(tableView, Priority.ALWAYS);
+        tableView.setPrefHeight(250);
+
+        tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        tableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
+            //what the user selects in the list view
+            SelectPathObjectCommand selectAnnotationCommand = new SelectPathObjectCommand(newSel);
+            selectAnnotationCommand.execute();
+        });    
 
         getChildren().addAll(title, tableView);
     }
@@ -60,7 +70,6 @@ public class NewPolygonViewerBox extends VBox {
     public TableView.TableViewSelectionModel<PathObject> getSelectionModel() {
         return tableView.getSelectionModel();
     }
-
 
     private TableColumn<PathObject, String> buildDatasetColumn() {
         TableColumn<PathObject, String> col = new TableColumn<>("Dataset");
@@ -118,8 +127,6 @@ public class NewPolygonViewerBox extends VBox {
         });
         return col;
     }
-
-
 
     private void handleAddClicked(PathObject polygon, Button button) {
         button.setDisable(true);

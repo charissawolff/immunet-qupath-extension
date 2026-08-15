@@ -8,7 +8,6 @@ import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGatewa
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
-import org.computational_immunology.ext.ImmuNet.ui.commands.SelectPathObjectCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.LoadPolygonCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.MergePolygonsCommand;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonTracker;
@@ -21,7 +20,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.scene.control.SelectionMode;
 import javafx.beans.binding.Bindings;
 import qupath.lib.objects.PathObject;
 
@@ -55,7 +53,6 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         sidePanelTab.setSpacing(5); // Space between buttons and boxes
 
         PolygonListBox polygonListBox = new PolygonListBox();
-        polygonListBox.setPrefHeight(200);
 
         Button loadDataBtn = makeButton("Load polygons", new Dimensions(30, 120));
         Label statusLabel = new Label();
@@ -99,21 +96,13 @@ public class PolygonViewerTab extends CustomSidePanelTab {
 
 
         ObservableList<PathObject> userAddedPolygons = polygonTracker.getNewAnnotations();
-        //bind the userAddedPolygons list to the polygonTracker's newAnnotations list, so that any new polygons added by the user are automatically added to the list view
+        //bind the userAddedPolygons list to the polygonTracker's newAnnotations list, so that any 
+        // new polygons added by the user are automatically added to the list view
 
         // add the user added polygons
         NewPolygonViewerBox newPolygonViewerBox = new NewPolygonViewerBox(userAddedPolygons, dataUploadHandler, selectedDataStore);
-        newPolygonViewerBox.setPrefHeight(300);
         VBox.setMargin(newPolygonViewerBox, new Insets(2, 2, 10, 2)); // Space between list and buttons
         VBox.setVgrow(newPolygonViewerBox, Priority.ALWAYS);
-        newPolygonViewerBox.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        newPolygonViewerBox.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
-            //what the user selects in the list view
-            SelectPathObjectCommand selectAnnotationCommand = new SelectPathObjectCommand(newSel);
-            selectAnnotationCommand.execute();
-        });    
-        
-
 
         Button mergeBtn = makeButton("Merge selected polygons", new Dimensions(20, 180));
         mergeBtn.disableProperty().bind(Bindings.createBooleanBinding(() -> {
