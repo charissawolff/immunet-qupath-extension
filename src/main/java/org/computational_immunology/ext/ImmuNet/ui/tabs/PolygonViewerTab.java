@@ -1,43 +1,30 @@
 package org.computational_immunology.ext.ImmuNet.ui.tabs;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGateway;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.Dimensions;
-import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SelectPathObjectCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.LoadPolygonCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.MergePolygonsCommand;
-import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.SetPolygonVisibilityCommand;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonTracker;
 import org.computational_immunology.ext.ImmuNet.ui.tabBoxes.NewPolygonViewerBox;
 import org.computational_immunology.ext.ImmuNet.ui.tabBoxes.PolygonListBox;
 
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.BooleanProperty;
-import javafx.util.StringConverter;
 import qupath.lib.objects.PathObject;
 
-import java.util.Map;
 
 public class PolygonViewerTab extends CustomSidePanelTab {
 

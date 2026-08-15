@@ -34,7 +34,7 @@ Viewer box for viewing USER added new polygons, not the ones that are fetched fr
 Here user can see the polygons they added, and can choose to upload them to the server or remove them.
 */
 public class NewPolygonViewerBox extends VBox {
-    private TableView<PathObject> tableView;
+    private final TableView<PathObject> tableView;
     private final ServerUploadGateway dataUploadHandler;
     private final SelectedDataStore selectedDataStore;
 
