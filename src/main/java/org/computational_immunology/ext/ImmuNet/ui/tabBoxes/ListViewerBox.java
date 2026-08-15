@@ -2,7 +2,6 @@ package org.computational_immunology.ext.ImmuNet.ui.tabBoxes;
 
 import java.util.List;
 
-import javafx.collections.FXCollections;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;

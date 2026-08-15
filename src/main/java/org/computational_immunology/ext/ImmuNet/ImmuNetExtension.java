@@ -8,10 +8,10 @@ import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
-import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
-import org.computational_immunology.ext.ImmuNet.ui.TileHoverOverlay;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonMetadataAdder;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonTracker;
+import org.computational_immunology.ext.ImmuNet.ui.overlays.TileHoverController;
+import org.computational_immunology.ext.ImmuNet.ui.overlays.TileHoverOverlay;
 import org.computational_immunology.ext.ImmuNet.ui.tabBoxes.EnableExtensionCheckbox;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.DatasetSelectorTab;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.PolygonViewerTab;
@@ -54,8 +54,14 @@ public class ImmuNetExtension implements QuPathExtension {
         // Built once and injected down. THis tracks the currently loaded slide and the currently
         // selected tile, and wires mouse hover/click on the viewer to the tile highlight overlay.
         SelectedDataStore selectedDataStore = new SelectedDataStore();
-        TileHoverOverlay tileHoverOverlay = new TileHoverOverlay(qupath.getOverlayOptions(), selectedDataStore);
-        TileHoverController tileHoverController = new TileHoverController(selectedDataStore, tileHoverOverlay, enableExtensionProperty);
+        TileHoverOverlay tileHoverOverlay = new TileHoverOverlay(qupath.getOverlayOptions());
+        TileHoverController tileHoverController = new TileHoverController(selectedDataStore.selectedSlideProperty(), tileHoverOverlay, enableExtensionProperty);
+        tileHoverController.setOnTileClicked(tile -> {
+            if (enableExtensionProperty.get()) {
+            selectedDataStore.setSelectedTile(tile);
+            ImmuNetLog.log("Tile clicked: " + tile);
+            }
+        });   // Set the selected tile in the data store when a tile is clicked, in the whole application, not just in the overlay
 
         // Side bar
         ServerConnectionTab serverConnectionTab = new ServerConnectionTab();

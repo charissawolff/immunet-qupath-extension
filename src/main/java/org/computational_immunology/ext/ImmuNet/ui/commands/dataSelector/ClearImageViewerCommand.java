@@ -3,7 +3,6 @@ package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.viewer.QuPathViewer;

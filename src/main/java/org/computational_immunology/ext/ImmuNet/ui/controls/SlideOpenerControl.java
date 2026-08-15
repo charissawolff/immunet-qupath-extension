@@ -12,8 +12,8 @@ import java.util.function.BooleanSupplier;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
-import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.SlideLoadWorkflow;
+import org.computational_immunology.ext.ImmuNet.ui.overlays.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.tabBoxes.DataListViewerBox;
 
 import qupath.lib.gui.QuPathGUI;
@@ -84,7 +84,7 @@ public class SlideOpenerControl extends VBox {
             workflow.setOnSlideReady(slide -> {
                 QuPathViewer viewer = QuPathGUI.getInstance().getViewer();
                 if (viewer != null) {
-                    tileHoverController.setSlide(slide, viewer);
+                    tileHoverController.attachAndRequestRepaint(viewer);
                 }
             });
 
