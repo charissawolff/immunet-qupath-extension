@@ -26,7 +26,7 @@ public class TileHoverController {
 
     private QuPathViewer viewer;
 
-    public TileHoverController(SelectedDataStore selectedDataStore, TileHoverOverlay overlay, ObservableBooleanValue enabled) {
+    public TileHoverController(SelectedDataStore selectedDataStore, TileHoverOverlay overlay) {
         this.selectedDataStore = selectedDataStore;
         this.overlay = overlay;
         this.enabled = enabled;

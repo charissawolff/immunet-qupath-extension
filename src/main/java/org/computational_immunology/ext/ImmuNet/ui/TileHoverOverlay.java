@@ -19,13 +19,10 @@ import qupath.lib.images.ImageData;
 import qupath.lib.regions.ImageRegion;
 
 public class TileHoverOverlay extends AbstractOverlay {
-
-    private final SelectedDataStore selectedDataStore;
     private volatile TileMetadata hoveredTileMetadata;
 
-    public TileHoverOverlay(OverlayOptions options, SelectedDataStore selectedDataStore) {
+    public TileHoverOverlay(OverlayOptions options) {
         super(options);
-        this.selectedDataStore = selectedDataStore;
     }
 
     // returns false if this tile was already the hovered one, so the caller only repaints on an actual change
