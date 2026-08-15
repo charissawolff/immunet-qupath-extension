@@ -14,6 +14,7 @@ import java.awt.image.BufferedImage;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
@@ -25,6 +26,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+
 import qupath.lib.images.ImageData;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.tools.PathObjectImageViewers;
@@ -43,7 +45,7 @@ public class NewPolygonViewerBox extends VBox {
     public NewPolygonViewerBox(ObservableList<PathObject> items, ServerUploadGateway dataUploadHandler, SelectedDataStore selectedDataStore) {
         Label title = new Label("User added polygons");
         title.setFont(Font.font("System", FontWeight.BOLD, 16));
-        VBox.setMargin(title, new javafx.geometry.Insets(0, 2, 5, 2));
+        VBox.setMargin(title, new Insets(0, 2, 5, 2));
         tableView = new TableView<>(items);
         this.dataUploadHandler = dataUploadHandler;
         this.selectedDataStore = selectedDataStore;

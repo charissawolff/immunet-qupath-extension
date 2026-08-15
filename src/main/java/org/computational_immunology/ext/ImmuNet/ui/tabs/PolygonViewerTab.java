@@ -58,8 +58,6 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         Label statusLabel = new Label();
 
         // bind to the selected slide property of the datastore, so that the button is only enabled when a slide is selected
-        // this continues working after the slide is cleaered, because when we click this button, we also
-        // clear the data from the datastore, which in turn enables the button again
         loadDataBtn.disableProperty().bind(Bindings.isNull(selectedDataStore.selectedSlideProperty()));
 
         loadDataBtn.setOnAction(e -> {
@@ -94,12 +92,9 @@ public class PolygonViewerTab extends CustomSidePanelTab {
             });
         });
 
-
-        ObservableList<PathObject> userAddedPolygons = polygonTracker.getNewAnnotations();
         //bind the userAddedPolygons list to the polygonTracker's newAnnotations list, so that any 
         // new polygons added by the user are automatically added to the list view
-
-        // add the user added polygons
+        ObservableList<PathObject> userAddedPolygons = polygonTracker.getNewAnnotations();
         NewPolygonViewerBox newPolygonViewerBox = new NewPolygonViewerBox(userAddedPolygons, dataUploadHandler, selectedDataStore);
         VBox.setMargin(newPolygonViewerBox, new Insets(2, 2, 10, 2)); // Space between list and buttons
         VBox.setVgrow(newPolygonViewerBox, Priority.ALWAYS);
