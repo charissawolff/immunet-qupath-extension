@@ -1,10 +1,11 @@
-package org.computational_immunology.ext.ImmuNet.ui.tabs;
+package org.computational_immunology.ext.ImmuNet.ui.tabBoxes;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.models.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
+import org.computational_immunology.ext.ImmuNet.ui.commands.SelectPathObjectCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.AddPolygonCommand;
 import org.json.JSONObject;
 
@@ -13,11 +14,19 @@ import java.awt.image.BufferedImage;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+
 import qupath.lib.images.ImageData;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.tools.PathObjectImageViewers;
@@ -28,21 +37,40 @@ import qupath.lib.objects.PathObject;
 Viewer box for viewing USER added new polygons, not the ones that are fetched from the server
 Here user can see the polygons they added, and can choose to upload them to the server or remove them.
 */
-public class NewPolygonViewerBox extends TableView<PathObject> {
+public class NewPolygonViewerBox extends VBox {
+    private final TableView<PathObject> tableView;
     private final ServerUploadGateway dataUploadHandler;
     private final SelectedDataStore selectedDataStore;
 
     public NewPolygonViewerBox(ObservableList<PathObject> items, ServerUploadGateway dataUploadHandler, SelectedDataStore selectedDataStore) {
-        super(items);
+        Label title = new Label("User added polygons");
+        title.setFont(Font.font("System", FontWeight.BOLD, 16));
+        VBox.setMargin(title, new Insets(0, 2, 5, 2));
+        tableView = new TableView<>(items);
         this.dataUploadHandler = dataUploadHandler;
         this.selectedDataStore = selectedDataStore;
-        setEditable(true);
-        setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        getColumns().add(buildThumbnailColumn());
-        getColumns().add(buildNameColumn());
-        getColumns().add(buildDatasetColumn());
-        getColumns().add(buildSlideColumn());
-        getColumns().add(buildAddColumn());
+        tableView.setEditable(true);
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        tableView.getColumns().add(buildThumbnailColumn());
+        tableView.getColumns().add(buildNameColumn());
+        tableView.getColumns().add(buildDatasetColumn());
+        tableView.getColumns().add(buildSlideColumn());
+        tableView.getColumns().add(buildAddColumn());
+        VBox.setVgrow(tableView, Priority.ALWAYS);
+        tableView.setPrefHeight(250);
+
+        tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        tableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
+            //what the user selects in the list view
+            SelectPathObjectCommand selectAnnotationCommand = new SelectPathObjectCommand(newSel);
+            selectAnnotationCommand.execute();
+        });    
+
+        getChildren().addAll(title, tableView);
+    }
+
+    public TableView.TableViewSelectionModel<PathObject> getSelectionModel() {
+        return tableView.getSelectionModel();
     }
 
     private TableColumn<PathObject, String> buildDatasetColumn() {
@@ -102,8 +130,6 @@ public class NewPolygonViewerBox extends TableView<PathObject> {
         return col;
     }
 
-
-
     private void handleAddClicked(PathObject polygon, Button button) {
         button.setDisable(true);
         ImmuNetLog.log("Adding polygon: " + polygon.getName() + " which is:" + polygon);
@@ -114,8 +140,8 @@ public class NewPolygonViewerBox extends TableView<PathObject> {
         AddPolygonCommand command = new AddPolygonCommand(polygonJson, dataUploadHandler);
         command.build();
         //visible on screen and not editable anymore
-        command.setOnDone(() -> { polygon.setLocked(true); refresh(); });
-        command.setOnFailed(this::refresh);
+        command.setOnDone(() -> { polygon.setLocked(true); tableView.refresh(); });
+        command.setOnFailed(tableView::refresh);
         command.start();
     }
 }

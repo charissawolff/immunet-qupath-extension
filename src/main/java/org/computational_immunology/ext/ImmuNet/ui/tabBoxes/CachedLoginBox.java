@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.ui.tabs;
+package org.computational_immunology.ext.ImmuNet.ui.tabBoxes;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.json.JSONObject;
@@ -11,7 +11,7 @@ import javafx.scene.layout.HBox;
 
 public class CachedLoginBox extends HBox {
     String json_key;
-    TextField field;
+    public TextField field;
     Label label;
 
     public enum BoxType {

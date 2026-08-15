@@ -12,8 +12,8 @@ import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.TileHoverOverlay;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonMetadataAdder;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonTracker;
+import org.computational_immunology.ext.ImmuNet.ui.tabBoxes.EnableExtensionCheckbox;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.DatasetSelectorTab;
-import org.computational_immunology.ext.ImmuNet.ui.tabs.EnableExtensionCheckbox;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.PolygonViewerTab;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.ServerConnectionTab;
 
