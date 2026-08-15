@@ -6,10 +6,10 @@ import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
-import org.computational_immunology.ext.ImmuNet.ui.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.ClearImageViewerCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.LoadDatasetsCommand;
 import org.computational_immunology.ext.ImmuNet.ui.controls.SlideOpenerControl;
+import org.computational_immunology.ext.ImmuNet.ui.overlays.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.tabBoxes.DataListViewerBox;
 
 import javafx.beans.binding.Bindings;
