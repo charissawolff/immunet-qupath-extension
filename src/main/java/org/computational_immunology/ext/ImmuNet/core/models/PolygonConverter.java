@@ -2,7 +2,6 @@ package org.computational_immunology.ext.ImmuNet.core.models;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.awt.geom.AffineTransform;
 
@@ -19,8 +18,22 @@ import qupath.lib.objects.classes.PathClass;
 import qupath.lib.io.GsonTools;
 import qupath.lib.objects.PathObjectTools;
 
+/**
+* Helper class to convert JSON representation of polygons to PathObject and vice versa, as well as to/from AnnotationPolygon.
+* We specifically convert to geojson-like format for saving to the database. This is because QuPath offers a helper class GsonTools to convert PathObject to/from geojson.
+* However, it also support loading polygons in a legacy none geojson format in order to load old polygons that were saved in the database before we switched to geojson-like format.
+**/
+
 public class PolygonConverter {
 
+
+    /**
+     * Converts an AnnotationPolygon to a QuPath PathObject.
+     * @param p the AnnotationPolygon to convert to a PathObject
+     * @param dx The scaling factor in the x direction (width)
+     * @param dy The scaling factor in the y direction (height)
+     * @return A QuPath PathObject representing our saved polygon in micrometers coordinate in the correct pixel coordinate system.
+     */
     public static PathObject toPathObject(AnnotationPolygon p, double dx, double dy) {
         List<PathObject> pathObjects = new ArrayList<>();
         // make json string from coords + type of annotation polygon
@@ -33,9 +46,8 @@ public class PolygonConverter {
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse GeoJSON: " + e.getMessage(), e);
         }
-        PathObject polygonPathObject = pathObjects.get(0); // Assuming only one polygon is present
+        PathObject polygonPathObject = pathObjects.get(0); // Assuming only one polygon is present (should be true for our use case)
 
-        // Now we need to scale the coordinates by dx and dy
         PathObject scaledPathObject = PathObjectTools.transformObject(polygonPathObject, AffineTransform.getScaleInstance(1/dx, 1/dy), true, false);    
         PathClass polygonClass = PathClass.getInstance(p.getId());
         scaledPathObject.setPathClass(polygonClass); //to have different colors too
@@ -50,6 +62,15 @@ public class PolygonConverter {
         scaledPathObject.setLocked(true); // Lock the polygon to prevent accidental modifications
         return scaledPathObject;
     }
+
+    /**
+     * Converts a QuPath PathObject to an AnnotationPolygon.
+     * The coordinates of the polygon are scaled by dx and dy to convert from pixel coordinates to micrometer coordinates.
+     * @param pathObject the QuPath PathObject to convert to an AnnotationPolygon
+     * @param dx The scaling factor in the x direction (width)
+     * @param dy The scaling factor in the y direction (height)
+     * @return An AnnotationPolygon representing the PathObject in micrometer coordinates.
+     */
 
     public static AnnotationPolygon fromPathObject(PathObject pathObject, double dx, double dy) {
         Geometry geometry = pathObject.getROI().getGeometry();
@@ -74,8 +95,12 @@ public class PolygonConverter {
         return new AnnotationPolygon(id, coordinates, type, name, dataset, slide, created);
     }
 
-    /*
-
+    /**
+    * Convert a Polygon object to a JSONObject for serialization. 
+    * This representation can be read as a geojson-like structure, with the coordinates and type of the polygon included.
+    * Used for saving polygons to a database.
+    * @param polygon the AnnotationPolygon to convert to a JSONObject
+    * @return A JSONObject representing the AnnotationPolygon in a geojson-like format.
     */
     public static JSONObject toJSONObject(AnnotationPolygon polygon) {
         JSONObject jsonObject = new JSONObject();
@@ -85,18 +110,19 @@ public class PolygonConverter {
         jsonObject.put("slide", polygon.getSlide());
         jsonObject.put("created", polygon.getCreated());
         jsonObject.put("type", polygon.getType()); //Polygon, multiPolygon, etc.
-        jsonObject.put("coordinates", polygon.getCoordinates()); //can be any shape, flat or nested, but prefer the actual gson 3 nested one
+        jsonObject.put("coordinates", polygon.getCoordinates()); //can be any shape, flat or nested, but prefer the actual gson nested one
         return jsonObject;
     }
 
-    public static JSONArray toJSONArray(Collection<AnnotationPolygon> polygons) {
-        JSONArray array = new JSONArray();
-        for (AnnotationPolygon polygon : polygons) {
-            array.put(toJSONObject(polygon));
-        }
-        return array;
-    }
-
+    /**
+     * Convert a JSONArray of JSON representation of polygons to a list of AnnotationPolygon objects.
+     * This method iterates through the JSONArray, extracting each JSONObject and converting it to an AnnotationPolygon using the fromJson method.
+     * This is useful for loading polygons from a database. Supports geojson-like format, with the coordinates and type of the polygon included.
+     * But also none geojson-like legacy format, with "coordinates" being "vertices", and no type included (defaults to "Polygon").
+     * The method also ensures that the coordinates are in the correct format, closing rings if necessary
+     * @param jsonArray A JSONArray containing the JSON representation of polygons. Each element in the array should be a JSONObject representing a single polygon.
+     * @return A list of AnnotationPolygon objects constructed from the JSON representation.
+     */
     public static List<AnnotationPolygon> fromJsonArray(JSONArray jsonArray) {
         List<AnnotationPolygon> polygons = new ArrayList<>();
         for (int i = 0; i < jsonArray.length(); i++) {
@@ -107,7 +133,6 @@ public class PolygonConverter {
                 type = "Polygon";
             }
 
-            // get the raw array, note that sometimes it's vertices (old) and "coordinates" (new) depending on how/when the polygon was created. 
             JSONArray rawCoordinates = jsonPolygon.has("coordinates")
                     ? jsonPolygon.getJSONArray("coordinates")
                     : jsonPolygon.getJSONArray("vertices");
@@ -148,7 +173,7 @@ public class PolygonConverter {
         }
     }
 
-    // Make sure the ring's first and last coordinates are exactly the same; error else
+    // Make sure the ring's first and last coordinates are exactly the same; we get an error if they are not.
     private static void closeRings(JSONArray rings) {
         for (int i = 0; i < rings.length(); i++) {
             JSONArray ring = rings.getJSONArray(i);
@@ -160,7 +185,11 @@ public class PolygonConverter {
             }
         }
     }
-    static String outerShape(JSONArray vertices) {
+
+    // Get the shape of the coordinates JSONArray. 
+    // Returns "flat" if the coordinates are a single ring (one level of arrays), 
+    // "nested" if they are multiple rings (two levels of arrays), and "mixed" if they are a mix of both (shouldn't happen).
+    private static String outerShape(JSONArray vertices) {
         boolean allFlat = true;
         boolean allNested = true;
 
