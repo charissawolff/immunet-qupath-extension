@@ -15,6 +15,7 @@ import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.LoadPolygonC
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.MergePolygonsCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.SetPolygonVisibilityCommand;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonTracker;
+import org.computational_immunology.ext.ImmuNet.ui.tabBoxes.NewPolygonViewerBox;
 
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
