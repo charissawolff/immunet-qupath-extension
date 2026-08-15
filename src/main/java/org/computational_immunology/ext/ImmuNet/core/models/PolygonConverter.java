@@ -20,8 +20,8 @@ import qupath.lib.objects.PathObjectTools;
 
 /**
 * Helper class to convert JSON representation of polygons to PathObject and vice versa, as well as to/from AnnotationPolygon.
-* We specifically convert to geojson-like format for saving to the database. This is because QuPath offers a helper class GsonTools to convert PathObject to/from geojson.
-* However, it also support loading polygons in a legacy none geojson format in order to load old polygons that were saved in the database before we switched to geojson-like format.
+* We specifically convert to GeoJSON-like format for saving to the database. This is because QuPath offers a helper class GsonTools to convert PathObject to/from GeoJSON.
+* However, it also support loading polygons in a legacy none GeoJSON format in order to load old polygons that were saved in the database before we switched to GeoJSON-like format.
 **/
 
 public class PolygonConverter {
@@ -97,10 +97,10 @@ public class PolygonConverter {
 
     /**
     * Convert a Polygon object to a JSONObject for serialization. 
-    * This representation can be read as a geojson-like structure, with the coordinates and type of the polygon included.
+    * This representation can be read as a GeoJSON-like structure, with the coordinates and type of the polygon included.
     * Used for saving polygons to a database.
     * @param polygon the AnnotationPolygon to convert to a JSONObject
-    * @return A JSONObject representing the AnnotationPolygon in a geojson-like format.
+    * @return A JSONObject representing the AnnotationPolygon in a GeoJSON-like format.
     */
     public static JSONObject toJSONObject(AnnotationPolygon polygon) {
         JSONObject jsonObject = new JSONObject();
@@ -117,8 +117,8 @@ public class PolygonConverter {
     /**
      * Convert a JSONArray of JSON representation of polygons to a list of AnnotationPolygon objects.
      * This method iterates through the JSONArray, extracting each JSONObject and converting it to an AnnotationPolygon using the fromJson method.
-     * This is useful for loading polygons from a database. Supports geojson-like format, with the coordinates and type of the polygon included.
-     * But also none geojson-like legacy format, with "coordinates" being "vertices", and no type included (defaults to "Polygon").
+     * This is useful for loading polygons from a database. Supports GeoJSON-like format, with the coordinates and type of the polygon included.
+     * But also none GeoJSON-like legacy format, with "coordinates" being "vertices", and no type included (defaults to "Polygon").
      * The method also ensures that the coordinates are in the correct format, closing rings if necessary
      * @param jsonArray A JSONArray containing the JSON representation of polygons. Each element in the array should be a JSONObject representing a single polygon.
      * @return A list of AnnotationPolygon objects constructed from the JSON representation.
