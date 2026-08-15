@@ -16,13 +16,11 @@ import qupath.lib.objects.hierarchy.PathObjectHierarchy;
 import qupath.lib.objects.hierarchy.events.PathObjectHierarchyEvent;
 import qupath.lib.objects.hierarchy.events.PathObjectHierarchyListener;
 
-/* 
-Tracks changes to the polygon hierarchy
-Specifically, tracks when user ADDS a new polygon, so that we can save it to the server 
-
-Note: when I change the figure of a polygon currently there, the events change other fire, and then it's reigistered as "added"
-SOmetimes when I create the polygon it also first fired change other and then added. I have to 
-check if the polygon is already in the newAnnotations list before adding it, to avoid duplicates.
+/**
+* Tracks changes to the polygon hierarchy
+* Specifically, tracks when user ADDS a new polygon, so that we can save it to the server 
+* Note: when I change the figure of a polygon currently there, the events change other fire, and then it's reigistered as "added"
+* Sometimes when I create the polygon it also first fired change "other" and then "added". I have to check if the polygon is already in the newAnnotations list before adding it, to avoid duplicates.
 */
 public class PolygonTracker implements PathObjectHierarchyListener  {
     PathObjectHierarchy hierarchy;
