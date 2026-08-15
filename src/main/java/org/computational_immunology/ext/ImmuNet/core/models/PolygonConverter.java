@@ -2,125 +2,106 @@ package org.computational_immunology.ext.ImmuNet.core.models;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.awt.Shape;
-import java.awt.geom.Area;
-import java.awt.geom.Path2D;
+import java.awt.geom.AffineTransform;
 
-import org.checkerframework.checker.units.qual.h;
-import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon.Vertex;
-import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.json.JSONString;
 
-import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.LinearRing;
 
-import qupath.lib.geom.Point2;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import qupath.lib.objects.PathObject;
-import qupath.lib.objects.PathObjects;
 import qupath.lib.objects.classes.PathClass;
-import qupath.lib.regions.ImagePlane;
-import qupath.lib.roi.GeometryROI;
-import qupath.lib.roi.GeometryTools;
-import qupath.lib.roi.ROIs;
-import qupath.lib.roi.interfaces.ROI;
+import qupath.lib.io.GsonTools;
+import qupath.lib.objects.PathObjectTools;
+
+/**
+* Helper class to convert JSON representation of polygons to PathObject and vice versa, as well as to/from AnnotationPolygon.
+* We specifically convert to GeoJSON-like format for saving to the database. This is because QuPath offers a helper class GsonTools to convert PathObject to/from GeoJSON.
+* However, it also support loading polygons in a legacy none GeoJSON format in order to load old polygons that were saved in the database before we switched to GeoJSON-like format.
+**/
 
 public class PolygonConverter {
 
+
+    /**
+     * Converts an AnnotationPolygon to a QuPath PathObject.
+     * @param p the AnnotationPolygon to convert to a PathObject
+     * @param dx The scaling factor in the x direction (width)
+     * @param dy The scaling factor in the y direction (height)
+     * @return A QuPath PathObject representing our saved polygon in micrometers coordinate in the correct pixel coordinate system.
+     */
     public static PathObject toPathObject(AnnotationPolygon p, double dx, double dy) {
-        //instead of being the polygon class, we need it to use geometryToROI do it can hold holes
+        List<PathObject> pathObjects = new ArrayList<>();
+        // make json string from coords + type of annotation polygon
+        JsonObject element = new JsonObject();
+        element.addProperty("type", p.getType());
+        element.add("coordinates", JsonParser.parseString(p.getCoordinates().toString()));
 
-        
-        List<AnnotationPolygon.Vertex> outerRing = p.getOuterRing();
-        List<List<AnnotationPolygon.Vertex>> holes = p.getHoles();
-
-        GeometryFactory gf = new GeometryFactory();
-        List<Coordinate> outerRingCoords = outerRing.stream()
-                .map(v -> new Coordinate(v.getX() / dx, v.getY() / dy))
-                .collect(Collectors.toList());
-
-        if (!outerRingCoords.get(0).equals2D(outerRingCoords.get(outerRingCoords.size() - 1))) {
-            outerRingCoords.add(outerRingCoords.get(0)); // close the ring
+        try{
+            pathObjects = GsonTools.parseObjectsFromGeoJSON(element);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse GeoJSON: " + e.getMessage(), e);
         }
+        PathObject polygonPathObject = pathObjects.get(0); // Assuming only one polygon is present (should be true for our use case)
 
-        Coordinate[] outerRingCoordsArray = outerRingCoords.toArray(new Coordinate[0]);
-        LinearRing outerLinearRing = gf.createLinearRing(outerRingCoordsArray);
-
-        List<LinearRing> holeLinearRings = new ArrayList<>();
-
-        for (List<AnnotationPolygon.Vertex> hole : holes) {
-            List<Coordinate> holeCoords = hole.stream()
-                .map(v -> new Coordinate(v.getX() / dx, v.getY() / dy))
-                .collect(Collectors.toList());
-
-        if (!holeCoords.get(0).equals2D(holeCoords.get(holeCoords.size() - 1))) {
-            holeCoords.add(holeCoords.get(0)); // close the ring
-            }
-        Coordinate[] holeCoordsArray = holeCoords.toArray(new Coordinate[0]);
-        holeLinearRings.add(gf.createLinearRing(holeCoordsArray));
-        }
-
-        LinearRing[] holesArray = holeLinearRings.toArray(new LinearRing[0]);
-        org.locationtech.jts.geom.Polygon polygon = gf.createPolygon(outerLinearRing, holesArray);
-        polygon.normalize();
-
-        ROI roi = GeometryTools.geometryToROI(polygon, ImagePlane.getDefaultPlane());
-
+        PathObject scaledPathObject = PathObjectTools.transformObject(polygonPathObject, AffineTransform.getScaleInstance(1/dx, 1/dy), true, false);    
         PathClass polygonClass = PathClass.getInstance(p.getId());
-        PathObject polygonPathObject = PathObjects.createAnnotationObject(roi, polygonClass);
-        polygonPathObject.setName(p.getName());
-        polygonPathObject.getMetadata().put("id", p.getId());
-        polygonPathObject.getMetadata().put("name", p.getName());
-        polygonPathObject.getMetadata().put("dataset", p.getDataset());
-        polygonPathObject.getMetadata().put("slide", p.getSlide());
-        polygonPathObject.getMetadata().put("created", p.getCreated());
+        scaledPathObject.setPathClass(polygonClass); //to have different colors too
+        scaledPathObject.setName(p.getName());
+        scaledPathObject.getMetadata().put("id", p.getId());
+        scaledPathObject.getMetadata().put("name", p.getName());
+        scaledPathObject.getMetadata().put("dataset", p.getDataset());
+        scaledPathObject.getMetadata().put("slide", p.getSlide());
+        scaledPathObject.getMetadata().put("created", p.getCreated());
+        scaledPathObject.getMetadata().put("type", p.getType());
 
-        polygonPathObject.setLocked(true); // Lock the polygon to prevent accidental modifications
-        return polygonPathObject;
+        scaledPathObject.setLocked(true); // Lock the polygon to prevent accidental modifications
+        return scaledPathObject;
     }
 
-    private PolygonConverter() {
-        /* This utility class should not be instantiated */
-    }
+    /**
+     * Converts a QuPath PathObject to an AnnotationPolygon.
+     * The coordinates of the polygon are scaled by dx and dy to convert from pixel coordinates to micrometer coordinates.
+     * @param pathObject the QuPath PathObject to convert to an AnnotationPolygon
+     * @param dx The scaling factor in the x direction (width)
+     * @param dy The scaling factor in the y direction (height)
+     * @return An AnnotationPolygon representing the PathObject in micrometer coordinates.
+     */
 
     public static AnnotationPolygon fromPathObject(PathObject pathObject, double dx, double dy) {
-        String id = (String) pathObject.getMetadata().get("id");
-        //read directly from pathObject metadata, since name can be changed by user
-        String name = pathObject.getName();
-        String dataset = (String) pathObject.getMetadata().get("dataset");
-        String slide = (String) pathObject.getMetadata().get("slide");
-        String created = (String) pathObject.getMetadata().get("created");
-
-        ROI roi = pathObject.getROI();
-        Geometry geometry = roi.getGeometry();
-
-        if (!(geometry instanceof org.locationtech.jts.geom.Polygon jtsPolygon)) {
-            throw new IllegalArgumentException("ROI geometry is not a single Polygon: " + geometry.getGeometryType());
+        Geometry geometry = pathObject.getROI().getGeometry();
+        if (!(geometry instanceof org.locationtech.jts.geom.Polygon) && !(geometry instanceof org.locationtech.jts.geom.MultiPolygon)) {
+            throw new IllegalArgumentException("ROI geometry is not a single Polygon or MultiPolygon: " + geometry.getGeometryType());
         }
 
-        List<Vertex> outerRing = toVertices(jtsPolygon.getExteriorRing(), dx, dy);
+        PathObject transformedPathObject = PathObjectTools.transformObject(pathObject, AffineTransform.getScaleInstance(dx, dy), true, false);
 
-        List<List<Vertex>> holes = new ArrayList<>();
-        for (int i = 0; i < jtsPolygon.getNumInteriorRing(); i++) {
-            holes.add(toVertices(jtsPolygon.getInteriorRingN(i), dx, dy));
-        }
+        String json = GsonTools.getInstance().toJson(transformedPathObject);
+        JsonObject geometryJson = JsonParser.parseString(json).getAsJsonObject().getAsJsonObject("geometry");
+        JSONArray coordinates = new JSONArray(geometryJson.getAsJsonArray("coordinates").toString());
+        String type = geometryJson.get("type").getAsString();
 
-        return new AnnotationPolygon(id, outerRing, holes, name, dataset, slide, created);
+        String id = (String) transformedPathObject.getMetadata().get("id");
+        //read directly from transformedPathObject metadata/name, since name can be changed by user when user adds a new polygon
+        String name = transformedPathObject.getName();
+        String dataset = (String) transformedPathObject.getMetadata().get("dataset");
+        String slide = (String) transformedPathObject.getMetadata().get("slide");
+        String created = (String) transformedPathObject.getMetadata().get("created");
+
+        return new AnnotationPolygon(id, coordinates, type, name, dataset, slide, created);
     }
 
-    private static List<Vertex> toVertices(LineString ring, double dx, double dy) {
-        return Arrays.stream(ring.getCoordinates())
-            .map(c -> new Vertex(c.x * dx, c.y * dy))
-            .toList();
-    }
-
+    /**
+    * Convert a Polygon object to a JSONObject for serialization. 
+    * This representation can be read as a GeoJSON-like structure, with the coordinates and type of the polygon included.
+    * Used for saving polygons to a database.
+    * @param polygon the AnnotationPolygon to convert to a JSONObject
+    * @return A JSONObject representing the AnnotationPolygon in a GeoJSON-like format.
+    */
     public static JSONObject toJSONObject(AnnotationPolygon polygon) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("id", polygon.getId());
@@ -128,102 +109,87 @@ public class PolygonConverter {
         jsonObject.put("dataset", polygon.getDataset());
         jsonObject.put("slide", polygon.getSlide());
         jsonObject.put("created", polygon.getCreated());
-
-        JSONArray verticesArray = new JSONArray();
-        JSONArray outerRingArray = new JSONArray();
-        for (Vertex vertex : polygon.getOuterRing()) {
-            outerRingArray.put(new JSONArray().put(vertex.getX()).put(vertex.getY()));
-        }
-        if (polygon.getHoles().isEmpty()) {
-            // No holes: keep the flat shape [[x,y], [x,y], ...] for backward compatibility
-            // with the Vue frontend, which can not paint nested vertices.
-            verticesArray = outerRingArray;
-        } else {
-            // Holes present: shape is [[outerRing], [hole1], [hole2], ...]. Will not show on the vue frontend.
-            verticesArray.put(outerRingArray);
-            for (List<Vertex> hole : polygon.getHoles()) {
-                JSONArray holeArray = new JSONArray();
-                for (Vertex vertex : hole) {
-                    holeArray.put(new JSONArray().put(vertex.getX()).put(vertex.getY()));
-                }
-                verticesArray.put(holeArray);
-            }
-        }
-        jsonObject.put("vertices", verticesArray);
-
+        jsonObject.put("type", polygon.getType()); //Polygon, multiPolygon, etc.
+        jsonObject.put("coordinates", polygon.getCoordinates()); //can be any shape, flat or nested, but prefer the actual gson nested one
         return jsonObject;
     }
 
-    public static JSONArray toJSONArray(Collection<AnnotationPolygon> polygons) {
-        JSONArray array = new JSONArray();
-        for (AnnotationPolygon polygon : polygons) {
-            array.put(toJSONObject(polygon));
-        }
-        return array;
-    }
-
+    /**
+     * Convert a JSONArray of JSON representation of polygons to a list of AnnotationPolygon objects.
+     * This method iterates through the JSONArray, extracting each JSONObject and converting it to an AnnotationPolygon using the fromJson method.
+     * This is useful for loading polygons from a database. Supports GeoJSON-like format, with the coordinates and type of the polygon included.
+     * But also none GeoJSON-like legacy format, with "coordinates" being "vertices", and no type included (defaults to "Polygon").
+     * The method also ensures that the coordinates are in the correct format, closing rings if necessary
+     * @param jsonArray A JSONArray containing the JSON representation of polygons. Each element in the array should be a JSONObject representing a single polygon.
+     * @return A list of AnnotationPolygon objects constructed from the JSON representation.
+     */
     public static List<AnnotationPolygon> fromJsonArray(JSONArray jsonArray) {
         List<AnnotationPolygon> polygons = new ArrayList<>();
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject jsonPolygon = jsonArray.getJSONObject(i);
-            JSONArray jsonVertices = jsonPolygon.getJSONArray("vertices");
-            // it is in the shape [[[outer ring], [hole1], [hole2]]]
-            // OR [[vertex1], [vertex2], [vertex3]] if there are no holes
-            //first check shape of json vertices
-            String shape = outerShape(jsonVertices);
-            switch (shape) {
-                case "flat":
-                   List<AnnotationPolygon.Vertex> vertices = parseVertices(jsonVertices);
-                    AnnotationPolygon polygon = new AnnotationPolygon(
-                            jsonPolygon.optString("_id", null),
-                            vertices,
-                            null,
-                            jsonPolygon.optString("name", null),
-                            jsonPolygon.optString("dataset", null),
-                            jsonPolygon.optString("slide", null),
-                            jsonPolygon.optString("created", null)
-                    );
-                    polygons.add(polygon);
-                    continue;
-                case "nested": 
-                    List<AnnotationPolygon.Vertex> outerRing = parseVertices(jsonVertices.getJSONArray(0));
-                    List<List<AnnotationPolygon.Vertex>> holes = parseHoles(jsonVertices, 1);
-                    AnnotationPolygon polygon2 = new AnnotationPolygon(
-                        jsonPolygon.optString("_id", null),
-                        outerRing,
-                        holes,
-                        jsonPolygon.optString("name", null),
-                        jsonPolygon.optString("dataset", null),
-                        jsonPolygon.optString("slide", null),
-                        jsonPolygon.optString("created", null)
-                    );
-                    polygons.add(polygon2);
-                    break;
+
+            String type = jsonPolygon.optString("type", "Polygon");
+            if (!Arrays.asList("Polygon", "MultiPolygon").contains(type)) {
+                type = "Polygon";
             }
+
+            JSONArray rawCoordinates = jsonPolygon.has("coordinates")
+                    ? jsonPolygon.getJSONArray("coordinates")
+                    : jsonPolygon.getJSONArray("vertices");
+
+            String shape = outerShape(rawCoordinates);
+            JSONArray coordinates;
+            if (shape.equals("flat")) {
+                // wrap in an extra array so a single ring is valid GeoJSON Polygon coordinates
+                coordinates = new JSONArray();
+                coordinates.put(rawCoordinates);
+            } else {
+                coordinates = rawCoordinates;
+            }
+            closeRingsIfNeeded(coordinates, type);
+
+            AnnotationPolygon polygon = new AnnotationPolygon(
+                jsonPolygon.optString("id", jsonPolygon.optString("_id", null)),
+                coordinates,
+                type,
+                jsonPolygon.optString("name", null),
+                jsonPolygon.optString("dataset", null),
+                jsonPolygon.optString("slide", null),
+                jsonPolygon.optString("created", null)
+            );
+            polygons.add(polygon);
         }
         return polygons;
     }
 
-    private static List<AnnotationPolygon.Vertex> parseVertices(JSONArray jsonArray){
-        List<AnnotationPolygon.Vertex> vertices = new ArrayList<>(jsonArray.length());
-            for (int j = 0; j < jsonArray.length(); j++) {
-                JSONArray point = jsonArray.getJSONArray(j); // e.g. [11255.70, 3696.45]
-                double x = point.getDouble(0);
-                double y = point.getDouble(1);
-                vertices.add(new AnnotationPolygon.Vertex(x, y));
+    // Polygon coordinates are [[[ring], [hole], ...]]]. MultiPolygon coordinates are one level deeper: [[[[ring],[hole]...]], [[[ring]...]], ...]]].
+    private static void closeRingsIfNeeded(JSONArray coordinates, String type) {
+        if ("MultiPolygon".equals(type)) {
+            for (int i = 0; i < coordinates.length(); i++) {
+                closeRings(coordinates.getJSONArray(i));
             }
-        return vertices;
-    }
-
-    private static List<List<AnnotationPolygon.Vertex>> parseHoles(JSONArray jsonArray, int startIndex) {
-        List<List<AnnotationPolygon.Vertex>> holes = new ArrayList<>(jsonArray.length() - startIndex);
-        for (int j = startIndex; j < jsonArray.length(); j++) {
-            holes.add(parseVertices(jsonArray.getJSONArray(j)));
+        } else {
+            closeRings(coordinates);
         }
-        return holes;
     }
 
-    static String outerShape(JSONArray vertices) {
+    // Make sure the ring's first and last coordinates are exactly the same; we get an error if they are not.
+    private static void closeRings(JSONArray rings) {
+        for (int i = 0; i < rings.length(); i++) {
+            JSONArray ring = rings.getJSONArray(i);
+            if (ring.length() == 0) continue;
+            JSONArray first = ring.getJSONArray(0);
+            JSONArray last = ring.getJSONArray(ring.length() - 1);
+            if (first.getDouble(0) != last.getDouble(0) || first.getDouble(1) != last.getDouble(1)) {
+                ring.put(first);
+            }
+        }
+    }
+
+    // Get the shape of the coordinates JSONArray. 
+    // Returns "flat" if the coordinates are a single ring (one level of arrays), 
+    // "nested" if they are multiple rings (two levels of arrays), and "mixed" if they are a mix of both (shouldn't happen).
+    private static String outerShape(JSONArray vertices) {
         boolean allFlat = true;
         boolean allNested = true;
 
@@ -237,5 +203,9 @@ public class PolygonConverter {
         if (allFlat) return "flat";     // [[x], [y], [z]]  -> one level: array of arrays
         if (allNested) return "nested"; 
         return "mixed";                 // shouldn;t happen
+    }
+
+    private PolygonConverter() {
+        /* This utility class should not be instantiated */
     }
 }

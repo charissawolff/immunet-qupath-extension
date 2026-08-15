@@ -38,7 +38,8 @@ public class ServerUploadGateway {
             if (!polygon.has("dataset")) missing.append("dataset ");
             if (!polygon.has("slide")) missing.append("slide ");
             if (!polygon.has("created")) missing.append("created ");
-            if (!polygon.has("vertices")) missing.append("vertices ");
+            if (!polygon.has("coordinates")) missing.append("coordinates ");
+            if (!polygon.has("type")) missing.append("type ");
 
             if (missing.length() > 0) {
                 throw new IOException("Polygon annotation is missing required fields: " + missing);
