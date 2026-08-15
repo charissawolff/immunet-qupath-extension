@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.ui.tabs;
+package org.computational_immunology.ext.ImmuNet.ui.tabBoxes;
 
 import org.computational_immunology.ext.ImmuNet.ImmuNetExtension;
 
