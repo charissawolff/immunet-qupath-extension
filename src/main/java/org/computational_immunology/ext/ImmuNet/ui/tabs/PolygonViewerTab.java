@@ -94,7 +94,7 @@ public class PolygonViewerTab extends CustomSidePanelTab {
                     }
                 }
         ));
-        Button loadDataBtn = makeButton("Load polygons", new Dimensions(40, 120));
+        Button loadDataBtn = makeButton("Load polygons", new Dimensions(30, 120));
         Label statusLabel = new Label();
 
         // bind to the selected slide property of the datastore, so that the button is only enabled when a slide is selected

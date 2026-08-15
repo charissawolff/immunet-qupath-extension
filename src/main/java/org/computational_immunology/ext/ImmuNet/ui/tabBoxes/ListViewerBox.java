@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.ui.tabs;
+package org.computational_immunology.ext.ImmuNet.ui.tabBoxes;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ public class ListViewerBox {
     }
 
     public void setItems(List<String> items){
-        listView.setItems(FXCollections.observableArrayList(items));
+        listView.getItems().setAll(items);
     }
 
     public ListView<String> getListView(){

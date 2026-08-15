@@ -11,6 +11,7 @@ import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.ClearIm
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.LoadDatasetsCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.LoadSlideDataCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.SlideLoadWorkflow;
+import org.computational_immunology.ext.ImmuNet.ui.tabBoxes.ListViewerBox;
 
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.viewer.QuPathViewer;
@@ -18,6 +19,8 @@ import qupath.lib.gui.viewer.QuPathViewer;
 import javafx.animation.PauseTransition;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
@@ -29,6 +32,7 @@ import javafx.util.Duration;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 
@@ -65,15 +69,27 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         VBox.setMargin(tsBox.getBox(), new Insets(15, 2, 2, 2)); // Box padding
         VBox.setMargin(dsBox.getBox(), new Insets(5, 2, 2, 2)); // Box padding
 
+        //SEARCH BAR for dsBox
+        ObservableList<String> dsItems = dsBox.getListView().getItems(); // 
+        FilteredList<String> filteredItems = new FilteredList<>(dsItems, s -> true);
+        dsBox.getListView().setItems(filteredItems);
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search for a dataset...");
+        searchField.textProperty().addListener((obs, oldValue, newValue) -> {
+            String query = newValue == null ? "" : newValue.trim().toLowerCase();
+            filteredItems.setPredicate(item ->
+                query.isEmpty() || item.toLowerCase().contains(query)
+            );
+        });
 
         //two buttons next to each other, one for loading datasets and one for clearing the current selection from viewer
-        Button loadDataBtn = makeButton("Load Datasets", new Dimensions(40, 120));
+        Button loadDataBtn = makeButton("Load Datasets", new Dimensions(30, 120));
         loadDataBtn.setOnAction(e -> {
             LoadDatasetsCommand loadDatasetCommand = new LoadDatasetsCommand(serverGateway);
             loadDatasetCommand.build();
             loadDatasetCommand.setOnDone(() -> {
                 List<String> datasets = loadDatasetCommand.getTask().getValue();
-                updateListViewerBox(dsBox, datasets);
+                 dsItems.setAll(datasets);
             });
             loadDatasetCommand.setOnFailed(() -> {
                 ImmuNetLog.error("Failed to load dataset data", loadDatasetCommand.getTask().getException());
@@ -93,7 +109,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         });
             
 
-        Button clearSelectionBtn = makeButton("Clear Image", new Dimensions(40, 120));
+        Button clearSelectionBtn = makeButton("Clear Image", new Dimensions(30, 120));
         clearSelectionBtn.setOnAction(e -> {
             selectedDataStore.clear();
             ClearImageViewerCommand.execute();
@@ -108,7 +124,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         buttonRow.setRight(clearSelectionBtn);
         
 
-        Button openImgBtn = makeButton("Open Slide", new Dimensions(40, 100));
+        Button openImgBtn = makeButton("Open Slide", new Dimensions(30, 100));
         Label statusLabel = new Label();
 
         // add a slider to see what user wants to transition composite to be. The smaller the better
@@ -203,7 +219,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
 
         updateSlideByDataset(dsBox, tsBox);
 
-        sidePanelTab.getChildren().addAll(buttonRow, formatRow, dsBox.getBox(), tsBox.getBox(), openImgBtn, statusLabel, tileOverlayCheckbox);
+        sidePanelTab.getChildren().addAll(buttonRow, formatRow, searchField,dsBox.getBox(), tsBox.getBox(), openImgBtn, statusLabel, tileOverlayCheckbox);
 
         return sidePanelTab;
     }
@@ -215,7 +231,7 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                     loadSlideDataCommand.build(); // Update tissue slide box
                     loadSlideDataCommand.setOnDone(() -> {
                         List<String> slides = loadSlideDataCommand.getTask().getValue();
-                        updateListViewerBox(slideBox, slides);
+                        slideBox.setItems(slides);
                     });
                     loadSlideDataCommand.setOnFailed(() -> {
                         ImmuNetLog.error("Failed to load slide data for dataset: " + newValue, loadSlideDataCommand.getTask().getException());
@@ -225,9 +241,5 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
                 }
             }
         );
-    }
-
-    private static void updateListViewerBox(ListViewerBox box, List<String> list){
-        box.setItems(list);
     }
 }
