@@ -1,13 +1,15 @@
 package org.computational_immunology.ext.ImmuNet.core.models;
 
-import java.util.Objects;
-
 import org.json.JSONArray;
+
+/**
+ * A polygon annotation compatible with how it's saved in the database.
+ */
 
 public class AnnotationPolygon {
 
     private final String id;
-    private final JSONArray coordinates; // GeoJSON-shaped: [[ring0 pts...], [ring1/hole pts...], ...]
+    private final JSONArray coordinates; // GeoJSON-shaped: [[[ring0 pts...], [ring1/hole pts...], ...]]
     private final String type;
     private final String name;
     private final String dataset;
@@ -19,17 +21,6 @@ public class AnnotationPolygon {
         this.id = id;
         this.coordinates = coordinates;
         this.type = type;
-        this.name = name;
-        this.dataset = dataset;
-        this.slide = slide;
-        this.created = created;
-    }
-
-        public AnnotationPolygon(String id, JSONArray coordinates, String name,
-                    String dataset, String slide, String created) {
-        this.id = id;
-        this.coordinates = coordinates;
-        this.type = "Polygon";
         this.name = name;
         this.dataset = dataset;
         this.slide = slide;
