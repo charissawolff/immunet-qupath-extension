@@ -55,6 +55,7 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         sidePanelTab.setSpacing(5); // Space between buttons and boxes
 
         PolygonListBox polygonListBox = new PolygonListBox();
+        polygonListBox.setPrefHeight(200);
 
         Button loadDataBtn = makeButton("Load polygons", new Dimensions(30, 120));
         Label statusLabel = new Label();
@@ -102,7 +103,7 @@ public class PolygonViewerTab extends CustomSidePanelTab {
 
         // add the user added polygons
         NewPolygonViewerBox newPolygonViewerBox = new NewPolygonViewerBox(userAddedPolygons, dataUploadHandler, selectedDataStore);
-        newPolygonViewerBox.setPrefHeight(250);
+        newPolygonViewerBox.setPrefHeight(300);
         VBox.setMargin(newPolygonViewerBox, new Insets(2, 2, 10, 2)); // Space between list and buttons
         VBox.setVgrow(newPolygonViewerBox, Priority.ALWAYS);
         newPolygonViewerBox.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
