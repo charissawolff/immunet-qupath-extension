@@ -68,10 +68,10 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         ObservableList<AnnotationPolygon> polygonNames = FXCollections.observableArrayList();
         Map<String, BooleanProperty> checkedMap = new HashMap<>();
 
-
         Label listViewTitle = new Label("Polygon list");
         listViewTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
         ListView<AnnotationPolygon> listView = new ListView<>(polygonNames);
+
         listView.setPrefHeight(150);
         VBox.setMargin(listView, new Insets(1, 2, 5, 2)); // Space between list and buttons
 
@@ -97,12 +97,18 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         Button loadDataBtn = makeButton("Load polygons", new Dimensions(40, 120));
         Label statusLabel = new Label();
 
+        selectedDataStore.selectedSlideProperty().addListener((obs, oldSlide, newSlide) -> {
+                polygonNames.clear();
+                checkedMap.clear();
+                statusLabel.setManaged(false);
+                statusLabel.setVisible(false);
+        });
+
         // bind to the selected slide property of the datastore, so that the button is only enabled when a slide is selected
         // this continues working after the slide is cleaered, because when we click this button, we also
         // clear the data from the datastore, which in turn enables the button again
         loadDataBtn.disableProperty().bind(Bindings.isNull(selectedDataStore.selectedSlideProperty()));
-
-
+        
         loadDataBtn.setOnAction(e -> {
         LoadPolygonCommand loadPolygonDataCommand = new LoadPolygonCommand(serverGateway, selectedDataStore);
         loadPolygonDataCommand.build();
@@ -115,7 +121,9 @@ public class PolygonViewerTab extends CustomSidePanelTab {
             polygonNames.clear();
             checkedMap.clear();
             loadPolygonDataCommand.start();
-            
+
+            statusLabel.setManaged(true);
+            statusLabel.setVisible(true);
             statusLabel.setText("Loading polygons...");
              // refresh the list right after loading
             loadPolygonDataCommand.setOnDone(() -> {
@@ -170,8 +178,6 @@ public class PolygonViewerTab extends CustomSidePanelTab {
             selectAnnotationCommand.execute();
         });    
         
-
-
         Button mergeBtn = makeButton("Merge selected polygons", new Dimensions(20, 180));
         mergeBtn.disableProperty().bind(Bindings.createBooleanBinding(() -> {
                 var selected = newPolygonViewerBox.getSelectionModel().getSelectedItems();
