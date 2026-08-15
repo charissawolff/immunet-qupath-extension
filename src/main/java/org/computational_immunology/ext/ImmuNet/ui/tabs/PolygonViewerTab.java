@@ -113,13 +113,9 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         ObservableList<PathObject> userAddedPolygons = polygonTracker.getNewAnnotations();
         //bind the userAddedPolygons list to the polygonTracker's newAnnotations list, so that any new polygons added by the user are automatically added to the list view
 
-        //add Title to the list view
-        Label newPolygonListTitle = new Label("User added polygons");
-        newPolygonListTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-
+        // add the user added polygons
         NewPolygonViewerBox newPolygonViewerBox = new NewPolygonViewerBox(userAddedPolygons, dataUploadHandler, selectedDataStore);
         newPolygonViewerBox.setPrefHeight(250);
-        VBox.setMargin(newPolygonListTitle, new Insets(10, 2, 0, 2)); // Space between list and buttons
         VBox.setMargin(newPolygonViewerBox, new Insets(2, 2, 10, 2)); // Space between list and buttons
         VBox.setVgrow(newPolygonViewerBox, Priority.ALWAYS);
         newPolygonViewerBox.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -145,7 +141,7 @@ public class PolygonViewerTab extends CustomSidePanelTab {
             mergePolygonsCommand.execute();
         });
 
-        sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,polygonListBox, newPolygonListTitle, newPolygonViewerBox, mergeBtn);
+        sidePanelTab.getChildren().addAll(loadDataBtn,statusLabel,polygonListBox, newPolygonViewerBox, mergeBtn);
 
         return sidePanelTab;
     }

@@ -32,6 +32,7 @@ public class PolygonListBox extends VBox {
     public PolygonListBox() {
         Label title = new Label("Polygon list");
         title.setFont(Font.font("System", FontWeight.BOLD, 16));
+        VBox.setMargin(title, new javafx.geometry.Insets(0, 2, 5, 2));
         listView = new ListView<>(polygons);
         listView.setPrefHeight(150);
         VBox.setMargin(listView, new Insets(1, 2, 5, 2));
@@ -55,6 +56,8 @@ public class PolygonListBox extends VBox {
         ));
 
         showAllCheckBox = new CheckBox("Show polygons");
+        VBox.setMargin(title, new javafx.geometry.Insets(0, 2, 5, 2));
+        VBox.setMargin(showAllCheckBox, new javafx.geometry.Insets(0, 2, 5, 2));
         showAllCheckBox.setSelected(true);
         showAllCheckBox.setOnAction(e -> {
             ImmuNetLog.log("Show polygons checkbox clicked");

@@ -14,10 +14,15 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import qupath.lib.images.ImageData;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.tools.PathObjectImageViewers;
@@ -28,22 +33,34 @@ import qupath.lib.objects.PathObject;
 Viewer box for viewing USER added new polygons, not the ones that are fetched from the server
 Here user can see the polygons they added, and can choose to upload them to the server or remove them.
 */
-public class NewPolygonViewerBox extends TableView<PathObject> {
+public class NewPolygonViewerBox extends VBox {
+    private TableView<PathObject> tableView;
     private final ServerUploadGateway dataUploadHandler;
     private final SelectedDataStore selectedDataStore;
 
     public NewPolygonViewerBox(ObservableList<PathObject> items, ServerUploadGateway dataUploadHandler, SelectedDataStore selectedDataStore) {
-        super(items);
+        Label title = new Label("User added polygons");
+        title.setFont(Font.font("System", FontWeight.BOLD, 16));
+        VBox.setMargin(title, new javafx.geometry.Insets(0, 2, 5, 2));
+        tableView = new TableView<>(items);
         this.dataUploadHandler = dataUploadHandler;
         this.selectedDataStore = selectedDataStore;
-        setEditable(true);
-        setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        getColumns().add(buildThumbnailColumn());
-        getColumns().add(buildNameColumn());
-        getColumns().add(buildDatasetColumn());
-        getColumns().add(buildSlideColumn());
-        getColumns().add(buildAddColumn());
+        tableView.setEditable(true);
+        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        tableView.getColumns().add(buildThumbnailColumn());
+        tableView.getColumns().add(buildNameColumn());
+        tableView.getColumns().add(buildDatasetColumn());
+        tableView.getColumns().add(buildSlideColumn());
+        tableView.getColumns().add(buildAddColumn());
+        VBox.setVgrow(tableView, Priority.ALWAYS);
+
+        getChildren().addAll(title, tableView);
     }
+
+    public TableView.TableViewSelectionModel<PathObject> getSelectionModel() {
+        return tableView.getSelectionModel();
+    }
+
 
     private TableColumn<PathObject, String> buildDatasetColumn() {
         TableColumn<PathObject, String> col = new TableColumn<>("Dataset");
@@ -114,8 +131,8 @@ public class NewPolygonViewerBox extends TableView<PathObject> {
         AddPolygonCommand command = new AddPolygonCommand(polygonJson, dataUploadHandler);
         command.build();
         //visible on screen and not editable anymore
-        command.setOnDone(() -> { polygon.setLocked(true); refresh(); });
-        command.setOnFailed(this::refresh);
+        command.setOnDone(() -> { polygon.setLocked(true); tableView.refresh(); });
+        command.setOnFailed(tableView::refresh);
         command.start();
     }
 }
