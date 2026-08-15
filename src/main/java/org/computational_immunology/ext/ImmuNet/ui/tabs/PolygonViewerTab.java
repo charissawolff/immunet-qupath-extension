@@ -57,6 +57,13 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         Button loadDataBtn = makeButton("Load polygons", new Dimensions(30, 120));
         Label statusLabel = new Label();
 
+        selectedDataStore.selectedSlideProperty().addListener((obs, oldSlide, newSlide) -> {
+                polygonNames.clear();
+                checkedMap.clear();
+                statusLabel.setManaged(false);
+                statusLabel.setVisible(false);
+        });
+
         // bind to the selected slide property of the datastore, so that the button is only enabled when a slide is selected
         loadDataBtn.disableProperty().bind(Bindings.isNull(selectedDataStore.selectedSlideProperty()));
 
@@ -71,7 +78,9 @@ public class PolygonViewerTab extends CustomSidePanelTab {
             ImmuNetLog.log("Load polygons button clicked");
             polygonListBox.clear();
             loadPolygonDataCommand.start();
-            
+
+            statusLabel.setManaged(true);
+            statusLabel.setVisible(true);
             statusLabel.setText("Loading polygons...");
              // refresh the list right after loading
             loadPolygonDataCommand.setOnDone(() -> {
