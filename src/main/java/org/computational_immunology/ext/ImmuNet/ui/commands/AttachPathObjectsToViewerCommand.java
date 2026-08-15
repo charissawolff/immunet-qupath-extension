@@ -2,7 +2,6 @@ package org.computational_immunology.ext.ImmuNet.ui.commands;
 
 import qupath.lib.gui.viewer.QuPathViewer;
 import qupath.lib.objects.PathObject;
-import qupath.lib.objects.PathObjects;
 import qupath.lib.objects.hierarchy.PathObjectHierarchy;
 import qupath.lib.gui.QuPathGUI;
 

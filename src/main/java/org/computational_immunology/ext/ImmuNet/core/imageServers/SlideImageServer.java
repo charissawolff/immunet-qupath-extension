@@ -2,7 +2,6 @@ package org.computational_immunology.ext.ImmuNet.core.imageServers;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
-import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
 
@@ -14,7 +13,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /*
 The image server for showing a SLIDE, which consists of many TILES.
