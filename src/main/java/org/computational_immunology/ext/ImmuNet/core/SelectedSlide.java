@@ -47,4 +47,12 @@ public record SelectedSlide(String datasetName, String slideName, List<TileMetad
     public List<TileMetadata> getTileMetadataList() {
         return tileMetadataList;
     }
+
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (!(object instanceof SelectedSlide that)) return false;
+
+        if (!datasetName.equals(that.datasetName)) return false;
+        return slideName.equals(that.slideName);
+    }
 }
