@@ -1,5 +1,9 @@
 package org.computational_immunology.ext.ImmuNet.core.models;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.json.JSONObject;
 
 import qupath.lib.objects.PathObject;
@@ -44,6 +48,20 @@ public class PredictionPointConverter {
         annotation.getMetadata().put("type", point.getT());
         annotation.setLocked(false);
         return annotation;
+    }
+
+    public static List<PathObject> toPathObjects(List<PredictionAnnotationPoint> points, List<TileMetadata> tileMetadatas) {
+        List<PathObject> pathObjects = new ArrayList<>();
+        for (PredictionAnnotationPoint point : points) {
+            TileMetadata tileMetadata = TileMetadata.findByCode(point.getTile(), tileMetadatas);
+            if (tileMetadata == null) {
+                ImmuNetLog.error("No tile metadata found for tile code: {}, skipping this annotation", point.getTile());
+                continue;
+            }
+            PathObject pathObject = toPathObject(point, tileMetadata);
+            pathObjects.add(pathObject);
+        }
+        return pathObjects;
     }
 
     private PredictionPointConverter(){

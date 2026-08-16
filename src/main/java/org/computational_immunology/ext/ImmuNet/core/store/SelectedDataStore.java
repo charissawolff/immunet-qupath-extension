@@ -5,6 +5,7 @@ import java.util.List;
 import org.computational_immunology.ext.ImmuNet.core.SelectedSlide;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
+import org.computational_immunology.ext.ImmuNet.core.models.PredictionAnnotationPoint;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -17,6 +18,7 @@ public class SelectedDataStore {
     private final ReadOnlyObjectWrapper<Double> dy = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyObjectWrapper<List<AnnotationPolygon>> Polygons = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyObjectWrapper<List<AnnotationPoint>> annotationPoints = new ReadOnlyObjectWrapper<>();
+    private final ReadOnlyObjectWrapper<List<PredictionAnnotationPoint>> predictionAnnotationPoints = new ReadOnlyObjectWrapper<>();
     public SelectedSlide getSelectedSlide() {
         return selectedSlide.get();
     }
@@ -34,6 +36,7 @@ public class SelectedDataStore {
         dy.set(null);
         Polygons.set(null);
         annotationPoints.set(null);
+        predictionAnnotationPoints.set(null);
     }
 
     public TileMetadata getSelectedTile() {
@@ -73,6 +76,13 @@ public class SelectedDataStore {
 
     public List<AnnotationPoint> getAnnotationPoints() {
         return annotationPoints.get();
+    }
+    public void setPredictionAnnotationPoints(List<PredictionAnnotationPoint> predictionAnnotationPoints) {
+        this.predictionAnnotationPoints.set(predictionAnnotationPoints);
+    }
+
+    public List<PredictionAnnotationPoint> getPredictionAnnotationPoints() {
+        return predictionAnnotationPoints.get();
     }
 
     public ReadOnlyObjectProperty<SelectedSlide> selectedSlideProperty() {
