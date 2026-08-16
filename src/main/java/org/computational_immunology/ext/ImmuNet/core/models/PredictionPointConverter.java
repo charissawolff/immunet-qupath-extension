@@ -38,7 +38,7 @@ public class PredictionPointConverter {
         annotation.getMetadata().put("model", point.getModelName());
         annotation.getMetadata().put("tile", point.getTile());
         annotation.getMetadata().put("type", point.getT());
-        annotation.setLocked(true);
+        annotation.setLocked(false);
         return annotation;
     }
 
