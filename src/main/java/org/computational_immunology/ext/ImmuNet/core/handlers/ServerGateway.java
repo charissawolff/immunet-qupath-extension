@@ -13,6 +13,7 @@ import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.ImageConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.PolygonConverter;
+import org.computational_immunology.ext.ImmuNet.core.models.PredictionAnnotationPoint;
 import org.computational_immunology.ext.ImmuNet.core.models.TiffConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.Tile;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
@@ -35,6 +36,7 @@ public class ServerGateway extends DataRequestHandler {
     private static final String TILEMETADATAPATH_FORMAT = "v/datasets/%s/%s/"; // datasetName, slideName
     private static final String TIFF_COMPONENTS_TILE_PATH_FORMAT = "v/datasets/%s/%s/%s/components.tiff?downsample=%d"; //dataset, slide and tile
     private static final String SLIDE_CHANNELS_PATH_FORMAT = "v/datasets/%s/%s/channels"; // datasetName, slideName
+    private static final String PREDICTION_ANNOTATIONS_PATH_FORMAT = "v/ml/%s/%s/%s/anns_pred.json?model=%s"; // datasetName, slideName, tileCode, modelName
 
     public ServerGateway(PageFetcher pageFetcher) {
         super(pageFetcher);
@@ -190,5 +192,47 @@ public class ServerGateway extends DataRequestHandler {
 
         JSONArray array = new JSONArray(body);
         return PolygonConverter.fromJsonArray(array);
+    }
+
+    public List<PredictionAnnotationPoint> fetchPredictionAnnotations(String dataset, String slide, String tile, String modelName) throws IOException, JSONException, InterruptedException {
+        if (modelName == null){
+            modelName = "default"; // default model name if not provided
+        }
+        String path = String.format(PREDICTION_ANNOTATIONS_PATH_FORMAT, dataset, slide, tile, modelName);
+        List<PredictionAnnotationPoint> predictionAnnotations = new ArrayList<>();
+
+        HttpResponse<String> response = pageFetcher.fetchStringPage(path);
+
+        int status = response.statusCode();
+        if (status == 404) {
+            return predictionAnnotations; // no prediction annotations
+        }
+        if (status < 200 || status >= 300) {
+            throw new IOException("Could not fetch prediction annotations for dataset: " + dataset
+                    + " with slide: " + slide + ", tile: " + tile + ", model: " + modelName + " (status " + status + ")");
+        }
+
+        String body = response.body().trim();
+        if (body.isEmpty()) {
+            return predictionAnnotations; // empty body means there are no prediction annotations
+        }
+
+        JSONArray array = new JSONArray(body);
+        for (int i = 0; i < array.length(); i++) {
+            JSONObject jsonObject = array.getJSONObject(i);
+            PredictionAnnotationPoint point = new PredictionAnnotationPoint(
+                    jsonObject.getString("dataset"),
+                    jsonObject.getString("slide"),
+                    jsonObject.getString("tile"),
+                    modelName,
+                    jsonObject.getString("t"),
+                    jsonObject.getJSONArray("positivity").toList().stream().mapToInt(o -> (int) o).toArray(),
+                    jsonObject.getInt("x"),
+                    jsonObject.getInt("y"),
+                    jsonObject.getJSONArray("prediction").toList().stream().mapToDouble(o -> (double) o).toArray()
+            );
+            predictionAnnotations.add(point);
+        }
+        return predictionAnnotations;
     }
 }
