@@ -60,6 +60,8 @@ public class LoadPredictionAnnotationCommand extends AbstractAsyncCommand<List<P
         }
         try {
             List<String> tileCodes = tilesMetadata.stream().map(tileMetadata -> tileMetadata.getCode()).toList();
+            //take only the first 3 tiles to test
+            tileCodes = tileCodes.subList(0, Math.min(tileCodes.size(), 3));
             List<PredictionAnnotationPoint> annotations = fetchAnnotations(tileCodes, tilesMetadata, progressReporter);
             return annotations;
         } catch (Exception e) {
@@ -71,7 +73,7 @@ public class LoadPredictionAnnotationCommand extends AbstractAsyncCommand<List<P
 
     private List<PredictionAnnotationPoint> fetchAnnotations(List<String> tileCodes, List<TileMetadata> tileMetadataList, Consumer<String> progressReporter) {
         try { 
-        fetchExecutor = Executors.newFixedThreadPool(10);
+        fetchExecutor = Executors.newFixedThreadPool(3);
             List<Future<List<PredictionAnnotationPoint>>> futureList = new ArrayList<>();
             for (String tileCode : tileCodes) {
                 ImmuNetLog.log("Fetching prediction annotations for tile: " + tileCode);
