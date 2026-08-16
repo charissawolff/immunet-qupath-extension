@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArray> {
-    private static final Duration REQUEST_TIMEOUT_SECONDS = Duration.ofSeconds(20);
+    private static final Duration REQUEST_TIMEOUT_SECONDS = Duration.ofSeconds(2400);
     private static final Duration REQUEST_TIMEOUT_IMAGE_SECONDS = Duration.ofSeconds(2400);
     private static final int MAX_POST_ATTEMPTS = 3;
     private static final Duration POST_RETRY_DELAY = Duration.ofSeconds(20);

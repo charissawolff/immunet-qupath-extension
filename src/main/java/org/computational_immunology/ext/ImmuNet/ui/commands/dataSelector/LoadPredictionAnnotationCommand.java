@@ -10,8 +10,6 @@ import java.util.function.Consumer;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
-import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
-import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPointConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.PredictionAnnotationPoint;
 import org.computational_immunology.ext.ImmuNet.core.models.PredictionPointConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
@@ -20,21 +18,25 @@ import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand
 import org.computational_immunology.ext.ImmuNet.ui.commands.AttachPathObjectsToViewerCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.annotations.RegisterNewClassificationsCommand;
 
+
 import qupath.lib.objects.PathObject;
 
 public class LoadPredictionAnnotationCommand extends AbstractAsyncCommand<List<PredictionAnnotationPoint>>  {
     private final SelectedDataStore selectedDataStore;
     private final ServerGateway serverGateway;
-    private volatile ExecutorService fetchExecutor;
-    private String datasetName;
-    private String slideName;
-    private List<TileMetadata> tilesMetadata;
+    private final List<TileMetadata> tilesMetadata;
+    private final String datasetName;
+    private final String slideName;
 
+
+    private volatile ExecutorService fetchExecutor;
 
     public LoadPredictionAnnotationCommand(SelectedDataStore selectedDataStore, ServerGateway serverGateway) {
         this.selectedDataStore = selectedDataStore;
         this.serverGateway = serverGateway;
-
+        this.tilesMetadata = selectedDataStore.getSelectedSlide().getTileMetadataList();
+        this.datasetName = selectedDataStore.getSelectedSlide().getDatasetName();
+        this.slideName = selectedDataStore.getSelectedSlide().getSlideName();
     }
 
     @Override
@@ -50,9 +52,6 @@ public class LoadPredictionAnnotationCommand extends AbstractAsyncCommand<List<P
 
     @Override
     protected List<PredictionAnnotationPoint> execute(Consumer<String> progressReporter) throws Exception {
-        datasetName = selectedDataStore.getSelectedSlide().getDatasetName();
-        slideName = selectedDataStore.getSelectedSlide().getSlideName();
-        tilesMetadata = selectedDataStore.getSelectedSlide().getTileMetadataList();
         progressReporter.accept("Fetching annotations for dataset: " + datasetName + ", slide: " + slideName);
         if (tilesMetadata == null) {
             ImmuNetLog.error("fetchSlideAnnotations called without tile metadata set. You need to call setTilesMetadata first for dataset: "
@@ -60,12 +59,7 @@ public class LoadPredictionAnnotationCommand extends AbstractAsyncCommand<List<P
             return new ArrayList<>();
         }
         try {
-            List<String> tileCodes = serverGateway.fetchSlideAnnotations(datasetName, slideName);
-            if (task.isCancelled()) {
-                // avoid creating the executor at all if we were cancelled while fetching tile codes,
-                // so a cancelled fetch can never come up with a fresh pool after the caller was told we're done
-                return new ArrayList<>();
-            }
+            List<String> tileCodes = tilesMetadata.stream().map(tileMetadata -> tileMetadata.getCode()).toList();
             List<PredictionAnnotationPoint> annotations = fetchAnnotations(tileCodes, tilesMetadata, progressReporter);
             return annotations;
         } catch (Exception e) {
@@ -80,6 +74,7 @@ public class LoadPredictionAnnotationCommand extends AbstractAsyncCommand<List<P
         fetchExecutor = Executors.newFixedThreadPool(10);
             List<Future<List<PredictionAnnotationPoint>>> futureList = new ArrayList<>();
             for (String tileCode : tileCodes) {
+                ImmuNetLog.log("Fetching prediction annotations for tile: " + tileCode);
                 TileMetadata tileMetadata = TileMetadata.findByCode(tileCode, tileMetadataList);
                 if (tileMetadata == null) {
                     ImmuNetLog.error("No tile metadata found for tile code: {} skipping its annotations", tileCode);

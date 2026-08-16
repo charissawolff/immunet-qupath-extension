@@ -8,6 +8,7 @@ import org.computational_immunology.ext.ImmuNet.core.models.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.ClearImageViewerCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.LoadDatasetsCommand;
+import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.LoadPredictionAnnotationCommand;
 import org.computational_immunology.ext.ImmuNet.ui.controls.SlideOpenerControl;
 import org.computational_immunology.ext.ImmuNet.ui.overlays.TileHoverController;
 import org.computational_immunology.ext.ImmuNet.ui.tabBoxes.DataListViewerBox;
@@ -108,7 +109,25 @@ public class DatasetSelectorTab extends CustomSidePanelTab {
         SlideOpenerControl slideOpenerControl = new SlideOpenerControl(serverGateway, 
                 selectedDataStore, tileHoverController, dataListViewerBox, useTiffComposite::get);
 
-        sidePanelTab.getChildren().addAll(buttonRow, formatRow, dataListViewerBox, slideOpenerControl, tileOverlayCheckbox);
+        Label predictionAnnotationLabel = new Label();
+        //load the prediction annotations button
+        Button loadPredictionAnnotationsBtn = makeButton("Load ML predictions", new Dimensions(30, 250));
+        loadPredictionAnnotationsBtn.setOnAction(e -> {
+            LoadPredictionAnnotationCommand loadPredictionAnnotationCommand = new LoadPredictionAnnotationCommand(selectedDataStore, serverGateway);
+            loadPredictionAnnotationCommand.build();
+            loadPredictionAnnotationCommand.setOnDone(() -> {
+                ImmuNetLog.log("Loaded ML predictions for dataset: " + selectedDataStore.getSelectedSlide().getDatasetName() + ", slide: " + selectedDataStore.getSelectedSlide().getSlideName());
+                predictionAnnotationLabel.setText("Loaded " + selectedDataStore.getPredictionAnnotationPoints().size() + " ML predictions for default model");
+            });
+            loadPredictionAnnotationCommand.setOnFailed(() -> {
+                ImmuNetLog.error("Failed to load ML predictions");
+            });
+            loadPredictionAnnotationCommand.start();
+        });
+        //make sure only available if a slide is selected, otherwise disable the button
+        loadPredictionAnnotationsBtn.disableProperty().bind(Bindings.isNull(selectedDataStore.selectedSlideProperty()));
+
+        sidePanelTab.getChildren().addAll(buttonRow, formatRow, dataListViewerBox, slideOpenerControl, tileOverlayCheckbox, loadPredictionAnnotationsBtn, predictionAnnotationLabel);
 
         return sidePanelTab;
     }

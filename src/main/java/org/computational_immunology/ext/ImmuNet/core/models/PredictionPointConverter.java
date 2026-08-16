@@ -26,10 +26,10 @@ public class PredictionPointConverter {
                     jsonObject.getString("tile"),
                     jsonObject.getString("annotator"),
                     jsonObject.getString("t"),
-                    jsonObject.getJSONArray("positivity").toList().stream().mapToInt(o -> (int) o).toArray(),
+                    jsonObject.getJSONArray("positivity").toList().stream().mapToInt(o -> ((Number) o).intValue()).toArray(),
                     jsonObject.getInt("x"),
                     jsonObject.getInt("y"),
-                    jsonObject.getJSONArray("prediction").toList().stream().mapToDouble(o -> (double) o).toArray()
+                    jsonObject.getJSONArray("prediction").toList().stream().mapToDouble(o -> ((Number) o).doubleValue()).toArray()
             );
         return point;
     }
