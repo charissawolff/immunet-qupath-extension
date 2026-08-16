@@ -9,6 +9,10 @@ import qupath.lib.regions.ImagePlane;
 import qupath.lib.roi.ROIs;
 import qupath.lib.roi.interfaces.ROI;
 
+/**
+ * Utility class for converting PredictionAnnotationPoint objects to and from JSON and PathObject representations.
+*/
+
 public class PredictionPointConverter {
 
     public static PredictionAnnotationPoint fromJson(JSONObject jsonObject){
@@ -46,5 +50,4 @@ public class PredictionPointConverter {
         /* Should not be instantiated */
     }
 
-    
 }

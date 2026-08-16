@@ -2,6 +2,10 @@ package org.computational_immunology.ext.ImmuNet.core.models;
 
 import java.util.Arrays;
 
+/**
+ * Represents one prediction of a given machine learning model for a given tile.
+ * The field t represents the type of the cell, for example, "B cell".
+ */
 public class PredictionAnnotationPoint {
 
     private final String dataset;
@@ -31,7 +35,6 @@ public PredictionAnnotationPoint(String dataset, String slide, String tile, Stri
         return dataset;
     }
  
- 
     public String getSlide() {
         return slide;
     }
@@ -48,7 +51,6 @@ public PredictionAnnotationPoint(String dataset, String slide, String tile, Stri
         return t;
     }
  
- 
     public int[] getPositivity() {
         return positivity;
     }
@@ -57,16 +59,13 @@ public PredictionAnnotationPoint(String dataset, String slide, String tile, Stri
         return x;
     }
  
- 
     public int getY() {
         return y;
     }
  
- 
     public double[] getPrediction() {
         return prediction;
     }
- 
  
     @Override
     public String toString() {
