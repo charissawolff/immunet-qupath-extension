@@ -1,0 +1,23 @@
+// 1. Find the polygon annotation, works with only 1 polygon
+def region = getAnnotationObjects().find { it.getROI().isArea() }
+def regionROI = region.getROI()
+
+// 2. Find all point annotations
+def pointAnnotations = getAnnotationObjects().findAll { it.getROI().isPoint() }
+
+// 3. Count points inside the region and group by classification
+def countsByClass = [:].withDefault { 0 }
+
+pointAnnotations.each { anno ->
+    def className = anno.getPathClass()?.getName() ?: "Unclassified"
+    def insideCount = anno.getROI().getAllPoints().count { pt ->
+        regionROI.contains(pt.getX(), pt.getY())
+    }
+    countsByClass[className] += insideCount
+}
+
+// 4. Print results
+countsByClass.sort().each { className, count ->
+    println "${className}: ${count}"
+}
+println "Total inside region: ${countsByClass.values().sum()}"
