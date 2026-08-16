@@ -14,6 +14,7 @@ import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.ImageConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.PredictionAnnotationPoint;
+import org.computational_immunology.ext.ImmuNet.core.models.PredictionPointConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.TiffConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.Tile;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
@@ -220,17 +221,7 @@ public class ServerGateway extends DataRequestHandler {
         JSONArray array = new JSONArray(body);
         for (int i = 0; i < array.length(); i++) {
             JSONObject jsonObject = array.getJSONObject(i);
-            PredictionAnnotationPoint point = new PredictionAnnotationPoint(
-                    jsonObject.getString("dataset"),
-                    jsonObject.getString("slide"),
-                    jsonObject.getString("tile"),
-                    modelName,
-                    jsonObject.getString("t"),
-                    jsonObject.getJSONArray("positivity").toList().stream().mapToInt(o -> (int) o).toArray(),
-                    jsonObject.getInt("x"),
-                    jsonObject.getInt("y"),
-                    jsonObject.getJSONArray("prediction").toList().stream().mapToDouble(o -> (double) o).toArray()
-            );
+            PredictionAnnotationPoint point = PredictionPointConverter.fromJson(jsonObject);
             predictionAnnotations.add(point);
         }
         return predictionAnnotations;

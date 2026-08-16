@@ -17,7 +17,7 @@ import qupath.lib.roi.interfaces.ROI;
 
 public class AnnotationPointConverter {
 
-    // a categorical palette so different "t" values are easy to tell apart at a glance,
+    // a categorical palette so different "t" values are easy to tell apart 
     // rather than relying on PathClass's default hash-derived color (which isn't guaranteed to be distinguishable).
     private static final int[] TYPE_COLOR_PALETTE = {
             ColorTools.packRGB(230, 25, 75),   // red
