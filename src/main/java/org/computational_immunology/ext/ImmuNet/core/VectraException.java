@@ -8,7 +8,7 @@ public class VectraException extends IOException {
     }
 
     public static VectraException wrongCredentials(Throwable cause) {
-        return new VectraException("Invalid username or password.", cause);
+        return new VectraException("Invalid username or password for database.", cause);
     }
     public static VectraException loginFailed(Throwable cause) {
         return new VectraException("Could not log in to the database. Please try again.", cause);
@@ -30,5 +30,9 @@ public class VectraException extends IOException {
     }
     public static VectraException networkUnreachable(Throwable cause) {
         return new VectraException("Your network is unreachable. Check your internet connection and try again.", cause);
+    }
+
+    public static VectraException unexpectedException(){
+        return new VectraException("Unexpected error occured. Please try again.", null);
     }
 }

@@ -3,6 +3,7 @@ package org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection;
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.VectraException;
 
+import java.io.IOException;
 import java.net.BindException;
 import java.net.ConnectException;
 import java.net.SocketException;
@@ -11,6 +12,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+/**
+ * Manages the ssh tunnel and thread for connecting to the server. 
+ * 
+ */
 
 public class SSHConnectionManager {
     private static final SSHConnectionManager INSTANCE = new SSHConnectionManager();
@@ -28,14 +34,29 @@ public class SSHConnectionManager {
         SSHReady = new CompletableFuture<>();
     }
 
-    public void startSSHThread(String username, String hostname, String password, int localPort, int remotePort) throws Exception {
+    /**
+ * Starts an SSH thread and opens a tunnel on the given local port, forwarding to the given remote port.
+ * Interrupts and closes any tunnel already running before starting the new one.
+ * @param username the SSH username
+ * @param hostname the SSH hostname
+ * @param password the SSH password
+ * @param localPort the local end of the tunnel
+ * @param remotePort the remote port to forward to
+ * @throws VectraException if the tunnel could not be established within 5 seconds
+ */
+
+    public void startSSHThread(String username, String hostname, String password, int localPort, int remotePort) throws VectraException {
         if (SSHThread != null) {
             SSHThread.interrupt();
             SSHThread = null;
         }
         if (sshTunnelHandler != null) {
-            sshTunnelHandler.closeSSHTunnel();
-            sshTunnelHandler = null;
+            try {
+                sshTunnelHandler.closeSSHTunnel();
+                sshTunnelHandler = null;
+            } catch (IOException ioe){
+                throw VectraException.unexpectedException();
+            }
         }
         SSHReady = new CompletableFuture<>();
         this.localPort = localPort;
