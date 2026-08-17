@@ -1,6 +1,6 @@
 import java.io.IOException;
 
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection.ServerConnectionHandler;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

@@ -3,7 +3,8 @@ package org.computational_immunology.ext.ImmuNet.ui.commands.connectServer;
 import java.util.function.Consumer;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection.SSHConnectionManager;
+import org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection.SessionManager;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
 
 public class ConnectToServerCommand extends AbstractAsyncCommand<Boolean> {
@@ -28,19 +29,19 @@ public class ConnectToServerCommand extends AbstractAsyncCommand<Boolean> {
     protected Boolean execute(Consumer<String> progressReporter) throws Exception {
         progressReporter.accept("Logging into server...");
         try {
-            ServerConnectionHandler.getInstance().startSSHThread(username, hostname, password, localPort, remotePort);
+            SSHConnectionManager.getInstance().startSSHThread(username, hostname, password, localPort, remotePort);
         } catch (Exception e) {
             ImmuNetLog.error("SSH connection failed.", e);
-            progressReporter.accept("SSH connection failed. Probably wrong credentials for username, hostname and password." );
+            progressReporter.accept("SSH connection failed." );
             return false;
         }
         try{
             ImmuNetLog.log("SSH connection established. Logging into database...");
             progressReporter.accept("Logging into database...");
-            ServerConnectionHandler.getInstance().performDatabaseLogin(dbuser,dbpass);
+            SessionManager.getInstance().performDatabaseLogin(dbuser, dbpass);
         }catch (Exception e){
             ImmuNetLog.error("Database login failed.", e);
-            progressReporter.accept("Database login failed: Probably wrong credentials for dbuser and dbpass.");
+            progressReporter.accept("Database login failed.");
             return false;
         }
         return true;

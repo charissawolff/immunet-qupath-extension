@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.core.handlers;
+package org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection;
 
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.session.ClientSession;
@@ -17,17 +17,18 @@ public class SSHTunnelHandler implements Runnable{
     int localPort;
     int remotePort;
 
+    CompletableFuture<Boolean> ready;
     SshClient sshClient;
     ClientSession clientSession;
-    CompletableFuture<Boolean> Ready;
 
-    public SSHTunnelHandler(String username, String hostname, String password, int localPort, int remotePort)
+    public SSHTunnelHandler(String username, String hostname, String password, int localPort, int remotePort, CompletableFuture<Boolean> ready)
     {
         this.username = username;
         this.hostname = hostname;
         this.password = password;
         this.localPort = localPort;
         this.remotePort = remotePort;
+        this.ready = ready;
     }
 
     @Override
@@ -60,7 +61,7 @@ public class SSHTunnelHandler implements Runnable{
 
         ImmuNetLog.log("Port forwarding success");
 
-        ServerConnectionHandler.getInstance().SSHReady.complete(true); //tell main thread we are ready
+        ready.complete(true); //tell main thread we are ready
 
         clientSession = session;
         Set<ClientSession.ClientSessionEvent> Events = session.waitFor(Set.of(ClientSession.ClientSessionEvent.CLOSED), -1);

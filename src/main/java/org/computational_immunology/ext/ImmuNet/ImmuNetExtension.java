@@ -1,11 +1,11 @@
 package org.computational_immunology.ext.ImmuNet;
 
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGateway;
+import org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection.ServerConnectionHandler;
 
 import java.io.IOException;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonMetadataAdder;
