@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.core.handlers;
+package org.computational_immunology.ext.ImmuNet.core.api;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;

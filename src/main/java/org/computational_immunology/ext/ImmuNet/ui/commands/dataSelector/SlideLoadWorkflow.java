@@ -1,7 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 
 import org.computational_immunology.ext.ImmuNet.core.SelectedSlide;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
+import org.computational_immunology.ext.ImmuNet.core.api.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 

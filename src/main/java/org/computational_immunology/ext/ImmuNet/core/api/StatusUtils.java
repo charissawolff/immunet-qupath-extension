@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection;
+package org.computational_immunology.ext.ImmuNet.core.api;
 
 import java.io.IOException;
 

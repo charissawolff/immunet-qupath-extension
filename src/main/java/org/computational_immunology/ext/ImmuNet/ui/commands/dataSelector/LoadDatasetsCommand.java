@@ -3,7 +3,7 @@ package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
+import org.computational_immunology.ext.ImmuNet.core.api.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
 
 public class LoadDatasetsCommand extends AbstractAsyncCommand<List<String>> {

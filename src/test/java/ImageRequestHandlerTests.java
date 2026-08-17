@@ -2,8 +2,8 @@ import java.io.InputStream;
 import java.net.http.HttpResponse;
 import java.util.List;
 
-import org.computational_immunology.ext.ImmuNet.core.handlers.ImageRequestHandler;
-import org.computational_immunology.ext.ImmuNet.core.handlers.PageFetcher;
+import org.computational_immunology.ext.ImmuNet.core.api.ImageRequestHandler;
+import org.computational_immunology.ext.ImmuNet.core.api.PageFetcher;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
 import org.json.JSONArray;

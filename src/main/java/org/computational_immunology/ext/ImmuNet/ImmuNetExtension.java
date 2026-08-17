@@ -1,12 +1,9 @@
 package org.computational_immunology.ext.ImmuNet;
 
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGateway;
-import org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection.ApiClient;
-
-import java.io.IOException;
-
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
+import org.computational_immunology.ext.ImmuNet.core.api.ServerGateway;
+import org.computational_immunology.ext.ImmuNet.core.api.ServerUploadGateway;
+import org.computational_immunology.ext.ImmuNet.core.api.ApiClient;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonMetadataAdder;
 import org.computational_immunology.ext.ImmuNet.ui.listeners.PolygonTracker;
@@ -17,14 +14,11 @@ import org.computational_immunology.ext.ImmuNet.ui.tabs.DatasetSelectorTab;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.PolygonViewerTab;
 import org.computational_immunology.ext.ImmuNet.ui.tabs.ServerConnectionTab;
 
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.scene.Scene;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.stage.Stage;
-import qupath.ext.template.ui.InterfaceController;
-import qupath.fx.dialogs.Dialogs;
 import qupath.fx.prefs.controlsfx.PropertyItemBuilder;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.extensions.QuPathExtension;

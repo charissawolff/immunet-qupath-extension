@@ -1,9 +1,8 @@
-package org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection;
+package org.computational_immunology.ext.ImmuNet.core.api;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.VectraException;
-import org.computational_immunology.ext.ImmuNet.core.handlers.PageFetcher;
-import org.computational_immunology.ext.ImmuNet.core.handlers.PagePoster;
+import org.computational_immunology.ext.ImmuNet.core.serverConnection.SSHConnectionManager;
 import org.json.JSONArray;
 
 import java.io.IOException;

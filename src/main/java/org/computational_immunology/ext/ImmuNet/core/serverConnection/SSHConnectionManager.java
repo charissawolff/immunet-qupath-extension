@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection;
+package org.computational_immunology.ext.ImmuNet.core.serverConnection;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.VectraException;

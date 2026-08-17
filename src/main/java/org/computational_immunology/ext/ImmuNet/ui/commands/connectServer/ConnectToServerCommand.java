@@ -3,8 +3,8 @@ package org.computational_immunology.ext.ImmuNet.ui.commands.connectServer;
 import java.util.function.Consumer;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection.ApiClient;
-import org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection.SSHConnectionManager;
+import org.computational_immunology.ext.ImmuNet.core.api.ApiClient;
+import org.computational_immunology.ext.ImmuNet.core.serverConnection.SSHConnectionManager;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
 
 public class ConnectToServerCommand extends AbstractAsyncCommand<Boolean> {

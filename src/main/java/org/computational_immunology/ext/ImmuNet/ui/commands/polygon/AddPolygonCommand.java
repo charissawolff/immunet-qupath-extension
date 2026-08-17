@@ -6,7 +6,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGateway;
+import org.computational_immunology.ext.ImmuNet.core.api.ServerUploadGateway;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
 
 public class AddPolygonCommand extends AbstractAsyncCommand<JSONObject> {
