@@ -15,7 +15,6 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Manages the ssh tunnel and thread for connecting to the server. 
- * 
  */
 
 public class SSHConnectionManager {
@@ -35,15 +34,15 @@ public class SSHConnectionManager {
     }
 
     /**
- * Starts an SSH thread and opens a tunnel on the given local port, forwarding to the given remote port.
- * Interrupts and closes any tunnel already running before starting the new one.
- * @param username the SSH username
- * @param hostname the SSH hostname
- * @param password the SSH password
- * @param localPort the local end of the tunnel
- * @param remotePort the remote port to forward to
- * @throws VectraException if the tunnel could not be established within 5 seconds
- */
+     * Starts an SSH thread and opens a tunnel on the given local port, forwarding to the user defined remote port.
+     * Interrupts and closes any tunnel already running before starting the new one.
+     * @param username the SSH username
+     * @param hostname the SSH hostname
+     * @param password the SSH password
+     * @param localPort the local end of the tunnel
+     * @param remotePort the remote port to forward to
+     * @throws VectraException if the tunnel could not be established within 15 seconds.
+     */
 
     public void startSSHThread(String username, String hostname, String password, int localPort, int remotePort) throws VectraException {
         if (SSHThread != null) {
@@ -66,7 +65,7 @@ public class SSHConnectionManager {
 
         try {
             ImmuNetLog.log("Waiting for SSH thread.");
-            SSHReady.get(5, TimeUnit.SECONDS);
+            SSHReady.get(15, TimeUnit.SECONDS);
         } catch (ExecutionException ee){
             interrupt();
             Throwable cause = ee.getCause() != null ? ee.getCause() : ee;
@@ -104,6 +103,9 @@ public class SSHConnectionManager {
         return false;
     }
 
+    /**
+     * Interrupts the running SSH thread and closes its tunnel only if one is actually active.
+     */
     public void interrupt() {
         if (SSHThread != null) {
             SSHThread.interrupt();
