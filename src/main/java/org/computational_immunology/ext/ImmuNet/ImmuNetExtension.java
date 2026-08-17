@@ -1,7 +1,7 @@
 package org.computational_immunology.ext.ImmuNet;
 
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGateway;
-import org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection.ServerConnectionHandler;
+import org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection.ApiClient;
 
 import java.io.IOException;
 
@@ -48,8 +48,8 @@ public class ImmuNetExtension implements QuPathExtension {
         //qupath.getOverlayOptions().setFillDetections(true);
 
         // Built once here and injected down, this will be used to retrieve data and images from the server
-        ServerGateway serverGateway = new ServerGateway(ServerConnectionHandler.getInstance());
-        ServerUploadGateway jsonDataUploadHandler = new ServerUploadGateway(ServerConnectionHandler.getInstance());
+        ServerGateway serverGateway = new ServerGateway(ApiClient.getInstance());
+        ServerUploadGateway jsonDataUploadHandler = new ServerUploadGateway(ApiClient.getInstance());
 
         // Built once and injected down. THis tracks the currently loaded slide and the currently
         // selected tile, and wires mouse hover/click on the viewer to the tile highlight overlay.
