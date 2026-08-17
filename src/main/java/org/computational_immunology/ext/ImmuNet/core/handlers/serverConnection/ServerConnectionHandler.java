@@ -15,8 +15,8 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 
 /**
- * 
- * 
+ * Sends HTTP requests to the backend api via the SSH tunnel. Implements {@link PageFetcher} and
+ * {@link PagePoster} to fetch and post data. 
  */
 
 public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArray> {
@@ -35,6 +35,9 @@ public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArra
         return URI.create("http://localhost:" + SSHConnectionManager.getInstance().getLocalPort() + "/" + path);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public HttpResponse<InputStream> fetchImagePage(String localPath) throws IOException, InterruptedException {
         HttpRequest getRequest = HttpRequest.newBuilder()
                 .uri(buildUri(localPath))
@@ -53,6 +56,9 @@ public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArra
             }
         }
 
+    /**
+     * {@inheritDoc}
+     */
     public HttpResponse<String> fetchStringPage(String localPath) throws IOException, InterruptedException {
         HttpRequest getRequest = HttpRequest.newBuilder()
                 .uri(buildUri(localPath))
@@ -72,6 +78,28 @@ public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArra
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public HttpResponse<String> postObject(String localPath, JSONArray payload) throws IOException, InterruptedException {
+        HttpRequest postRequest = HttpRequest.newBuilder()
+                .uri(buildUri(localPath))
+                .timeout(REQUEST_TIMEOUT_SECONDS)
+                .header("Cookie", SessionManager.getInstance().getSessionCookie())
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
+                .build();
+        try {
+            return sendPostWithRetry(postRequest);
+        } catch (IOException | InterruptedException e) {
+            ImmuNetLog.error("Could not post object", e);
+            throw e;
+        }
+    }
+
+    /**
+     * Sends a POST request, retrying up to MAX_POST_ATTEMPTS times with a defined delay inbetween attempts given an error.
+     */
     private HttpResponse<String> sendPostWithRetry(HttpRequest request) throws IOException, InterruptedException {
         IOException lastException = null;
         for (int attempt = 1; attempt <= MAX_POST_ATTEMPTS; attempt++) {
@@ -87,21 +115,5 @@ public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArra
             }
         }
         throw lastException;
-    }
-
-    public HttpResponse<String> postObject(String localPath, JSONArray payload) throws IOException, InterruptedException {
-        HttpRequest postRequest = HttpRequest.newBuilder()
-                .uri(buildUri(localPath))
-                .timeout(REQUEST_TIMEOUT_SECONDS)
-                .header("Cookie", SessionManager.getInstance().getSessionCookie())
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
-                .build();
-        try {
-            return sendPostWithRetry(postRequest);
-        } catch (IOException | InterruptedException e) {
-            ImmuNetLog.error("Could not post object", e);
-            throw e;
-        }
     }
 }
