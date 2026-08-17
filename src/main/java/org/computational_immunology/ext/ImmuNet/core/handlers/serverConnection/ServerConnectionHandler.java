@@ -23,7 +23,7 @@ public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArra
     private static final Duration IMAGE_RETRY_DELAY = Duration.ofMillis(500);
     private static final ServerConnectionHandler INSTANCE = new ServerConnectionHandler();
 
-    HttpClient client = HttpClient.newHttpClient();
+    private final HttpClient client = HttpClient.newHttpClient();
 
     public static ServerConnectionHandler getInstance() {
         return INSTANCE;

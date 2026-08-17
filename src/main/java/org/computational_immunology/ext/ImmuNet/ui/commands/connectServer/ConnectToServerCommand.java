@@ -32,7 +32,7 @@ public class ConnectToServerCommand extends AbstractAsyncCommand<Boolean> {
             SSHConnectionManager.getInstance().startSSHThread(username, hostname, password, localPort, remotePort);
         } catch (Exception e) {
             ImmuNetLog.error("SSH connection failed.", e);
-            progressReporter.accept("SSH connection failed." );
+            progressReporter.accept(e.getMessage());
             return false;
         }
         try{
@@ -41,7 +41,7 @@ public class ConnectToServerCommand extends AbstractAsyncCommand<Boolean> {
             SessionManager.getInstance().performDatabaseLogin(dbuser, dbpass);
         }catch (Exception e){
             ImmuNetLog.error("Database login failed.", e);
-            progressReporter.accept("Database login failed.");
+            progressReporter.accept(e.getMessage());
             return false;
         }
         return true;
@@ -49,7 +49,11 @@ public class ConnectToServerCommand extends AbstractAsyncCommand<Boolean> {
 
     @Override
     protected void onSuccess(Boolean result) {
-        ImmuNetLog.log("Successfully connected to server: " + hostname + " with user: " + username);
+        if (result) {
+            ImmuNetLog.log("Successfully connected to server: " + hostname + " with user: " + username);
+        } else {
+            ImmuNetLog.log("Failed to connect to server: " + hostname + " with user: " + username);
+        }
     }
 
     @Override

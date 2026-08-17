@@ -1,6 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
+import org.computational_immunology.ext.ImmuNet.core.handlers.VectraException;
 
 import java.io.IOException;
 import java.net.URI;
@@ -32,9 +33,12 @@ public class SessionManager {
             setSessionCookie(getDatabaseSessionCookie(dbuser, dbpass));
             ImmuNetLog.log("Successfully got session cookie");
         } catch (IOException | InterruptedException e) {
-            ImmuNetLog.error("Invalid database credentials. Interrupting SSH Thread.", e);
+            ImmuNetLog.error("Database login failed. Interrupting SSH thread.", e);
             SSHConnectionManager.getInstance().interrupt();
-            throw e;
+            if (e instanceof VectraException) {
+                throw e;
+            }
+            throw VectraException.loginFailed(e);
         }
     }
 
@@ -42,7 +46,7 @@ public class SessionManager {
         return URI.create("http://localhost:" + SSHConnectionManager.getInstance().getLocalPort() + "/" + path);
     }
 
-    public HttpResponse<String> postRequestVectraLogin(String username, String password) throws InterruptedException {
+    public HttpResponse<String> postRequestVectraLogin(String username, String password) throws InterruptedException, IOException {
         HttpRequest postRequest = HttpRequest.newBuilder()
                 .uri(buildUri(LOGIN_PATH_FORMAT))
                 .timeout(REQUEST_TIMEOUT_SECONDS)
@@ -52,11 +56,9 @@ public class SessionManager {
 
         try {
             return sendPostWithRetry(postRequest);
-        } catch (InterruptedException e) {
-            throw e;
         } catch (IOException e) {
             ImmuNetLog.error("Could not log into Vectra database", e);
-            return null;
+            throw e;
         }
     }
 
@@ -64,6 +66,9 @@ public class SessionManager {
         HttpResponse<String> response = postRequestVectraLogin(username, password);
         HttpHeaders headers = response.headers();
         List<String> cookies = headers.allValues("Set-Cookie");
+        if (cookies.isEmpty()) {
+            throw VectraException.wrongCredentials(null);
+        }
         setSessionCookie(cookies.get(0));
         return cookies.get(0);
     }
@@ -81,8 +86,14 @@ public class SessionManager {
         for (int attempt = 1; attempt <= MAX_POST_ATTEMPTS; attempt++) {
             try {
                 HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
-                StatusUtils.checkStatusCode(response.statusCode());
+                int statusCode = response.statusCode();
+                if (statusCode == 401 || statusCode == 403) {
+                    throw VectraException.wrongCredentials(null);
+                }
+                StatusUtils.checkStatusCode(statusCode);
                 return response;
+            } catch (VectraException e) {
+                throw e;
             } catch (IOException e) {
                 lastException = e;
                 if (attempt < MAX_POST_ATTEMPTS) {

@@ -36,6 +36,7 @@ public class SSHTunnelHandler implements Runnable{
             try {
                 createSSHTunnel();
             } catch (IOException e) {
+                ready.completeExceptionally(e);
                 ImmuNetLog.error("Could not start SSH thread. Are your credentials wrong?", e);
             }
     }
