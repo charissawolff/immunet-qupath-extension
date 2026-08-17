@@ -10,6 +10,12 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Connects to a remote SSH host and opens a local tunnel to it. Runs on its own thread,
+ * started and interrupted by {@link SSHConnectionManager}, and signals readiness or failure to that
+ * thread via the given {@link CompletableFuture}.
+ */
+
 public class SSHTunnelHandler implements Runnable{
     String username;
     String hostname;
@@ -21,6 +27,15 @@ public class SSHTunnelHandler implements Runnable{
     SshClient sshClient;
     ClientSession clientSession;
 
+    /**
+     * Constructs a handler for the given SSH connection to run on its own thread.
+     * @param username the SSH username
+     * @param hostname the SSH hostname
+     * @param password the SSH password
+     * @param localPort the local end of the tunnel
+     * @param remotePort the remote port to forward to
+     * @param ready completed once the tunnel is open, or exception if it could not be opened
+     */
     public SSHTunnelHandler(String username, String hostname, String password, int localPort, int remotePort, CompletableFuture<Boolean> ready)
     {
         this.username = username;
@@ -31,6 +46,10 @@ public class SSHTunnelHandler implements Runnable{
         this.ready = ready;
     }
 
+    /**
+     * {@inheritDoc}
+     * Opens the SSH tunnel. Reports that it failed to open the tunnel via {@code ready}.
+     */
     @Override
     public void run() {
             try {
@@ -41,7 +60,10 @@ public class SSHTunnelHandler implements Runnable{
             }
     }
 
-    //Starts the SSH client and sets up the tunnel. This will wait until the connection fails.
+    /**
+     * Starts the SSH client, perform authentication and forwards the local port to the remote port.
+     * @throws IOException if the connection or authentication fails
+     */
     public void createSSHTunnel() throws IOException {
         SshClient client = SshClient.setUpDefaultClient();
         sshClient = client;
