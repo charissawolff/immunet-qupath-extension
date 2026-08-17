@@ -14,13 +14,15 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 
+/**
+ * 
+ * 
+ */
+
 public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArray> {
-    private static final Duration REQUEST_TIMEOUT_SECONDS = Duration.ofSeconds(20);
-    private static final Duration REQUEST_TIMEOUT_IMAGE_SECONDS = Duration.ofSeconds(2400);
+    private static final Duration REQUEST_TIMEOUT_SECONDS = Duration.ofSeconds(60);
     private static final int MAX_POST_ATTEMPTS = 3;
     private static final Duration POST_RETRY_DELAY = Duration.ofSeconds(20);
-    private static final int MAX_IMAGE_ATTEMPTS = 2;
-    private static final Duration IMAGE_RETRY_DELAY = Duration.ofMillis(500);
     private static final ServerConnectionHandler INSTANCE = new ServerConnectionHandler();
 
     private final HttpClient client = HttpClient.newHttpClient();
@@ -37,23 +39,19 @@ public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArra
         HttpRequest getRequest = HttpRequest.newBuilder()
                 .uri(buildUri(localPath))
                 .header("Cookie", SessionManager.getInstance().getSessionCookie())
-                .timeout(REQUEST_TIMEOUT_IMAGE_SECONDS)
                 .GET()
                 .build();
-        for (int attempt = 1; attempt <= MAX_IMAGE_ATTEMPTS; attempt++) {
             try {
                 HttpResponse<InputStream> response = client.send(getRequest, BodyHandlers.ofInputStream());
                 StatusUtils.checkStatusCode(response.statusCode());
                 return response;
-            } catch (IOException e) {
-                ImmuNetLog.error("Could not fetch page {}", localPath, e);
-                if (attempt < MAX_IMAGE_ATTEMPTS) {
-                    Thread.sleep(IMAGE_RETRY_DELAY.toMillis());
-                }
+            } catch (IOException ioe) {
+                ImmuNetLog.error("Could not fetch page {}", localPath, ioe);
+                throw ioe;
+            } catch (InterruptedException ie){
+                return null;
             }
         }
-        return null;
-    }
 
     public HttpResponse<String> fetchStringPage(String localPath) throws IOException, InterruptedException {
         HttpRequest getRequest = HttpRequest.newBuilder()
