@@ -61,7 +61,7 @@ public class LoadPredictionAnnotationCommand extends AbstractAsyncCommand<List<P
         try {
             List<String> tileCodes = tilesMetadata.stream().map(tileMetadata -> tileMetadata.getCode()).toList();
             //take only the first 3 tiles to test
-            tileCodes = tileCodes.subList(0, Math.min(tileCodes.size(), 3));
+            //tileCodes = tileCodes.subList(0, Math.min(tileCodes.size(), 3));
             List<PredictionAnnotationPoint> annotations = fetchAnnotations(tileCodes, tilesMetadata, progressReporter);
             return annotations;
         } catch (Exception e) {
