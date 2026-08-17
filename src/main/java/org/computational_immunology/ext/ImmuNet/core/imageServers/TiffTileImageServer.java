@@ -5,7 +5,6 @@ import java.io.IOException;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
-import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.Tile;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 
