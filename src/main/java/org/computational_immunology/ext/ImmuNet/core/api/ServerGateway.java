@@ -11,13 +11,14 @@ import org.computational_immunology.ext.ImmuNet.core.converters.AnnotationPointC
 import org.computational_immunology.ext.ImmuNet.core.converters.ImageConverter;
 import org.computational_immunology.ext.ImmuNet.core.converters.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.converters.TiffConverter;
-import org.computational_immunology.ext.ImmuNet.core.converters.TileMetadataConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.Tile;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadataConverter;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
