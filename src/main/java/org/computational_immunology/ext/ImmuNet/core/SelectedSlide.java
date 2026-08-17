@@ -7,6 +7,12 @@ import java.util.Optional;
 
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 
+/**
+ * Record of what slide the user has open in the viewer. 
+ * @param datasetName
+ * @param slideName
+ * @param tileMetadataList
+ */
 public record SelectedSlide(String datasetName, String slideName, List<TileMetadata> tileMetadataList) {
 
     public SelectedSlide {
