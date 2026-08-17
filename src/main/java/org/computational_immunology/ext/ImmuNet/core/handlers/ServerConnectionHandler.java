@@ -107,33 +107,6 @@ public class ServerConnectionHandler implements PageFetcher, PagePoster<JSONArra
         return URI.create("http://localhost:" + localPort + "/" + path);
     }
 
-    /**
-     * Fetch the content of a page with a GET request
-     *
-     * @param localPath path to webpage, appended to the local tunnel's base URL
-     * @return full response package of the webpage incl. headers and body
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    public HttpResponse<InputStream> fetchPage(String localPath) throws IOException, InterruptedException {
-        HttpRequest getRequest = HttpRequest.newBuilder()
-                .uri(buildUri(localPath))
-                .header("Cookie", sessionCookie)
-                .timeout(REQUEST_TIMEOUT_SECONDS)
-                .GET()
-                .build();
-        try{
-            HttpResponse<InputStream> response = client.send(getRequest, BodyHandlers.ofInputStream());
-            checkStatusCode(response.statusCode());
-            return response;
-        } catch (InterruptedException e) {
-            throw e;
-        } catch(IOException e){
-            ImmuNetLog.error("Could not fetch page {}", localPath, e);
-            return null;
-        }
-    }
-
     public HttpResponse<InputStream> fetchImagePage(String localPath) throws IOException, InterruptedException {
         HttpRequest getRequest = HttpRequest.newBuilder()
                 .uri(buildUri(localPath))
