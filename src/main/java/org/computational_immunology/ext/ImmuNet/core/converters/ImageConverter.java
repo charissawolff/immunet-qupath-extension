@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.core.models;
+package org.computational_immunology.ext.ImmuNet.core.converters;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.util.concurrent.Semaphore;
 
 import javax.imageio.ImageIO;
+
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
 
 public class ImageConverter {
 

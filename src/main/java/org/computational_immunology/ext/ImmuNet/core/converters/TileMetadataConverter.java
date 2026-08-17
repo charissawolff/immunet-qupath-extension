@@ -1,10 +1,11 @@
-package org.computational_immunology.ext.ImmuNet.core.models;
+package org.computational_immunology.ext.ImmuNet.core.converters;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;
 import org.json.JSONArray;
 import org.json.JSONException;

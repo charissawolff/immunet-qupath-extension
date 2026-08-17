@@ -1,10 +1,12 @@
-package org.computational_immunology.ext.ImmuNet.core.models;
+package org.computational_immunology.ext.ImmuNet.core.converters;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
+import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
+import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 import org.json.JSONObject;
 
 import qupath.lib.common.ColorTools;

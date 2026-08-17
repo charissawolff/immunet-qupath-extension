@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.core.models;
+package org.computational_immunology.ext.ImmuNet.core.converters;
 
 import java.awt.Point;
 import java.awt.image.BandedSampleModel;

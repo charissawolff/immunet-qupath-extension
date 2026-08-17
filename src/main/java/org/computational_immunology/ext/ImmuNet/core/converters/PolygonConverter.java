@@ -1,10 +1,11 @@
-package org.computational_immunology.ext.ImmuNet.core.models;
+package org.computational_immunology.ext.ImmuNet.core.converters;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.awt.geom.AffineTransform;
 
+import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

@@ -6,8 +6,8 @@ import java.util.function.Consumer;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
 import org.computational_immunology.ext.ImmuNet.core.api.ServerGateway;
+import org.computational_immunology.ext.ImmuNet.core.converters.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
-import org.computational_immunology.ext.ImmuNet.core.models.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AttachPathObjectsToViewerCommand;
