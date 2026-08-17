@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.core.handlers;
+package org.computational_immunology.ext.ImmuNet.core;
 
 import java.io.IOException;
 

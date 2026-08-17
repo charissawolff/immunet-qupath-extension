@@ -1,7 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.core.handlers.serverConnection;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.VectraException;
+import org.computational_immunology.ext.ImmuNet.core.VectraException;
 
 import java.net.BindException;
 import java.net.ConnectException;
