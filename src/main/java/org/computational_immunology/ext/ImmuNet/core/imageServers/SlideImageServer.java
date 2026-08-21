@@ -217,11 +217,13 @@ public class SlideImageServer {
      * @throws IOException if the sparse server's region manager cannot be read
      */
     public static List<TileImageServer> getOverviewServers(SparseImageServer sparseServer) throws IOException {
-        double middleDownsample = sparseServer.getPreferredDownsamples()[0];
+        int downsampleIndex = sparseServer.getPreferredDownsamples().length -1;
+        ImmuNetLog.log("preferred downsamples are " + sparseServer.getPreferredDownsamples().toString());
+        double downsample = sparseServer.getPreferredDownsamples()[downsampleIndex];
         List<TileImageServer> thumbServers = new ArrayList<>();
         for (ImageRegion region : sparseServer.getManager().getRegions()) {
             try {
-                ImageServer<BufferedImage> server = sparseServer.getManager().getServer(region, middleDownsample);
+                ImageServer<BufferedImage> server = sparseServer.getManager().getServer(region, downsample);
                 if (server instanceof TileImageServer tileImageServer) {
                     thumbServers.add(tileImageServer);
                 } else {
