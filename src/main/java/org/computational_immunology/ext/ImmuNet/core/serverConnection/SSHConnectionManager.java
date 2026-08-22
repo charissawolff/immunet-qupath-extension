@@ -91,6 +91,9 @@ public class SSHConnectionManager {
         if (hasCause(cause, SocketException.class)) {
             return VectraException.networkUnreachable(cause);
         }
+        if (hasCause(cause, IllegalStateException.class)){
+            return VectraException.unexpectedException();
+        }
         return VectraException.sshConnectionFailed(cause);
     }
 

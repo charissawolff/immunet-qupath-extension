@@ -54,10 +54,10 @@ public class SSHTunnelHandler implements Runnable{
     public void run() {
             try {
                 createSSHTunnel();
-            } catch (IOException e) {
+            } catch (IOException  | IllegalStateException e) {
                 ready.completeExceptionally(e);
-                ImmuNetLog.error("Could not start SSH thread. Are your credentials wrong?", e);
-            }
+                ImmuNetLog.error("Could not start SSH thread", e);
+            } 
     }
 
     /**
