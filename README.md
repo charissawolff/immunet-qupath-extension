@@ -13,6 +13,16 @@ The QuPath extension was made for the Computational Immunology Group at Radboud 
 2. Open QuPath v0.7.0, click on "Extensions > Manage extensions". Click on "Open Extension Directory". You'll be prompted to create a user directory if you don't already have one. A folder will then open. Drag the built jar from `build/libs/` into this folder. 
 3. Restart QuPath. 
 
+## Examples
+
+<img src="example-images/JPEG-and-TIFF.png" alt="Opening a slide as JPEG or TIFF" width="33%">
+
+User can open a specified slide in both JPEG (left) and TIFF (right) versions, depending on usecase. Opening a TIFF file also means that QuPath's feature to view only specified channels is available, while it is not for the JPEG version. The TIFF version showcases more detail in the slide. The multi tile viewer is used for comparing the two image versions here only. The extension only works when one single image is opened.
+
+<img src="example-images/polygons.png" alt="Viewing and adding polygons" width="33%">
+
+User can view polygons from the server (left top table) or add new polygons (left bottom table) to the server.
+
 ## Features 
 - Open Vectra slide images stored on the lab's server. It is not necessary to first download all the tiles locally.
 - Open images as 3-channel JPEG or as full multichannel TIFF format.
