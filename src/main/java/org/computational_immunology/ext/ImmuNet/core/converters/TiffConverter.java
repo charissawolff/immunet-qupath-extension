@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.core.models;
+package org.computational_immunology.ext.ImmuNet.core.converters;
 
 import java.awt.Point;
 import java.awt.image.BandedSampleModel;
@@ -25,8 +25,8 @@ import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 
-/*
-Used to convert bytes from an image from the server into the necessary layered images
+/**
+* Used to convert bytes from an image from the server into the necessary layered images
 */
 public class TiffConverter {
 

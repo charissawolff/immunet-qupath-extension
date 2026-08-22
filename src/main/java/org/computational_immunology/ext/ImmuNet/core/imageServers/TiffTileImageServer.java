@@ -4,8 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
-import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
+import org.computational_immunology.ext.ImmuNet.core.api.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.Tile;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 
@@ -18,15 +17,32 @@ import qupath.lib.images.servers.TileRequest;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * {@link TileImageServer} that serves a single tile as a multi-channel float32 image at one
+ * declared downsample level. Fetches the tile from the backend via {@link ServerGateway} and
+ * resizes it locally to whatever tile size QuPath requests.
+ */
+
 public class TiffTileImageServer extends TileImageServer {
     private final double downsampleValue;
     private final ServerGateway serverGateway;
     private final ImageServerMetadata metadata;
 
-    public TiffTileImageServer(// DatasetMetadata datasetMetadata,
+    /**
+     * Builds a single tile multichannel image server for the given tile, declaring one
+     * resolution level at {@code downsampleValue}.
+     * @param tileMetadata metadata describing the tile (pixel size, position, code, type)
+     * @param datasetName the dataset the tile belongs to
+     * @param slideName the slide the tile belongs to
+     * @param channelList the names of the channels to expose, each assigned a color from a fixed palette
+     * @param downsampleValue the downsample this server instance represents; determines the
+     *                        declared resolution level and preferred tile size
+     * @param serverGateway used to fetch the tile image from the backend
+     */
+    public TiffTileImageServer(
         TileMetadata tileMetadata, String datasetName,
-            String slideName, List<String> channelList, double downsampleValue,
-            ServerGateway serverGateway) {
+        String slideName, List<String> channelList, double downsampleValue,
+        ServerGateway serverGateway) {
         super(tileMetadata, datasetName, slideName);
         this.downsampleValue = downsampleValue;
         this.serverGateway = serverGateway;
@@ -54,6 +70,14 @@ public class TiffTileImageServer extends TileImageServer {
                 .build();
     }
 
+    /**
+     * {@inheritDoc}
+     * Fetches the tile's TIFF image from the backend via
+     * {@link ServerGateway#fetchComponentsTiffImage}, passing along the requested tile's
+     * downsample, and resizes it to the requested tile dimensions. Returns a blank tile if the
+     * fetch fails with an {@link IOException}.
+     * @throws IOException if fetching the tile is interrupted
+     */
     @Override
     public BufferedImage readTile(TileRequest tileRequest) throws IOException {
         int requestedWidth = tileRequest.getTileWidth();
@@ -88,6 +112,12 @@ public class TiffTileImageServer extends TileImageServer {
         return metadata;
     }
 
+    /**
+     * Builds one {@link ImageChannel} per channel name, assigning each a color from a fixed
+     * palette of 16 colors. This insures that the slides on the server, each channel will have a unique color.
+     * @param channelList the names of the channels to build
+     * @return the image channels, in the same order as {@code channelList}
+     */
     private static List<ImageChannel> toImageChannels(List<String> channelList) {
         List<ImageChannel> channels = new ArrayList<>();
         List<int[]> defaultColors = new ArrayList<>();

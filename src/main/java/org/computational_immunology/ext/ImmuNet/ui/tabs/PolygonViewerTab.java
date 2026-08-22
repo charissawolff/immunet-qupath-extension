@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGateway;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
+import org.computational_immunology.ext.ImmuNet.core.api.ServerGateway;
+import org.computational_immunology.ext.ImmuNet.core.api.ServerUploadGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.Dimensions;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.LoadPolygonCommand;

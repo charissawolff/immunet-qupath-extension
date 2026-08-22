@@ -1,9 +1,9 @@
 package org.computational_immunology.ext.ImmuNet.ui.tabBoxes;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerUploadGateway;
+import org.computational_immunology.ext.ImmuNet.core.api.ServerUploadGateway;
+import org.computational_immunology.ext.ImmuNet.core.converters.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
-import org.computational_immunology.ext.ImmuNet.core.models.PolygonConverter;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.commands.SelectPathObjectCommand;
 import org.computational_immunology.ext.ImmuNet.ui.commands.polygon.AddPolygonCommand;

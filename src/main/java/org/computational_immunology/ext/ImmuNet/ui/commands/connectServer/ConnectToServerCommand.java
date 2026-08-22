@@ -3,7 +3,8 @@ package org.computational_immunology.ext.ImmuNet.ui.commands.connectServer;
 import java.util.function.Consumer;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerConnectionHandler;
+import org.computational_immunology.ext.ImmuNet.core.api.ApiClient;
+import org.computational_immunology.ext.ImmuNet.core.serverConnection.SSHConnectionManager;
 import org.computational_immunology.ext.ImmuNet.ui.commands.AbstractAsyncCommand;
 
 public class ConnectToServerCommand extends AbstractAsyncCommand<Boolean> {
@@ -28,19 +29,19 @@ public class ConnectToServerCommand extends AbstractAsyncCommand<Boolean> {
     protected Boolean execute(Consumer<String> progressReporter) throws Exception {
         progressReporter.accept("Logging into server...");
         try {
-            ServerConnectionHandler.getInstance().startSSHThread(username, hostname, password, localPort, remotePort);
+            SSHConnectionManager.getInstance().startSSHThread(username, hostname, password, localPort, remotePort);
         } catch (Exception e) {
             ImmuNetLog.error("SSH connection failed.", e);
-            progressReporter.accept("SSH connection failed. Probably wrong credentials for username, hostname and password." );
+            progressReporter.accept(e.getMessage());
             return false;
         }
         try{
             ImmuNetLog.log("SSH connection established. Logging into database...");
             progressReporter.accept("Logging into database...");
-            ServerConnectionHandler.getInstance().performDatabaseLogin(dbuser,dbpass);
+            ApiClient.getInstance().performDatabaseLogin(dbuser, dbpass);
         }catch (Exception e){
             ImmuNetLog.error("Database login failed.", e);
-            progressReporter.accept("Database login failed: Probably wrong credentials for dbuser and dbpass.");
+            progressReporter.accept(e.getMessage());
             return false;
         }
         return true;
@@ -48,7 +49,11 @@ public class ConnectToServerCommand extends AbstractAsyncCommand<Boolean> {
 
     @Override
     protected void onSuccess(Boolean result) {
-        ImmuNetLog.log("Successfully connected to server: " + hostname + " with user: " + username);
+        if (result) {
+            ImmuNetLog.log("Successfully connected to server: " + hostname + " with user: " + username);
+        } else {
+            ImmuNetLog.log("Failed to connect to server: " + hostname + " with user: " + username);
+        }
     }
 
     @Override

@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.core.handlers;
+package org.computational_immunology.ext.ImmuNet.core.api;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -10,6 +10,11 @@ import javax.imageio.ImageIO;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+/**
+ * Handles data (JSON and Image) requests to the backend api. Delegates the actual HTTP request to a {@link PageFetcher} instance.
+ * Provides the JSON or {@link BufferedImage} representation of the response for further processing.
+ */
 
 public class DataRequestHandler {
     private final PageFetcher pageFetcher;
@@ -37,6 +42,17 @@ public class DataRequestHandler {
             return imageInputStream.readAllBytes();
         }
     }
+
+    /**
+     * Fetches and decodes images into a BufferedImage.
+     * Semaphore handles how many images are decoded simultaneously. This was added after too many simultaneous decoding leads to 
+     * performance issues and crashes.
+     * @param path the absolute path to the image resource on the server
+     * @param semaphore a semaphore to control concurrent decoding of images.
+     * @return a BufferedImage object representing the fetched image.
+     * @throws IOException when the image data cannot be found or properly decoded.
+     * @throws InterruptedException when user cancels the javafx task for fetching images.
+     */
 
     public BufferedImage fetchImage(String path, Semaphore semaphore) throws IOException, InterruptedException {
         byte[] imageBytes = fetchBytes(path);

@@ -1,6 +1,6 @@
 package org.computational_immunology.ext.ImmuNet.core.imageServers;
 
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
+import org.computational_immunology.ext.ImmuNet.core.api.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 
 import qupath.lib.images.servers.ImageServer;

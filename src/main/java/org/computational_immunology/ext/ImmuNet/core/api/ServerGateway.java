@@ -1,4 +1,4 @@
-package org.computational_immunology.ext.ImmuNet.core.handlers;
+package org.computational_immunology.ext.ImmuNet.core.api;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -7,13 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
+import org.computational_immunology.ext.ImmuNet.core.converters.AnnotationPointConverter;
+import org.computational_immunology.ext.ImmuNet.core.converters.ImageConverter;
+import org.computational_immunology.ext.ImmuNet.core.converters.PolygonConverter;
+import org.computational_immunology.ext.ImmuNet.core.converters.TiffConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPoint;
-import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPointConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.AnnotationPolygon;
 import org.computational_immunology.ext.ImmuNet.core.models.DatasetMetadata;
-import org.computational_immunology.ext.ImmuNet.core.models.ImageConverter;
-import org.computational_immunology.ext.ImmuNet.core.models.PolygonConverter;
-import org.computational_immunology.ext.ImmuNet.core.models.TiffConverter;
 import org.computational_immunology.ext.ImmuNet.core.models.Tile;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata.ImageType;

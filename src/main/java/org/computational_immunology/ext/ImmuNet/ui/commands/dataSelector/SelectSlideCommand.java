@@ -1,7 +1,7 @@
 package org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
+import org.computational_immunology.ext.ImmuNet.core.api.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.imageServers.SlideImageServer;
 import org.computational_immunology.ext.ImmuNet.core.imageServers.TileImageServer;
 import org.computational_immunology.ext.ImmuNet.core.models.TileMetadata;

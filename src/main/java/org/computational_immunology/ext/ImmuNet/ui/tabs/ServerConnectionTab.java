@@ -13,6 +13,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -38,6 +40,8 @@ public class ServerConnectionTab extends CustomSidePanelTab{
     CachedLoginBox[] allLoginBoxes;
 
     Label statusLabel = new Label();
+
+    private final BooleanProperty connectionInProgress = new SimpleBooleanProperty(false);
 
     public ServerConnectionTab() {
         super("Server Connection");
@@ -80,12 +84,13 @@ public class ServerConnectionTab extends CustomSidePanelTab{
         
         loadConfig();
         
-        Button connectBtn = makeButton("Connect", new Dimensions(40, 100));
+        Button connectBtn = makeButton("Connect", new Dimensions(30, 100));
         EventHandler<ActionEvent> connectEvent = sendCredentials();
 
         //add listener to make sure all fields are filled before enabling the connect button
         connectBtn.disableProperty().bind(Bindings.createBooleanBinding(() ->
-                Arrays.stream(allLoginBoxes).anyMatch(s-> s.field.getText().isEmpty()),
+                connectionInProgress.get() || Arrays.stream(allLoginBoxes).anyMatch(s-> s.field.getText().isEmpty()),
+                connectionInProgress,
                 hostnameField.field.textProperty(),
                 usernameField.field.textProperty(),
                 passwordField.field.textProperty(),
@@ -168,15 +173,19 @@ public class ServerConnectionTab extends CustomSidePanelTab{
             String dbPass       = dbPassField.field.getText();
             int dbLocalPort = Integer.parseInt(dbLocalPortField.field.getText());
             int dbRemotePort = Integer.parseInt(dbRemotePortField.field.getText());
+            statusLabel.setStyle("-fx-text-fill: black;");
+            statusLabel.setText("Trying to connect...");
 
             // Credentials entered
             if (Arrays.stream(allLoginBoxes).noneMatch(s-> s.field.getText().isEmpty()) ){
                 ConnectToServerCommand connectCommand = new ConnectToServerCommand(username, hostname, password, dbUsername, dbPass, dbLocalPort, dbRemotePort);
                 statusLabel.setStyle("-fx-text-fill: black;");
+                connectionInProgress.set(true);
                 connectCommand.build();
                 connectCommand.getTask().messageProperty().addListener((obs, oldMsg, newMsg) -> statusLabel.setText(newMsg));
                 connectCommand.start();
                 connectCommand.setOnDone(() -> {
+                    connectionInProgress.set(false);
                     try {
                         //get result of the command to check if the connection was successful
                         Boolean result = connectCommand.getTask().getValue();
@@ -197,6 +206,7 @@ public class ServerConnectionTab extends CustomSidePanelTab{
                 });
 
                 connectCommand.setOnFailed(() -> {
+                    connectionInProgress.set(false);
                     ImmuNetLog.error("Connection failed:");
                     statusLabel.setText("Error while connecting to server. Check logs for details.");
                     statusLabel.setStyle("-fx-text-fill: red;");

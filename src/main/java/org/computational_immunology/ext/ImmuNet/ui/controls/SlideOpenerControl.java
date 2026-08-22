@@ -10,7 +10,7 @@ import javafx.geometry.Insets;
 import java.util.function.BooleanSupplier;
 
 import org.computational_immunology.ext.ImmuNet.core.ImmuNetLog;
-import org.computational_immunology.ext.ImmuNet.core.handlers.ServerGateway;
+import org.computational_immunology.ext.ImmuNet.core.api.ServerGateway;
 import org.computational_immunology.ext.ImmuNet.core.store.SelectedDataStore;
 import org.computational_immunology.ext.ImmuNet.ui.commands.dataSelector.SlideLoadWorkflow;
 import org.computational_immunology.ext.ImmuNet.ui.overlays.TileHoverController;
