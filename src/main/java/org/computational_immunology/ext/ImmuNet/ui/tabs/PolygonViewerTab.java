@@ -55,10 +55,20 @@ public class PolygonViewerTab extends CustomSidePanelTab {
         PolygonListBox polygonListBox = new PolygonListBox();
 
         Button loadDataBtn = makeButton("Load polygons", new Dimensions(30, 120));
+        loadDataBtn.setPadding(new Insets(2, 2, 2, 2));
         Label statusLabel = new Label();
+        statusLabel.setPadding(new Insets(2, 2, 2, 2));
+        statusLabel.setManaged(false);
+        statusLabel.setVisible(false);
 
         // bind to the selected slide property of the datastore, so that the button is only enabled when a slide is selected
         loadDataBtn.disableProperty().bind(Bindings.isNull(selectedDataStore.selectedSlideProperty()));
+
+        selectedDataStore.selectedSlideProperty().addListener((obs, oldSlide, newSlide) -> {
+                polygonListBox.clear();
+                statusLabel.setManaged(false);
+                statusLabel.setVisible(false);
+        });
 
         loadDataBtn.setOnAction(e -> {
         LoadPolygonCommand loadPolygonDataCommand = new LoadPolygonCommand(serverGateway, selectedDataStore);

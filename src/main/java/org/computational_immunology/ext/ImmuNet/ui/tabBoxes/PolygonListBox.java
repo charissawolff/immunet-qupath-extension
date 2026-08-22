@@ -58,7 +58,7 @@ public class PolygonListBox extends VBox {
                 }
         ));
 
-        showAllCheckBox = new CheckBox("Show polygons");
+        showAllCheckBox = new CheckBox("Show all polygons");
         VBox.setMargin(showAllCheckBox, new javafx.geometry.Insets(0, 2, 5, 2));
         showAllCheckBox.setSelected(true);
         showAllCheckBox.setOnAction(e -> {
